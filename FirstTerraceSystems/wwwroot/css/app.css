@@ -84,3 +84,34 @@ h1:focus {
         padding-left: env(safe-area-inset-left);
     }
 }
+
+.content {
+    height: 100vh;
+    overflow: hidden;
+    padding: 10px !important;
+}
+
+.mud-tabs-toolbar.mud-tabs-toolbar-dark {
+    background: transparent;
+}
+
+.mud-tabs-toolbar-wrapper {
+    grid-gap: 4px;
+}
+
+.mud-tab {
+    background: #2D3539;
+    min-height: 100% !important;
+}
+
+    .mud-tab.mud-tab-active {
+        background: #5B6970;
+    }
+
+.mud-tabs-toolbar .mud-tabs-toolbar-inner {
+    min-height: 31px !important;
+}
+
+.mud-tabs-toolbar-dark .mud-tab-slider {
+    display: none;
+}
