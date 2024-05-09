@@ -1,0 +1,26 @@
+﻿@page "/"
+
+<div class="signIn">
+    <MudGrid Class="justify-center" Spacing="0">
+        <MudItem xs="5">
+            <MudPaper Class="d-flex flex-column justify-content-center align-items-center login-content h-100 rounded-0">
+                <MudImage Src="../images/logo.png" Alt="logo" class="logo" />
+                <MudInput @bind-Value="@Email" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudInput>
+                <MudInput @bind-Value="@Password" Placeholder="Password" InputType="InputType.Password"></MudInput>
+                <MudButton ButtonType="ButtonType.Submit">Sign in</MudButton>
+                <MudButton class="create-new" ButtonType="ButtonType.Submit" Href="/register">I dont have an account create one</MudButton>
+                <span class="separator">OR</span>
+                <MudButton class="social-media" ButtonType="ButtonType.Submit"><MudImage Src="../images/devicon_google.png" Alt="devivon_google" />Continue using Google ID</MudButton>
+                <MudButton class="social-media" ButtonType="ButtonType.Submit"><MudImage Src="../images/apple.png" Alt="apple" />Continue using Apple ID</MudButton>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="7">
+            <MudImage Src="../images/login-bg.png" Alt="login-bg" />
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    public string Email { get; set; }
+    public string Password { get; set; }
+}
