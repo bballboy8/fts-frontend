@@ -17,6 +17,7 @@ namespace FirstTerraceSystems
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
+            
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();

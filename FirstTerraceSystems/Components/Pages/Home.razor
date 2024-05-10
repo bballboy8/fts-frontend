@@ -53,6 +53,10 @@
     <MudTabPanel OnClick="LoadChart" Text="ADD CHART">
         <div id="container1"></div>
     </MudTabPanel>
+    <MudTabPanel OnClick="LoadChart" Text="Scatter CHART">
+        <div id="container2"></div>
+    </MudTabPanel>
+    
 </MudTabs>
 
 @code {
@@ -71,11 +75,14 @@
             {
                 await JS.InvokeVoidAsync("loadStockChart", "");
             }
-            else
+            else if (activeIndex == 1)
             {
                 await JS.InvokeVoidAsync("loadStockChart1", "");
             }
-
+            else if (activeIndex == 2)
+            {
+                await JS.InvokeVoidAsync("loadStockChart2", "");
+            }
         }
         catch (Exception ex)
         {
