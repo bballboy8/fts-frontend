@@ -8,6 +8,20 @@ a, .btn-link {
     color: #006bb7;
 }
 
+:root {
+    --chart-bg-color: #ffffff;
+    --font-color: #202527;
+}
+[data-theme="dark"] {
+    --chart-bg-color: #202527;
+    --font-color: #ffffff;
+}
+[data-theme="light"] {
+    --chart-bg-color: #202527;
+    --font-color: #ffffff;
+}
+
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;
@@ -102,12 +116,13 @@ h1:focus {
 }
 
 .mud-tab {
-    background: #2D3539;
+    background: #2D3539 !important;
     min-height: 100% !important;
+    color:#fff!important;
 }
 
     .mud-tab.mud-tab-active {
-        background: #5B6970;
+        background: #5B6970 !important;
     }
 
 .mud-tabs-toolbar .mud-tabs-toolbar-inner {

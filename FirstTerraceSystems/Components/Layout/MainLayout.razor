@@ -6,9 +6,9 @@
     </div> *@
 
     <main>
-        @* <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div> *@
+        <div id="headbar" class="top-row px-4">
+            <MudSwitch Color="Color.Primary" ValueChanged="@((bool newValue) => ToggleDarkMode(newValue))" />
+        </div>
 
         <article class="content px-4">
             @Body
@@ -18,3 +18,22 @@
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+
+@code{
+    private bool IsDarkMode { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
+        }
+    }
+
+    // Method to handle MudSwitch state changes
+    private async Task ToggleDarkMode(bool newValue)
+    {
+        IsDarkMode = newValue;
+        await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
+    }
+}
