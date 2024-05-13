@@ -117,7 +117,8 @@ window.loadStockChart = async () => {
         }],
         exporting: {
             enabled: false // Disable export
-        }
+        },
+        navigator: { enabled: false, adaptToUpdateData: false }
     });
 };
 
@@ -258,7 +259,8 @@ window.loadStockChart1 = async () => {
         },
         exporting: {
             enabled: false // Disable export
-        }
+        },
+        navigator: { enabled: false, adaptToUpdateData: false }
     });
 }
 
@@ -275,43 +277,48 @@ window.changeBackgroundColor = (isDarkMode) => {
     });
 
     // Update chart backgrounds and series colors for all Highcharts charts
+    
     Highcharts.charts.forEach(chart => {
-        chart.update({
-            chart: {
-                backgroundColor: backgroundColor,
-                borderColor: isDarkMode ? "#5B6970" : "#ffffff",
-            },
-            xAxis: [{
-                labels: {
-                    style: {
-                        color: fontColor
+        debugger
+        if (chart) {
+            chart.update({
+                chart: {
+                    backgroundColor: backgroundColor,
+                    borderColor: isDarkMode ? "#5B6970" : "#ffffff",
+                },
+                xAxis: [{
+                    labels: {
+                        style: {
+                            color: fontColor
+                        }
                     }
-                }
-            }, {
-                labels: {
-                    style: {
-                        color: fontColor
+                }, {
+                    labels: {
+                        style: {
+                            color: fontColor
+                        }
                     }
-                }
-            }],
-            yAxis: [{
-                labels: {
-                    style: {
-                        color: fontColor
+                }],
+                yAxis: [{
+                    labels: {
+                        style: {
+                            color: fontColor
+                        }
                     }
-                }
-            }, {
-                labels: {
-                    style: {
-                        color: fontColor
+                }, {
+                    labels: {
+                        style: {
+                            color: fontColor
+                        }
                     }
-                }
-            }],
-            series: chart.series.map(series => ({
-                ...series.options,
-                color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
-                upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
-            }))
-        });
+                }],
+                series: chart.series.map(series => ({
+                    ...series.options,
+                    color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
+                    upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
+                }))
+            });
+        }
+        
     });
 }; 
