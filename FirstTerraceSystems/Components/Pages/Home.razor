@@ -43,45 +43,18 @@
 
 
 @page "/home"
-@using MudBlazor
-@inject IJSRuntime JS;
 
-<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Color="@Color.Dark" @bind-ActivePanelIndex="activeIndex">
-    <MudTabPanel OnClick="LoadChart" Text="XNYS: APPL" ShowCloseIcon=true>
-        <div id="container"></div>
-    </MudTabPanel>
-    <MudTabPanel OnClick="LoadChart" Text="ADD CHART">
-        <div id="container1"></div>
-    </MudTabPanel>
-</MudTabs>
 
-@code {
-    int activeIndex = 0;
+<h4>Welcome to Firebase</h4>
+@code{
 
-    protected async override Task OnInitializedAsync()
-    {
-        await LoadChart();
-    }
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         IJSObjectReference module = await JSRuntime.InvokeVoidAsync("import", "./js/stockchart.js");
+    //         await module.InvokeVoidAsync("loadStockChart");
+    //     }
+    // }
 
-    private async Task LoadChart()
-    {
-        try
-        {
-            if (activeIndex == 0)
-            {
-                await JS.InvokeVoidAsync("loadStockChart", "");
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("loadStockChart1", "");
-            }
-
-        }
-        catch (Exception ex)
-        {
-
-            throw;
-        }
-    }
 }
-

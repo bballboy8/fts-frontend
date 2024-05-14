@@ -1,14 +1,20 @@
 ﻿@page "/"
 
 <div class="signIn">
+    <EditForm Model="@_loginDto" OnValidSubmit="ExecuteLogin">
+        <DataAnnotationsValidator />
     <MudGrid Class="justify-center" Spacing="0">
         <MudItem xs="5">
             <MudPaper Class="d-flex flex-column justify-content-center align-items-center login-content h-100 rounded-0">
                 <MudImage Src="../images/logo.png" Alt="logo" class="logo" />
-                <MudInput @bind-Value="@Email" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudInput>
-                <MudInput @bind-Value="@Password" Placeholder="Password" InputType="InputType.Password"></MudInput>
+                    <MudTextField @bind-Value="@_loginDto.Username" For="@(() => _loginDto.Username)" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudTextField>
+                    <MudTextField @bind-Value="@_loginDto.Password" Required="true" For="@(() => _loginDto.Password)" Placeholder="Password" InputType="InputType.Password"></MudTextField>
+                @if (ShowAuthError)
+                {
+                    <MudText Align="Align.Center" Color="Color.Warning" Typo="Typo.body2">@Error</MudText>
+                }
                 <MudButton ButtonType="ButtonType.Submit">Sign in</MudButton>
-                <MudButton class="create-new" ButtonType="ButtonType.Submit" Href="/register">I dont have an account create one</MudButton>
+                <MudButton class="create-new" Href="/register">I dont have an account create one</MudButton>
                 <span class="separator">OR</span>
                 <MudButton class="social-media" ButtonType="ButtonType.Submit"><MudImage Src="../images/devicon_google.png" Alt="devivon_google" />Continue using Google ID</MudButton>
                 <MudButton class="social-media" ButtonType="ButtonType.Submit"><MudImage Src="../images/apple.png" Alt="apple" />Continue using Apple ID</MudButton>
@@ -18,9 +24,5 @@
             <MudImage Src="../images/login-bg.png" Alt="login-bg" />
         </MudItem>
     </MudGrid>
+    </EditForm>
 </div>
-
-@code {
-    public string Email { get; set; }
-    public string Password { get; set; }
-}

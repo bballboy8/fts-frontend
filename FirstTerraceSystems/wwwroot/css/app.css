@@ -160,12 +160,14 @@ h1:focus {
     margin-bottom: 20px;
     border: 1px solid #25E2A2;
     transition: all 0.3s;
+    margin-top:20px;
 }
 
     .signIn .mud-button.create-new {
         background: transparent;
         color: #25E2A2;
         margin-bottom: 0;
+        margin-top: 0;
     }
 
     .signIn .mud-button:hover {
@@ -216,13 +218,13 @@ h1:focus {
 
     .signIn .mud-button.social-media,
     .signIn .mud-input > input.mud-input-root, div.mud-input-slot.mud-input-root {
-        border: 1px solid #5B6970 !important;
+        border: 1px solid #fff !important;
         height: 50px;
         padding: 0 25px;
         width: 100%;
         font-weight: 400;
         background: transparent;
-        margin-bottom: 20px;
+        margin-bottom: 0px;
         border-radius: 50px;
         color: #fff !important;
         transition: all 0.3s;
@@ -308,4 +310,31 @@ h1:focus {
     line-height: 14px;
     color: #FFFFFF;
     font-weight: 500;
+}
+
+/*.mud-input.mud-input-underline.mud-input-error:after {
+    display: none;
+}*/
+
+/*.mud-input > input.mud-input-root:focus, .mud-input > input.mud-input-root:active, div.mud-input-slot.mud-input-root:focus, div.mud-input-slot.mud-input-root:active {
+    border: 1px solid red;
+}*/
+.mud-input.mud-input-underline.mud-input-error:after {
+    transform: unset !important;
+    bottom: 0px;
+    height: 52px;
+    width: 100%;
+    border-radius: 50px;
+    border-bottom: unset !important;
+    border: 3px solid var(--mud-palette-primary) !important;
+    border-color: var(--mud-palette-error) !important;
+}
+.mud-input {
+    color: #fff !important;
+}
+.mud-input-control{
+    width:100%;
+}
+.mud-input-helper-text.mud-input-error{
+    padding-left:30px;
 }

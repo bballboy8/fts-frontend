@@ -1,5 +1,10 @@
-﻿@inherits LayoutComponentBase
+﻿@using FirstTerraceSystems.AuthProviders
+@using Microsoft.AspNetCore.Components.Authorization
 
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthenticationService
+@inject AuthenticationStateProvider AuthStateProvider
 <div class="page">
     @* <div class="sidebar">
         <NavMenu />
@@ -18,3 +23,25 @@
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+
+@code{
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        // if (!NavigationManager.Uri.ToLower().Contains("register"))
+        // {
+        //     if (!authState.User.Identity?.IsAuthenticated ?? false)
+        //     {
+        //         NavigationManager.NavigateTo("/login");
+        //     }
+        //     else
+        //     {
+        //         NavigationManager.NavigateTo("/login");
+        //         // NavigationManager.NavigateTo("/stockchart");
+        //     }
+        // }
+        
+    }
+
+}
