@@ -7,7 +7,7 @@
         <MudItem xs="5">
             <MudPaper Class="d-flex flex-column justify-content-center align-items-center login-content h-100 rounded-0">
                 <MudImage Src="../images/logo.png" Alt="logo" class="logo" />
-                    <MudTextField @bind-Value="@_loginDto.Username" For="@(() => _loginDto.Username)" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudTextField>
+                    <MudTextField @bind-Value="@_loginDto.Email" For="@(() => _loginDto.Email)" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudTextField>
                     <MudTextField @bind-Value="@_loginDto.Password" Required="true" For="@(() => _loginDto.Password)" Placeholder="Password" InputType="InputType.Password"></MudTextField>
                 @if (ShowAuthError)
                 {

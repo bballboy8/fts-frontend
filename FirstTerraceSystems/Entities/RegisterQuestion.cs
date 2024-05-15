@@ -13,9 +13,9 @@ namespace FirstTerraceSystems.Entities
         public string Question_3 { get; set; }
         public string Question_4 { get; set; }
         public string Question_5 { get; set; }
-        public string question_6 { get; set; }
-        public string question_7 { get; set; }
-        public string question_8 { get; set; }
-        public string question_9 { get; set; }
+        public string Question_6 { get; set; }
+        public string Question_7 { get; set; }
+        public string Question_8 { get; set; }
+        public string Question_9 { get; set; }
     }
 }

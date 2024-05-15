@@ -30,7 +30,7 @@ namespace FirstTerraceSystems.Services
 
         public async Task<AuthResponseDto> Login(LoginDto model)
         {
-            var content = JsonSerializer.Serialize(new { username = model.Username, password = model.Password  }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var content = JsonSerializer.Serialize(new { email = model.Email, password = model.Password }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
 
@@ -42,10 +42,10 @@ namespace FirstTerraceSystems.Services
                 return result;
 
             await _localStorage.SetItemAsync("authToken", result.Access_Token);
-            ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Username);
+            ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email);
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result.Access_Token);
 
-            return new AuthResponseDto ();
+            return new AuthResponseDto();
         }
         
         public async Task<RegisterResponseDto> Registration(RegisterModel model)
@@ -64,9 +64,17 @@ namespace FirstTerraceSystems.Services
             return new RegisterResponseDto();
         }
 
-        
-            public async Task Logout()
+
+        public async Task Logout(LoginDto model)
         {
+            var content = JsonSerializer.Serialize(new { email = model.Email }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
+
+            var authResult = await _client.PostAsync("user/logout", bodyContent);
+            var authContent = await authResult.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<AuthResponseDto>(authContent, _options);
+
             await _localStorage.RemoveItemAsync("authToken");
             ((AuthStateProvider)_authStateProvider).NotifyUserLogout();
             _client.DefaultRequestHeaders.Authorization = null;

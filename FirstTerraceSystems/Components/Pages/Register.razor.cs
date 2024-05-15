@@ -64,10 +64,10 @@ namespace FirstTerraceSystems.Components.Pages
                     question_3 = _registerQuestion.Question_3,
                     question_4 = _registerQuestion.Question_4,
                     question_5 = _registerQuestion.Question_5,
-                    question_6 = _registerQuestion.question_6,
-                    question_7 = _registerQuestion.question_7,
-                    question_8 = _registerQuestion.question_8,
-                    question_9 = _registerQuestion.question_9,
+                    question_6 = _registerQuestion.Question_6,
+                    question_7 = _registerQuestion.Question_7,
+                    question_8 = _registerQuestion.Question_8,
+                    question_9 = _registerQuestion.Question_9,
                 }
             };
 

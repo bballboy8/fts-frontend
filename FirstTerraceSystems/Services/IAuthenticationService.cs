@@ -14,7 +14,8 @@ namespace FirstTerraceSystems.Services
         Task<RegisterResponseDto> Registration(RegisterModel model);
      
         Task<AuthResponseDto> Login(LoginDto userForAuthentication);
-        Task Logout();
-        
+        Task Logout(LoginDto model);
+
+
     }
 }
