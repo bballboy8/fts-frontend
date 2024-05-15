@@ -18,26 +18,20 @@ namespace FirstTerraceSystems.Components.Pages
         private RegisterModel _registerModel = new RegisterModel();
         private FirstTerraceSystems.Entities.RegisterQuestion _registerQuestion = new FirstTerraceSystems.Entities.RegisterQuestion();
 
-        [Inject]
-        public IAuthenticationService AuthenticationService { get; set; }
-       
+        [Inject] public IAuthenticationService AuthenticationService { get; set; }
+        [Inject] public NavigationManager NavigationManager { get; set; }
         [Parameter] public RegisterModel RegisterModal { get; set; } = new();
         [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
 
-        [Inject]
-        public NavigationManager NavigationManager { get; set; }
         public bool ShowAuthError { get; set; }
         public string Error { get; set; }
         private bool ShowRegister { get; set; } = true;
 
-        //private void ShowQuestion()
-        //{
-        //    ShowRegister = false;
-        //}
         private void BackToRegistration()
         {
             ShowRegister = true;
         }
+
         private async Task SaveAsync()
         {
             var registerDto = new RegisterModel
@@ -48,15 +42,15 @@ namespace FirstTerraceSystems.Components.Pages
                 email = _registerDto.email,
                 password = _registerDto.password,
                 confirm_password = _registerDto.confirm_password,
-                //company_name = _registerDto.company_name,
-                //city = _registerDto.city,
-                //phone   = _registerDto.phone,
-                //address_1= _registerDto.address_1,
-                //address_2= _registerDto.address_2,
-                //state = _registerDto.state,
-                //region = _registerDto.region,
-                //postal_code = _registerDto.postal_code,
-                //country = _registerDto.country, 
+                company_name = _registerDto.company_name,
+                city = _registerDto.city,
+                phone = _registerDto.phone,
+                address_1 = _registerDto.address_1,
+                address_2 = _registerDto.address_2,
+                state = _registerDto.state,
+                region = _registerDto.region,
+                postal_code = _registerDto.postal_code,
+                country = _registerDto.country,
                 trading_experience = new TradingExperience
                 {
                     question_1 = _registerQuestion.Question_1,
@@ -71,16 +65,17 @@ namespace FirstTerraceSystems.Components.Pages
                 }
             };
 
-            // Call the Registration method of AuthenticationService
             var registerResponse = await AuthenticationService.Registration(registerDto);
             if (registerResponse != null)
             {
+                _snackBar.Add("Registration successful", Severity.Success);
                 NavigationManager.NavigateTo("/login");
             }
             else
             {
                 Error = registerResponse?.Message ?? "An error occurred during registration.";
                 ShowAuthError = true;
+                _snackBar.Add(Error, Severity.Error);
             }
         }
 

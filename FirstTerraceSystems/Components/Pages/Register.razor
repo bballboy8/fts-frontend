@@ -10,7 +10,7 @@
                         <MudImage Src="../images/logo.png" Alt="logo" class="logo" />
                         <MudTextField T="string" @bind-Value="@_registerDto.first_name" For="@(() => _registerDto.first_name)" Placeholder="First name"></MudTextField>
                         <MudTextField T="string" @bind-Value="@_registerDto.last_name" For="@(() => _registerDto.last_name)" Placeholder="Last name"></MudTextField>
-                        <MudTextField T="string" @bind-Value="@_registerDto.user_id" For="@(() => _registerDto.user_id)" Placeholder="Username" InputMode="InputMode.email" InputType="InputType.Email"></MudTextField>
+                        <MudTextField T="string" @bind-Value="@_registerDto.user_id" For="@(() => _registerDto.user_id)" Placeholder="Username"></MudTextField>
                         <MudTextField T="string" @bind-Value="@_registerDto.email" For="@(() => _registerDto.email)" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudTextField>
                         <MudTextField T="string" @bind-Value="@_registerDto.password" For="@(() => _registerDto.password)" Placeholder="Password" InputType="InputType.Password"></MudTextField>
                         <MudTextField T="string" @bind-Value="@_registerDto.confirm_password" For="@(() => _registerDto.confirm_password)" Placeholder="Confirm Password" InputType="InputType.Password"></MudTextField>
@@ -25,7 +25,7 @@
 }
 else
 {
-    <div class="signIn signUp">
+    <div class="signIn signUp questions">
         <EditForm Model="@_registerQuestion" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
             <MudGrid Class="justify-center" Spacing="0">

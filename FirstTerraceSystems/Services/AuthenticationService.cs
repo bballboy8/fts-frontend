@@ -28,6 +28,7 @@ namespace FirstTerraceSystems.Services
             _localStorage = localStorage;
         }
 
+        
         public async Task<AuthResponseDto> Login(LoginDto model)
         {
             var content = JsonSerializer.Serialize(new { email = model.Email, password = model.Password }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -42,12 +43,14 @@ namespace FirstTerraceSystems.Services
                 return result;
 
             await _localStorage.SetItemAsync("authToken", result.Access_Token);
+            await _localStorage.SetItemAsync("email", model.Email);
+
             ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email);
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result.Access_Token);
 
             return new AuthResponseDto();
         }
-        
+
         public async Task<RegisterResponseDto> Registration(RegisterModel model)
         {
             var content = JsonSerializer.Serialize(model, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -67,7 +70,8 @@ namespace FirstTerraceSystems.Services
 
         public async Task Logout(LoginDto model)
         {
-            var content = JsonSerializer.Serialize(new { email = model.Email }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var email = await _localStorage.GetItemAsync<string>("email");
+            var content = JsonSerializer.Serialize(new { email = email }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
 

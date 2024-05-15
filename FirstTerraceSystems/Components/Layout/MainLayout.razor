@@ -12,9 +12,12 @@
     </div> *@
 
     <main>
-        <div class="top-row px-4">
-            <MudButton @onclick="Logout">Logout</MudButton>
-        </div>
+        @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
+        {
+            <div style="background-color:#202527" class="top-row px-4">
+                <MudButton Variant="Variant.Outlined" Color="Color.Success" @onclick="Logout">Logout</MudButton>
+            </div>
+        }
 
         <article class="content px-4">
             @Body
@@ -25,30 +28,30 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-@code{
+@code {
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
 
-        // if (!NavigationManager.Uri.ToLower().Contains("register"))
-        // {
-        //     if (!authState.User.Identity?.IsAuthenticated ?? false)
-        //     {
-        //         NavigationManager.NavigateTo("/login");
-        //     }
-        //     else
-        //     {
-        //         NavigationManager.NavigateTo("/login");
-        //         // NavigationManager.NavigateTo("/stockchart");
-        //     }
-        // }
-        
+        if (!NavigationManager.Uri.ToLower().Contains("register"))
+        {
+            if (!authState.User.Identity?.IsAuthenticated ?? false)
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/stockchart");
+            }
+        }
+
     }
-    
+
     private async Task Logout()
     {
         var model = new LoginDto();
         await AuthenticationService.Logout(model);
+        NavigationManager.NavigateTo("/login");
+        StateHasChanged();
     }
-
 }

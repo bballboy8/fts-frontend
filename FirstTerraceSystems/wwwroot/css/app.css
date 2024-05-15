@@ -120,7 +120,7 @@ h1:focus {
 
 .content:has(.signIn) {
     background-image: url(../images/Sign-in-bg.jpg);
-    height: 100vh;
+    height: 94vh;
     width: 100%;
     background-size: cover;
     background-repeat: no-repeat;
@@ -162,13 +162,20 @@ h1:focus {
     transition: all 0.3s;
     margin-top:20px;
 }
-
-    .signIn .mud-button.create-new {
-        background: transparent;
-        color: #25E2A2;
-        margin-bottom: 0;
-        margin-top: 0;
-    }
+.signIn.questions .mud-button {
+    padding: 22px 0;
+}
+.signIn.questions .mud-paper {
+    max-height: 92vh;
+    justify-content:unset !important;
+    overflow: auto;
+}
+.signIn .mud-button.create-new {
+    background: transparent;
+    color: #25E2A2;
+    margin-bottom: 0;
+    margin-top: 0;
+}
 
     .signIn .mud-button:hover {
         background: transparent;
@@ -260,7 +267,7 @@ h1:focus {
     font-size: 18px;
     text-align: center;
     color: #fff;
-    margin-bottom: 40px;
+    /*margin-bottom: 40px;*/
     font-weight: 400;
 }
 
@@ -337,4 +344,8 @@ h1:focus {
 }
 .mud-input-helper-text.mud-input-error{
     padding-left:30px;
+}
+.questions {
+    height: 92vh;
+    border-radius: 50px;
 }

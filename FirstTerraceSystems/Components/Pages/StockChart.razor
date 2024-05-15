@@ -22,22 +22,13 @@
 
     private async Task LoadChart()
     {
-        try
+        if (activeIndex == 0)
         {
-            if (activeIndex == 0)
-            {
-                await JS.InvokeVoidAsync("loadStockChart", "");
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("loadStockChart1", "");
-            }
-
+            await JS.InvokeVoidAsync("loadStockChart", "");
         }
-        catch (Exception ex)
+        else
         {
-
-            throw;
+            await JS.InvokeVoidAsync("loadStockChart1", "");
         }
     }
 }
