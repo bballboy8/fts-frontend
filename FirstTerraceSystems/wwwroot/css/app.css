@@ -312,13 +312,6 @@ h1:focus {
     font-weight: 500;
 }
 
-/*.mud-input.mud-input-underline.mud-input-error:after {
-    display: none;
-}*/
-
-/*.mud-input > input.mud-input-root:focus, .mud-input > input.mud-input-root:active, div.mud-input-slot.mud-input-root:focus, div.mud-input-slot.mud-input-root:active {
-    border: 1px solid red;
-}*/
 .mud-input.mud-input-underline.mud-input-error:after {
     transform: unset !important;
     bottom: 0px;
