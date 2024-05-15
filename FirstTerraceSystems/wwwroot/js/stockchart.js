@@ -714,11 +714,31 @@ window.loadStockChart2 = async () => {
     Highcharts.stockChart('container2', {
         chart: {
             type: 'scatter',
+            marginTop: 10,
             backgroundColor: "#202527",
             borderWidth: 1,
             borderColor: "#5B6970",
             spacing: [0, 0, 0, 0] // Adjust spacing between charts
             //marginRight: 100, //margin after chart
+        },
+        rangeSelector: {
+            buttonTheme: {
+                fill: '#272C2F', // Change this to the desired color
+                stroke: '#272C2F', // Change this to the desired color
+                style: {
+                    color: '#FFFFFF' // Change this to the desired color
+                },
+                states: {
+                    hover: {
+                        fill: '#5B6970', // Change this to the desired color
+                        stroke: '#5B6970' // Change this to the desired color
+                    },
+                    select: {
+                        fill: '#5B6970', // Change this to the desired color
+                        stroke: '#5B6970' // Change this to the desired color
+                    }
+                }
+            }
         },
         xAxis: [{
             gridLineWidth: 0, // Remove grid lines
@@ -796,6 +816,17 @@ window.loadStockChart2 = async () => {
 
         navigator: {
             enabled: false // Hide the navigator
+        },
+        navigation: {
+            buttonOptions: {
+                enabled: true,
+                symbolX: 12,
+                symbolY: 11,
+                align: 'right',
+                verticalAlign: 'top',
+                x: 0,
+                y: 10
+            }
         },
         series: [
             {
