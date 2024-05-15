@@ -1,0 +1,26 @@
+﻿@page "/register"
+<div class="signIn signUp w-50">
+    <MudGrid Class="justify-center" Spacing="0">
+        <MudItem xs="8">
+            <MudPaper Class="d-flex flex-column justify-content-center align-items-center login-content h-100 rounded-0">
+                <MudImage Src="../images/logo.png" Alt="logo" class="logo" />
+                <MudInput @bind-Value="@FirstName" Placeholder="First name" InputMode="InputMode.text" InputType="InputType.Text"></MudInput>
+                <MudInput @bind-Value="@LastName" Placeholder="Last name" InputMode="InputMode.text" InputType="InputType.Text"></MudInput>
+                <MudInput @bind-Value="@Email" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudInput>
+                <MudInput @bind-Value="@Password" Placeholder="Password" InputType="InputType.Password"></MudInput>
+                <MudInput @bind-Value="@Password" Placeholder="Confirm Password" InputType="InputType.Password"></MudInput>
+                <MudButton ButtonType="ButtonType.Submit" Href="/registerQuestion">Continue</MudButton>
+                <MudButton class="create-new" ButtonType="ButtonType.Submit" Href="/">Back</MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string Email { get; set; }
+    public string Password { get; set; }
+}
+
+
