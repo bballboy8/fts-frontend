@@ -264,6 +264,187 @@ window.loadStockChart1 = async () => {
     });
 }
 
+window.loadStockChart2 = async () => {
+}
+
+window.loadStockChart2 = async () => {
+
+
+    const data = await fetch(
+        'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
+    ).then(response => response.json());
+
+    const ohlc = [],
+        volume = [],
+        dataLength = data.length,
+        groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
+
+    for (let i = 0; i < dataLength; i += 1) {
+
+        // 1 = open , 2 = high, 3= low, 4 = close
+        ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
+        volume.push([data[i][0], data[i][5]]);
+    }
+
+    Highcharts.stockChart('container2', {
+        chart: {
+            type: 'scatter',
+            marginTop: 10,
+            backgroundColor: "#202527",
+            borderWidth: 1,
+            borderColor: "#5B6970",
+            spacing: [0, 0, 0, 0] // Adjust spacing between charts
+            //marginRight: 100, //margin after chart
+        },
+        rangeSelector: {
+            buttonTheme: {
+                fill: '#272C2F', // Change this to the desired color
+                stroke: '#272C2F', // Change this to the desired color
+                style: {
+                    color: '#FFFFFF' // Change this to the desired color
+                },
+                states: {
+                    hover: {
+                        fill: '#5B6970', // Change this to the desired color
+                        stroke: '#5B6970' // Change this to the desired color
+                    },
+                    select: {
+                        fill: '#5B6970', // Change this to the desired color
+                        stroke: '#5B6970' // Change this to the desired color
+                    }
+                }
+            }
+        },
+        xAxis: [{
+            gridLineWidth: 0, // Remove grid lines
+            offset: 0,
+            labels: {
+                align: 'left',
+                y: -290,
+                x: -20,
+                style: {
+                    color: '#ffffff'
+                }
+            },
+            lineWidth: 0,
+            opposite: false
+        }, {
+            gridLineWidth: 0, // Remove grid lines
+            offset: 0,
+            labels: {
+                align: 'left',
+                y: -290,
+                x: -20,
+                style: {
+                    color: '#ffffff'
+                }
+            },
+            lineWidth: 0,
+            opposite: false
+        }],
+        /*title: {
+            text: 'AAPL Historical'
+        },*/
+        yAxis: [{
+            labels: {
+                align: 'right',
+                x: -3,
+                style: {
+                    color: '#ffffff'
+                },
+            },
+            title: {
+                text: 'Price',
+                style: {
+                    color: '#ffffff'
+                }
+            },
+            height: '60%',
+            lineWidth: 2,
+            resize: {
+                enabled: true
+            },
+        }, {
+            labels: {
+                gridLineWidth: 0,
+                align: 'right',
+                x: -3,
+                style: {
+                    color: '#ffffff'
+                }
+            },
+            title: {
+                text: 'Volume',
+                style: {
+                    color: '#ffffff'
+                }
+            },
+            top: '65%',
+            height: '35%',
+            offset: 0,
+            gridLineWidth: 0,
+            lineWidth: 2
+        }],
+        tooltip: {
+            split: true
+        },
+
+        navigator: {
+            enabled: false // Hide the navigator
+        },
+        navigation: {
+            buttonOptions: {
+                enabled: true,
+                symbolX: 12,
+                symbolY: 11,
+                align: 'right',
+                verticalAlign: 'top',
+                x: 0,
+                y: 10
+            }
+        },
+        series: [
+            {
+                name: 'Stock',
+                data: ohlc.map(function (point, i) {
+                    if (i === 0 || point[1] > ohlc[i - 1][1]) {
+                        return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
+                    } else {
+                        return { x: point[0], y: point[1], color: 'red' }; // Lower
+                    }
+                }),
+                dataGrouping: {
+                    units: groupingUnits
+                }
+            },
+            {
+                type: 'column',
+                name: 'Volume',
+                data: volume.map(function (point, i) {
+                    if (i === 0 || point[1] > volume[i - 1][1]) {
+                        return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
+                    } else {
+                        return { x: point[0], y: point[1], color: 'red' }; // Lower
+                    }
+                }),
+                yAxis: 1,
+                dataGrouping: {
+                    units: groupingUnits
+                }
+            }],
+        tooltip: {
+            pointFormat: 'Time: {point.x}  <br/> Price: {point.y}',
+            split: true
+        },
+        exporting: {
+            enabled: false // Disable export
+        },
+        credits: {
+            enabled: false
+        }
+    });
+}
+
 window.changeBackgroundColor = (isDarkMode) => {
     // Change HTML body background color based on the isDarkMode parameter
     fontColor = isDarkMode ? '#ffffff' : '#202527';
@@ -277,7 +458,7 @@ window.changeBackgroundColor = (isDarkMode) => {
     });
 
     // Update chart backgrounds and series colors for all Highcharts charts
-    
+
     Highcharts.charts.forEach(chart => {
         debugger
         if (chart) {
@@ -319,6 +500,6 @@ window.changeBackgroundColor = (isDarkMode) => {
                 }))
             });
         }
-        
+
     });
 }; 
