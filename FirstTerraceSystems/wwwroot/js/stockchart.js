@@ -290,7 +290,7 @@ window.loadStockChart2 = async () => {
         chart: {
             type: 'scatter',
             marginTop: 10,
-            backgroundColor: "#202527",
+            //backgroundColor: "#202527",
             borderWidth: 1,
             borderColor: "#5B6970",
             spacing: [0, 0, 0, 0] // Adjust spacing between charts
