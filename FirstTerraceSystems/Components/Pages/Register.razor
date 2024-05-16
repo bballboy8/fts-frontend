@@ -1,26 +1,89 @@
 ﻿@page "/register"
-<div class="signIn signUp w-50">
-    <MudGrid Class="justify-center" Spacing="0">
-        <MudItem xs="8">
-            <MudPaper Class="d-flex flex-column justify-content-center align-items-center login-content h-100 rounded-0">
-                <MudImage Src="../images/logo.png" Alt="logo" class="logo" />
-                <MudInput @bind-Value="@FirstName" Placeholder="First name" InputMode="InputMode.text" InputType="InputType.Text"></MudInput>
-                <MudInput @bind-Value="@LastName" Placeholder="Last name" InputMode="InputMode.text" InputType="InputType.Text"></MudInput>
-                <MudInput @bind-Value="@Email" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudInput>
-                <MudInput @bind-Value="@Password" Placeholder="Password" InputType="InputType.Password"></MudInput>
-                <MudInput @bind-Value="@Password" Placeholder="Confirm Password" InputType="InputType.Password"></MudInput>
-                <MudButton ButtonType="ButtonType.Submit" Href="/registerQuestion">Continue</MudButton>
-                <MudButton class="create-new" ButtonType="ButtonType.Submit" Href="/">Back</MudButton>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-</div>
-
-@code {
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string Email { get; set; }
-    public string Password { get; set; }
+@if (ShowRegister)
+{
+    <div class="signIn signUp questions w-50">
+        <EditForm Model="@_registerDto" OnValidSubmit="(() => ShowRegister = false)">
+            <DataAnnotationsValidator />
+            <MudGrid Class="justify-center" Spacing="0">
+                <MudItem xs="8">
+                    <MudPaper Class="d-flex flex-column justify-content-center align-items-center login-content h-100 rounded-0">
+                        <MudImage Src="../images/logo.png" Alt="logo" class="logo" />
+                        <MudTextField T="string" @bind-Value="@_registerDto.first_name" For="@(() => _registerDto.first_name)" Placeholder="First name"></MudTextField>
+                        <MudTextField T="string" @bind-Value="@_registerDto.last_name" For="@(() => _registerDto.last_name)" Placeholder="Last name"></MudTextField>
+                        <MudTextField T="string" @bind-Value="@_registerDto.user_id" For="@(() => _registerDto.user_id)" Placeholder="Username"></MudTextField>
+                        <MudTextField T="string" @bind-Value="@_registerDto.email" For="@(() => _registerDto.email)" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudTextField>
+                        <MudTextField T="string" @bind-Value="@_registerDto.password" For="@(() => _registerDto.password)" Placeholder="Password" InputType="InputType.Password"></MudTextField>
+                        <MudTextField T="string" @bind-Value="@_registerDto.confirm_password" For="@(() => _registerDto.confirm_password)" Placeholder="Confirm Password" InputType="InputType.Password"></MudTextField>
+                       
+                        <MudButton ButtonType="ButtonType.Submit">Continue</MudButton>
+                        <MudButton class="create-new" ButtonType="ButtonType.Submit" Href="/login">Back</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </div>
 }
+else
+{
+    <div class="signIn signUp questions">
+        <EditForm Model="@_registerQuestion" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <MudGrid Class="justify-center" Spacing="0">
+                <MudItem xs="8">
+                    <MudPaper Class="d-flex flex-column justify-content-center align-items-center login-content h-100 rounded-0">
+                        <p>Before we continue, we require a bit of information regarding your trading experience.</p>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_1" For="@(() => _registerQuestion.Question_1)" Label="Question 1" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_2" For="@(() => _registerQuestion.Question_2)" Label="Question 2" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_3" For="@(() => _registerQuestion.Question_3)" Label="Question 3" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_4" For="@(() => _registerQuestion.Question_4)" Label="Question 4" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_5" For="@(() => _registerQuestion.Question_5)" Label="Question 5" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_6" For="@(() => _registerQuestion.Question_6)" Label="Question 6" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_7" For="@(() => _registerQuestion.Question_7)" Label="Question 7" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_8" For="@(() => _registerQuestion.Question_8)" Label="Question 8" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudSelect Dense="true" T="string" @bind-Value="@_registerQuestion.Question_9" For="@(() => _registerQuestion.Question_9)" Label="Question 9" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="@("Tyrannosaur")" />
+                            <MudSelectItem Value="@("Triceratops")" />
+                            <MudSelectItem Value="@("Henon Rex")" />
+                        </MudSelect>
+                        <MudButton ButtonType="ButtonType.Submit">Create account</MudButton>
+                        <MudButton class="create-new" ButtonType="ButtonType.Submit" @onclick="BackToRegistration"> Back</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </div>
 
+}
 

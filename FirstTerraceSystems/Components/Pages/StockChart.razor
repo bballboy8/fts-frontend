@@ -1,7 +1,36 @@
 ﻿@page "/stockchart"
 
-<h3>StockChart</h3>
+@using MudBlazor
+@inject IJSRuntime JS;
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Color="@Color.Dark" @bind-ActivePanelIndex="activeIndex">
+    <MudTabPanel OnClick="LoadChart" Text="XNYS: APPL" ShowCloseIcon=true>
+        <div id="container"></div>
+    </MudTabPanel>
+    <MudTabPanel OnClick="LoadChart" Text="ADD CHART">
+        <div id="container1"></div>
+    </MudTabPanel>
+</MudTabs>
 
 @code {
+    int activeIndex = 0;
 
+    protected async override Task OnInitializedAsync()
+    {
+        await LoadChart();
+    }
+
+    private async Task LoadChart()
+    {
+        if (activeIndex == 0)
+        {
+            await JS.InvokeVoidAsync("loadStockChart", "");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("loadStockChart1", "");
+        }
+    }
 }
+
+

@@ -1,6 +1,6 @@
 ﻿let backgroundColor = '#202527';
 let fontColor = '#ffffff';
-
+let isDarkMode = true;
 window.loadStockChart = async () => {
     const data = await fetch(
         'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
@@ -113,7 +113,9 @@ window.loadStockChart = async () => {
             yAxis: 1,
             dataGrouping: {
                 units: groupingUnits
-            }
+            },
+            color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
+            upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
         }],
         exporting: {
             enabled: false // Disable export
@@ -243,7 +245,9 @@ window.loadStockChart1 = async () => {
             name: 'AAPL Volume',
             data: volume,
             yAxis: 1,
-            gridLineWidth: 0
+            gridLineWidth: 0,
+            color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
+            upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
         }],
         responsive: {
             rules: [{
@@ -450,7 +454,9 @@ window.changeBackgroundColor = (isDarkMode) => {
     fontColor = isDarkMode ? '#ffffff' : '#202527';
     backgroundColor = isDarkMode ? '#202527' : '#ffffff';
     document.body.style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
-    document.getElementById("headbar").style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
+    //document.getElementById("headbar").style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
+    document.documentElement.setAttribute('data-sidebar', isDarkMode ? 'dark' : 'light');
+
 
     // Update text color for all axes labels
     document.querySelectorAll('.highcharts-xaxis-labels text, .highcharts-yaxis-labels text').forEach(label => {
