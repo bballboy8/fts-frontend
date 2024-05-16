@@ -26,7 +26,7 @@ namespace FirstTerraceSystems.Components.Pages
             var result = await AuthenticationService.Login(_loginDto);
             if (!string.IsNullOrEmpty(result.Detail))
             {
-                Error = result.Detail;
+                Error = result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail;
                 ShowAuthError = true;
             }
             else

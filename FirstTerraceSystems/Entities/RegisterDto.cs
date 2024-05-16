@@ -30,6 +30,7 @@ namespace FirstTerraceSystems.Entities
         public string postal_code { get; set; }
         public string country { get; set; }
 
+        [MinLength(8,ErrorMessage ="Password length must be minimum 8 characters.")]
         [Required(ErrorMessage = "Password is required")]
         public string password { get; set; }
 

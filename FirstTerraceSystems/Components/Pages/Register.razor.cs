@@ -39,7 +39,7 @@ namespace FirstTerraceSystems.Components.Pages
                 first_name = _registerDto.first_name,
                 last_name = _registerDto.last_name,
                 user_id = _registerDto.user_id,
-                email = _registerDto.email,
+                email = _registerDto.email.ToLower(),
                 password = _registerDto.password,
                 confirm_password = _registerDto.confirm_password,
                 company_name = _registerDto.company_name,

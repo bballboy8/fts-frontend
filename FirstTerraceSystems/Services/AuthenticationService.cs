@@ -31,7 +31,7 @@ namespace FirstTerraceSystems.Services
         
         public async Task<AuthResponseDto> Login(LoginDto model)
         {
-            var content = JsonSerializer.Serialize(new { email = model.Email, password = model.Password }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var content = JsonSerializer.Serialize(new { email = model.Email.ToLower(), password = model.Password }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
 
