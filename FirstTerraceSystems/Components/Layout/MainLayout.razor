@@ -1,14 +1,24 @@
-﻿@inherits LayoutComponentBase
+﻿@using FirstTerraceSystems.AuthProviders
+@using FirstTerraceSystems.Entities
+@using Microsoft.AspNetCore.Components.Authorization
 
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthenticationService
+@inject AuthenticationStateProvider AuthStateProvider
 <div class="page">
     @* <div class="sidebar">
         <NavMenu />
     </div> *@
 
     <main>
-        <div id="headbar" class="top-row px-4">
-            <MudSwitch Color="Color.Primary" ValueChanged="@((bool newValue) => ToggleDarkMode(newValue))" />
-        </div>
+        @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
+        {
+            <div id="headbar" class="top-row px-4">
+                <MudButton Variant="Variant.Outlined" Class="mr-2" Color="Color.Success" @onclick="Logout">Logout</MudButton>
+                <MudSwitch @bind-Checked="@IsDarkMode" Color="Color.Primary" Class="w-auto" ValueChanged="@((bool newValue) => ToggleDarkMode(newValue))" />
+            </div>
+        }
 
         <article class="content px-4">
             @Body
@@ -19,21 +29,39 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-@code{
-    private bool IsDarkMode { get; set; }
+@code {
+    private bool IsDarkMode { get; set; } = true;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
-        }
-    }
-
-    // Method to handle MudSwitch state changes
     private async Task ToggleDarkMode(bool newValue)
     {
         IsDarkMode = newValue;
         await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        if (!NavigationManager.Uri.ToLower().Contains("register"))
+        {
+            if (!authState.User.Identity?.IsAuthenticated ?? false)
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
+                NavigationManager.NavigateTo("/stockchart");
+            }
+        }
+
+    }
+
+    private async Task Logout()
+    {
+        var model = new LoginDto();
+        await AuthenticationService.Logout(model);
+        NavigationManager.NavigateTo("/login");
+        StateHasChanged();
     }
 }
