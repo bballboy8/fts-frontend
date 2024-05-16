@@ -269,9 +269,6 @@ window.loadStockChart1 = async () => {
 }
 
 window.loadStockChart2 = async () => {
-}
-
-window.loadStockChart2 = async () => {
 
 
     const data = await fetch(
@@ -294,7 +291,7 @@ window.loadStockChart2 = async () => {
         chart: {
             type: 'scatter',
             marginTop: 10,
-            //backgroundColor: "#202527",
+            backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
             spacing: [0, 0, 0, 0] // Adjust spacing between charts
