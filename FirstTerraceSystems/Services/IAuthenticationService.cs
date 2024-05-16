@@ -10,12 +10,8 @@ namespace FirstTerraceSystems.Services
 {
     public interface IAuthenticationService
     {
-
         Task<RegisterResponseDto> Registration(RegisterModel model);
-     
         Task<AuthResponseDto> Login(LoginDto userForAuthentication);
         Task Logout(LoginDto model);
-
-
     }
 }
