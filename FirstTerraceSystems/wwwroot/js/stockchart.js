@@ -269,6 +269,7 @@ window.loadStockChart1 = async () => {
     });
 }
 
+
 window.changeBackgroundColor = (mode) => {
     isDarkMode = mode;
     // Change HTML body background color based on the isDarkMode parameter
@@ -330,3 +331,149 @@ window.changeBackgroundColor = (mode) => {
         
     });
 }; 
+
+
+window.loadMultiStockChart = async (id) => {
+    const data = await fetch(
+        'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
+    ).then(response => response.json());
+    debugger;
+    const ohlc = [],
+        volume = [],
+        dataLength = data.length,
+        groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
+
+    for (let i = 0; i < dataLength; i += 1) {
+        ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
+        volume.push([data[i][0], data[i][5]]);
+    }
+
+    Highcharts.stockChart(id, {
+        chart: {
+            backgroundColor: backgroundColor,
+            borderWidth: 1,
+            borderColor: "#5B6970",
+            //marginRight: 100, //margin after chart
+        },
+        rangeSelector: {
+            selected: 4
+        },
+        xAxis: [{
+            offset: 0,
+            labels: {
+                align: 'left',
+                x: 5,
+                style: {
+                    color: fontColor
+                }
+            },
+            lineWidth: 0,
+            opposite: false
+        }, {
+            offset: 0,
+            labels: {
+                align: 'left',
+                x: 5,
+                style: {
+                    color: fontColor
+                }
+            },
+            lineWidth: 0,
+            opposite: false
+        }],
+        /*title: {
+            text: 'AAPL Historical'
+        },*/
+        yAxis: [{
+            labels: {
+                align: 'left',
+                x: 5,
+                style: {
+                    color: fontColor // Green color
+                }
+            },
+            /* title: {
+                 text: 'OHLC',
+                 style: {
+                     color: '#ffffff',
+                     fontSize: 18
+                 },
+             },*/
+            height: '65%',
+            lineWidth: 2,
+            resize: {
+                enabled: true
+            }
+        }, {
+            labels: {
+                align: 'left',
+                x: 5,
+                style: {
+                    color: fontColor
+                }
+            },
+            //title: {
+            //    text: 'VOLUME',
+            //    style: {
+            //        color: '#5B6970',
+            //        fontSize: 13,
+            //        fontweight:"600"
+            //    },
+            //},
+            top: '65%',
+            height: '35%',
+            offset: 0,
+            gridLineWidth: 0,
+            lineWidth: 2
+        }],
+        tooltip: {
+            split: true
+        },
+        series: [{
+            type: 'candlestick',
+            name: 'AAPL',
+            data: ohlc,
+            dataGrouping: {
+                units: groupingUnits
+            },
+            color: '#C01620', // Color for the fall
+            upColor: '#16C05A', // Color for the rise
+        }, {
+            type: 'column',
+            name: 'Volume',
+            data: volume,
+            yAxis: 1,
+            dataGrouping: {
+                units: groupingUnits
+            },
+            color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
+            upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
+        }],
+        exporting: {
+            enabled: false // Disable export
+        },
+        navigator: { enabled: false, adaptToUpdateData: false }
+    });
+};
+
+window.initializeDragAndDrop = function () {
+    $(".chart").draggable({
+        revert: "invalid",
+        containment: "parent",
+        helper: "clone",
+        cursor: "move"
+    });
+
+    $(".grid-item").droppable({
+        accept: ".chart",
+        drop: function (event, ui) {
+            var dropped = ui.helper;
+            var droppedOn = $(this);
+            $(dropped).detach().css({ top: 0, left: 0 }).appendTo(droppedOn);
+
+            // Call the loadMultiStockChart function to load a chart into the dropped grid item
+            DotNet.invokeMethodAsync('YourAssemblyName', 'LoadMultiStockChart', $(droppedOn).attr('id'));
+        }
+    });
+};
+
