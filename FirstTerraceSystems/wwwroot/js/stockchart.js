@@ -159,6 +159,7 @@ window.loadStockChart1 = async () => {
 
     Highcharts.stockChart('container1', {
         chart: {
+            marginTop: 10,
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
@@ -193,6 +194,7 @@ window.loadStockChart1 = async () => {
         yAxis: [{
             labels: {
                 align: 'left',
+                x:5,
                 style: {
                     color: fontColor
                 }
@@ -205,8 +207,8 @@ window.loadStockChart1 = async () => {
         }, {
             labels: {
                 gridLineWidth: 0,
-                align: 'right',
-                x: -3,
+                align: 'left',
+                x: 5,
                 style: {
                     color: fontColor
                 }
@@ -320,7 +322,7 @@ window.loadStockChart2 = async () => {
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
-            spacing: [0, 0, 0, 0] // Adjust spacing between charts
+            //spacing: [0, 0, 0, 0] // Adjust spacing between charts
             //marginRight: 100, //margin after chart
         },
         rangeSelector: {
@@ -347,8 +349,8 @@ window.loadStockChart2 = async () => {
             offset: 0,
             labels: {
                 align: 'left',
-                y: -290,
-                x: -20,
+                y: -255,
+                x: -10,
                 style: {
                     color: fontColor
                 }
@@ -360,8 +362,8 @@ window.loadStockChart2 = async () => {
             offset: 0,
             labels: {
                 align: 'left',
-                y: -290,
-                x: -20,
+                y: -255,
+                x: -10,
                 style: {
                     color: fontColor
                 }
@@ -374,38 +376,44 @@ window.loadStockChart2 = async () => {
         },*/
         yAxis: [{
             labels: {
-                align: 'right',
-                x: -3,
+                align: 'left',
+                x: 5,
                 style: {
                     color: fontColor
                 },
             },
-            title: {
-                text: 'Price',
-                style: {
-                    color: fontColor
-                }
-            },
-            height: '60%',
+            //x:-70,
+            //x:20,
+            //title: {
+            //    x:3
+            //    //text: 'Price',
+            //    //style: {
+            //    //    color: fontColor
+            //    //}
+            //},
+            height: '65%',
             lineWidth: 2,
             resize: {
                 enabled: true
             },
         }, {
             labels: {
-                gridLineWidth: 0,
-                align: 'right',
-                x: -3,
+                //gridLineWidth: 0,
+                align: 'left',
+                x: 5,
                 style: {
                     color: fontColor
                 }
             },
-            title: {
-                text: 'Volume',
-                style: {
-                    color: '#ffffff'
-                }
-            },
+            //x: -70,
+            //title: {
+            //    x:3
+            //    //text: 'Volume',
+            //    //style: {
+            //    //    color: '#ffffff'
+            //    //}
+            //},
+            //x:10,
             top: '65%',
             height: '35%',
             offset: 0,
