@@ -1,7 +1,7 @@
 ﻿@page "/stockchart"
 
 @using MudBlazor
-@inject IJSRuntime JS;
+
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Color="@Color.Dark" @bind-ActivePanelIndex="activeIndex">
     <MudTabPanel OnClick="LoadChart" Text="XNYS: APPL" ShowCloseIcon=true>
@@ -24,11 +24,11 @@
     {
         if (activeIndex == 0)
         {
-            await JS.InvokeVoidAsync("loadStockChart", "");
+            await JSRuntime.InvokeVoidAsync("loadStockChart", "");
         }
         else
         {
-            await JS.InvokeVoidAsync("loadStockChart1", "");
+            await JSRuntime.InvokeVoidAsync("loadStockChart1", "");
         }
     }
 }

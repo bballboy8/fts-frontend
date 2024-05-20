@@ -1,6 +1,7 @@
 ﻿let backgroundColor = '#202527';
 let fontColor = '#ffffff';
 let isDarkMode = true;
+
 window.loadStockChart = async () => {
     const data = await fetch(
         'https://demo-live-data.highcharts.com/aapl-ohlcv.json'

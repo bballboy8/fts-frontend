@@ -1,0 +1,30 @@
+﻿@page "/gridCharts"
+
+<MudDropContainer T="string" Items="ChartIds" ItemDropped="ItemUpdated" Class="d-flex flex-wrap flex-grow-1">
+    <ChildContent>
+        <MudDropZone T="DropItem" Identifier="Drop Zone 1" Class="rounded mud-background-gray pa-6 ma-8 flex-grow-1">
+            <MudText Typo="Typo.h6" Class="mb-4">Drop Zone 1</MudText>
+        </MudDropZone>
+
+    </ChildContent>
+    <ItemRenderer>
+        <MudPaper Elevation="25" Class="pa-4 my-4">@context.Name</MudPaper>
+    </ItemRenderer>
+</MudDropContainer>
+
+@code {
+    private void ItemUpdated(MudItemDropInfo<DropItem> dropItem)
+    {
+        dropItem.Item.Identifier = dropItem.DropzoneIdentifier;
+    }
+
+    public List<string> ChartIds { get; set; } = new List<string>()
+    {
+        "ChartId1","ChartId2","ChartId3","ChartId4","ChartId5","ChartId6","ChartId7","ChartId8","ChartId9",
+    };
+
+    private async Task LoadChart(MudItemDropInfo<string> dropItem, int index)
+    {
+        await JSRuntime.InvokeVoidAsync($"loadStockChart", $"container{index}");
+    }
+}
