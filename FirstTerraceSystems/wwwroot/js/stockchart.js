@@ -30,7 +30,8 @@ window.loadStockChart = async () => {
             offset: 0,
             labels: {
                 align: 'left',
-                x: 5,
+                y: -255,
+                x: -10,
                 style: {
                     color: fontColor
                 }
@@ -41,7 +42,8 @@ window.loadStockChart = async () => {
             offset: 0,
             labels: {
                 align: 'left',
-                x: 5,
+                y: -255,
+                x: -10,
                 style: {
                     color: fontColor
                 }
@@ -109,7 +111,13 @@ window.loadStockChart = async () => {
         }, {
             type: 'column',
             name: 'Volume',
-            data: volume,
+            data: volume.map(function (point, i) {
+                if (i === 0 || point[1] > volume[i - 1][1]) {
+                    return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
+                } else {
+                    return { x: point[0], y: point[1], color: 'red' }; // Lower
+                }
+            }),
             yAxis: 1,
             dataGrouping: {
                 units: groupingUnits
@@ -151,15 +159,18 @@ window.loadStockChart1 = async () => {
 
     Highcharts.stockChart('container1', {
         chart: {
+            marginTop: 10,
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
         },
         xAxis: [{
+            gridLineWidth: 0,
             offset: 0,
             labels: {
                 align: 'left',
-                x: 5,
+                y: -140,
+                x: -20,
                 style: {
                     color: fontColor
                 }
@@ -167,10 +178,12 @@ window.loadStockChart1 = async () => {
             lineWidth: 0,
             opposite: false
         }, {
+            gridLineWidth: 0,
             offset: 0,
             labels: {
                 align: 'left',
-                x: 5,
+                y: -140,
+                x: -20,
                 style: {
                     color: fontColor
                 }
@@ -181,24 +194,30 @@ window.loadStockChart1 = async () => {
         yAxis: [{
             labels: {
                 align: 'left',
+                x:5,
                 style: {
                     color: fontColor
                 }
             },
             height: '80%',
+            lineWidth: 2,
             resize: {
                 enabled: true
             }
         }, {
             labels: {
+                gridLineWidth: 0,
                 align: 'left',
+                x: 5,
                 style: {
                     color: fontColor
                 }
             },
             top: '80%',
             height: '20%',
-            offset: 0
+            offset: 0,
+            gridLineWidth: 0,
+            lineWidth: 2
         }],
         tooltip: {
             shape: 'square',
@@ -243,7 +262,13 @@ window.loadStockChart1 = async () => {
             type: 'column',
             id: 'aapl-volume',
             name: 'AAPL Volume',
-            data: volume,
+            data: volume.map(function (point, i) {
+                if (i === 0 || point[1] > volume[i - 1][1]) {
+                    return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
+                } else {
+                    return { x: point[0], y: point[1], color: 'red' }; // Lower
+                }
+            }),
             yAxis: 1,
             gridLineWidth: 0,
             color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
@@ -264,7 +289,10 @@ window.loadStockChart1 = async () => {
         exporting: {
             enabled: false // Disable export
         },
-        navigator: { enabled: false, adaptToUpdateData: false }
+        navigator: { enabled: false, adaptToUpdateData: false },
+        credits: {
+            enabled: false
+        }
     });
 }
 
@@ -294,7 +322,7 @@ window.loadStockChart2 = async () => {
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
-            spacing: [0, 0, 0, 0] // Adjust spacing between charts
+            //spacing: [0, 0, 0, 0] // Adjust spacing between charts
             //marginRight: 100, //margin after chart
         },
         rangeSelector: {
@@ -321,10 +349,10 @@ window.loadStockChart2 = async () => {
             offset: 0,
             labels: {
                 align: 'left',
-                y: -290,
-                x: -20,
+                y: -255,
+                x: -10,
                 style: {
-                    color: '#ffffff'
+                    color: fontColor
                 }
             },
             lineWidth: 0,
@@ -334,10 +362,10 @@ window.loadStockChart2 = async () => {
             offset: 0,
             labels: {
                 align: 'left',
-                y: -290,
-                x: -20,
+                y: -255,
+                x: -10,
                 style: {
-                    color: '#ffffff'
+                    color: fontColor
                 }
             },
             lineWidth: 0,
@@ -348,38 +376,44 @@ window.loadStockChart2 = async () => {
         },*/
         yAxis: [{
             labels: {
-                align: 'right',
-                x: -3,
+                align: 'left',
+                x: 5,
                 style: {
-                    color: '#ffffff'
+                    color: fontColor
                 },
             },
-            title: {
-                text: 'Price',
-                style: {
-                    color: '#ffffff'
-                }
-            },
-            height: '60%',
+            //x:-70,
+            //x:20,
+            //title: {
+            //    x:3
+            //    //text: 'Price',
+            //    //style: {
+            //    //    color: fontColor
+            //    //}
+            //},
+            height: '65%',
             lineWidth: 2,
             resize: {
                 enabled: true
             },
         }, {
             labels: {
-                gridLineWidth: 0,
-                align: 'right',
-                x: -3,
+                //gridLineWidth: 0,
+                align: 'left',
+                x: 5,
                 style: {
-                    color: '#ffffff'
+                    color: fontColor
                 }
             },
-            title: {
-                text: 'Volume',
-                style: {
-                    color: '#ffffff'
-                }
-            },
+            //x: -70,
+            //title: {
+            //    x:3
+            //    //text: 'Volume',
+            //    //style: {
+            //    //    color: '#ffffff'
+            //    //}
+            //},
+            //x:10,
             top: '65%',
             height: '35%',
             offset: 0,
