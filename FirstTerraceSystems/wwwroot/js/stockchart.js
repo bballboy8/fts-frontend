@@ -337,7 +337,7 @@ window.loadMultiStockChart = async (id) => {
     const data = await fetch(
         'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
     ).then(response => response.json());
-    debugger;
+
     const ohlc = [],
         volume = [],
         dataLength = data.length,
@@ -455,25 +455,29 @@ window.loadMultiStockChart = async (id) => {
         navigator: { enabled: false, adaptToUpdateData: false }
     });
 };
+function allowDrop(ev) {
+    ev.preventDefault();
+}
 
-window.initializeDragAndDrop = function () {
-    $(".chart").draggable({
-        revert: "invalid",
-        containment: "parent",
+function drag(ev) {
+    ev.dataTransfer.setData("text", ev.target.id);
+}
+
+function drop(ev) {
+    ev.preventDefault();
+    var data = ev.dataTransfer.getData("text");
+    ev.target.appendChild(document.getElementById(data));
+}
+
+
+function dragdropchart () {
+    $("#sortable").sortable({
+        revert: true
+    });
+    $("#draggable").draggable({
+        connectToSortable: "#sortable",
         helper: "clone",
-        cursor: "move"
+        revert: "invalid"
     });
-
-    $(".grid-item").droppable({
-        accept: ".chart",
-        drop: function (event, ui) {
-            var dropped = ui.helper;
-            var droppedOn = $(this);
-            $(dropped).detach().css({ top: 0, left: 0 }).appendTo(droppedOn);
-
-            // Call the loadMultiStockChart function to load a chart into the dropped grid item
-            DotNet.invokeMethodAsync('YourAssemblyName', 'LoadMultiStockChart', $(droppedOn).attr('id'));
-        }
-    });
-};
-
+    $("div").disableSelection();
+}

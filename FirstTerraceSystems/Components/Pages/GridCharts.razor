@@ -1,56 +1,67 @@
 ﻿@page "/gridCharts"
 
-<MudDropContainer T="DropChart" Items="ChartIds" ItemsSelector="@((item, dropzone) => item.Selector == dropzone)" ItemDropped="ItemUpdated" Class="d-flex flex-grow-1">
-    <ChildContent>
-        <MudGrid>
-            @foreach (var chart in ChartIds)
-            {
-                <MudItem xs="4">
-                    <MudPaper Class="ma-4 flex-grow-1">
-                        <MudDropZone T="DropChart" Identifier="@chart.Selector" Class="rounded rounded mud-background-grayflex-grow-1">
-                            <div id="@($"chartContainer_{chart.Name}")" style="width: 100%; height: 285px;"></div>
-                        </MudDropZone>
-                    </MudPaper>
-                </MudItem>
-            }
-        </MudGrid>
-    </ChildContent>
-</MudDropContainer>
+<style type="text/css">
+    .gridly {
+        position: relative;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center; 
+    }
 
-@code {
+    .brick {
+        margin: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+        .brick.large {
+            width: calc(33.33% - 20px);
+            height: 300px;
+            background: white;
+        }
+
+          
+</style>
+
+<div id="sortable" class="gridly ">
+    <div class="brick large" id="chartContainer1"></div>
+    <div class="brick large" id="chartContainer2"></div>
+    <div class="brick large" id="chartContainer3"></div>
+    <div class="brick large" id="chartContainer4"></div>
+    <div class="brick large" id="chartContainer5"></div>
+    <div class="brick large" id="chartContainer6"></div>
+    <div class="brick large" id="chartContainer7"></div>
+    <div class="brick large" id="chartContainer8"></div>
+    <div class="brick large" id="chartContainer9"></div>
+</div>
+
+<div id="chartModal1" class="modal">
+    <div class="modal-content" id="chartPopupContainer1"></div>
+</div>
+
+    
+@code
+{
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            await LoadChart();
+        {
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer1");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer2");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer3");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer4");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer5");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer6");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer7");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer8");
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer9");
+
+           
+            await JSRuntime.InvokeVoidAsync("dragdropchart");
+        }
     }
 
-    private void ItemUpdated(MudItemDropInfo<DropChart> dropChart)
-    {
-        dropChart.Item.Selector = dropChart.DropzoneIdentifier;
-        LoadChart();
-    }
-
-    private List<DropChart> ChartIds = new()
-    {
-        new DropChart(){ Name = "ChartId1", Selector = "1" },
-        new DropChart(){ Name = "ChartId2", Selector = "2" },
-        new DropChart(){ Name = "ChartId3", Selector = "3" },
-        new DropChart(){ Name = "ChartId4", Selector = "4" },
-        new DropChart(){ Name = "ChartId5", Selector = "5" },
-        new DropChart(){ Name = "ChartId6", Selector = "6" },
-        new DropChart(){ Name = "ChartId7", Selector = "7" },
-        new DropChart(){ Name = "ChartId8", Selector = "8" },
-        new DropChart(){ Name = "ChartId9", Selector = "9" },
-    };
-
-    public class DropChart
-    {
-        public string Name { get; init; }
-        public string Selector { get; set; }
-    }
-    private async Task LoadChart()
-    {
-        foreach (var id in ChartIds)
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", $"chartContainer_{id.Name}");
-    }
 }
