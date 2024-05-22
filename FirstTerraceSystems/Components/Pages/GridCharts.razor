@@ -25,8 +25,8 @@
 
             .brick.large.fullscreen {
                 position: fixed;
-                width: 80%; /* Adjust the width for fullscreen */
-                height: 80%; /* Adjust the height for fullscreen */
+                width: 70%; /* Adjust the width for fullscreen */
+                height: 70%; /* Adjust the height for fullscreen */
                 z-index: 9999;
                 left: 10%;
                 top: 10%;
@@ -34,18 +34,6 @@
                 overflow: auto; /* Add scrollbars if necessary */
             }
 
-           
-
-    .btn {
-        position: absolute;
-        right: 10px;
-        padding: 5px;
-        cursor: pointer;
-    }
-
-        .btn.close {
-            top: 50px;
-        }
 </style>
 
 <div id="sortable" class="gridly ">
@@ -60,10 +48,6 @@
     <div class="brick large" id="chartContainer9"></div>
 </div>
 
-<div id="chartModal1" class="modal">
-    <div class="modal-content" id="chartPopupContainer1"></div>
-</div>
-
     
 @code
 {
@@ -71,23 +55,14 @@
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer1");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer2");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer3");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer4");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer5");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer6");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer7");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer8");
-            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer9");
-
-
-            await JSRuntime.InvokeVoidAsync("addChartDblClickListener", "chartContainer1");
-           // await JSRuntime.InvokeVoidAsync("addChartDblClickListener", "chartContainer1");
-
-           // await JSRuntime.InvokeVoidAsync("addButtonClickListeners", "chartContainer1");
-
+            for (int i = 1; i <= 9; i++)
+            {
+                
+                await JSRuntime.InvokeVoidAsync("loadMultiStockChart", $"chartContainer{i}");
+                await JSRuntime.InvokeVoidAsync("addChartDblClickListener", $"chartContainer{i}");
+            }
             await JSRuntime.InvokeVoidAsync("dragdropchart");
+          
         }
     }
 
