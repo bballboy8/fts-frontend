@@ -481,3 +481,78 @@ function dragdropchart () {
     });
     $("div").disableSelection();
 }
+
+//function addChartDblClickListener(brickId) {
+//    var brick = document.getElementById(brickId);
+
+//    brick.addEventListener('dblclick', function () {
+//        brick.classList.toggle('fullscreen');
+//    });
+//}
+//function addButtonClickListeners(brickId) {
+//    var brick = document.getElementById(brickId);
+
+//    var closeBtn = brick.querySelector('.btn.close');
+
+//    closeBtn.addEventListener('click', function () {
+//        brick.style.display = 'none';
+//    });
+//}
+
+function addChartDblClickListener(chartContainer) {
+    var chart = document.getElementById(chartContainer);
+    chart.addEventListener('dblclick', function (e) {
+        e.stopPropagation(); // Prevents the event from bubbling up the DOM tree, preventing any parent handlers from being notified of the event
+        chart.classList.add('fullscreen'); // Add the fullscreen class to enlarge the chart
+
+        // Add a click event listener to the document
+        document.addEventListener('click', function resetChart(e) {
+            // If the clicked target is not the chart, reset the chart
+            if (e.target !== chart) {
+                chart.classList.remove('fullscreen'); // Remove the fullscreen class to reset the chart
+                document.removeEventListener('click', resetChart); // Remove the event listener
+            }
+        });
+
+        // Make the chart draggable
+        chart.addEventListener('mousedown', function (e) {
+            var offsetX = e.clientX - chart.getBoundingClientRect().left;
+            var offsetY = e.clientY - chart.getBoundingClientRect().top;
+
+            function dragMove(e) {
+                chart.style.left = e.clientX - offsetX + 'px';
+                chart.style.top = e.clientY - offsetY + 'px';
+            }
+
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('mouseup', function () {
+                document.removeEventListener('mousemove', dragMove);
+            }, { once: true });
+        });
+
+        // Make the chart resizable
+        var resizer = document.createElement('div');
+        resizer.className = 'resizer';
+        chart.appendChild(resizer);
+        resizer.addEventListener('mousedown', function (e) {
+            e.stopPropagation();
+            var initialWidth = chart.clientWidth;
+            var initialHeight = chart.clientHeight;
+            var initialX = e.clientX;
+            var initialY = e.clientY;
+
+            function resizeMove(e) {
+                var newWidth = initialWidth + e.clientX - initialX;
+                var newHeight = initialHeight + e.clientY - initialY;
+                chart.style.width = newWidth + 'px';
+                chart.style.height = newHeight + 'px';
+            }
+
+            document.addEventListener('mousemove', resizeMove);
+            document.addEventListener('mouseup', function () {
+                document.removeEventListener('mousemove', resizeMove);
+            }, { once: true });
+        });
+    });
+}
+

@@ -50,8 +50,8 @@
             }
             else
             {
+                NavigationManager.NavigateTo("/gridCharts"); /* NavigationManager.NavigateTo("/stockchart"); */
                 await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
-                NavigationManager.NavigateTo("/gridCharts");/* NavigationManager.NavigateTo("/stockchart"); */
             }
         }
 
