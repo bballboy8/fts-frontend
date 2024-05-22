@@ -8,13 +8,44 @@
 @inject AuthenticationStateProvider AuthStateProvider
 <div class="page">
     @* <div class="sidebar">
-        <NavMenu />
+    <NavMenu />
     </div> *@
 
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
         {
             <div id="headbar" class="top-row px-4">
+
+                @* Display options code here *@
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle layout-btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        DISPLAY OPTIONS
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="#">Save layout</a>
+                        <a class="dropdown-item" href="#">Load layout</a>
+
+                        <div class="dropdown dropend">
+                            <a class="dropdown-item dropdown-toggle sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load template</a>
+                            <div class="dropdown-menu" id="load-template-dropdown">
+                                <a class="dropdown-item load-template" href="#"> <span class="chart-1"></span> 1 chart</a>
+                                <a class="dropdown-item load-template" href="#"><span class="main-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span>2 charts</a>
+                                <a class="dropdown-item load-template" href="#"> <span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-2"></span> <span class="chart-2"></span></span> <span class="chart-3-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span></span>4 charts</a>
+                                <a class="dropdown-item load-template" href="#"> <span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-6"></span> <span class="chart-6"></span></span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> </span>6 charts</a>
+                                <a class="dropdown-item load-template" href="#"><span style="margin-top: -7px;"><span class="chart-8-grid"> <span class="chart-8"></span> <span class="chart-8"></span></span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> </span>8 charts</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="market-time">
+                    <span class="market-time-text">4:34 AM EST</span>
+                </div>
+
+                <div class="market-open">
+                    <span class="market-time-text">MARKET <span style="font-weight: 700;">OPEN</span></span>
+                </div>
+
                 <MudButton Variant="Variant.Outlined" Class="mr-2" Color="Color.Success" @onclick="Logout">Logout</MudButton>
                 <MudSwitch @bind-Checked="@IsDarkMode" Color="Color.Primary" Class="w-auto" ValueChanged="@((bool newValue) => ToggleDarkMode(newValue))" />
             </div>
@@ -31,7 +62,6 @@
 
 @code {
     private bool IsDarkMode { get; set; } = true;
-
     private async Task ToggleDarkMode(bool newValue)
     {
         IsDarkMode = newValue;

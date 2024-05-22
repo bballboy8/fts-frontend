@@ -251,6 +251,7 @@ h1:focus {
         color: #fff !important;
         transition: all 0.3s;
     }
+        
 
         .signIn .mud-input > input.mud-input-root:focus, div.mud-input-slot.mud-input-root:focus,
         .signIn .mud-input > input.mud-input-root:hover, div.mud-input-slot.mud-input-root:hover {
@@ -380,3 +381,13 @@ h1:focus {
 [data-sidebar=light] #headbar {
     background-color: #ffffff;
 }
+.display-options {
+    max-width: 20% !important;
+    margin-left: 79% !important;
+    height: 61px;
+    background-color: #5B6970;
+    border-radius: 5px;
+}
+/*div.mud-input.mud-input-outlined.mud-input-adorned-end.mud-shrink.mud-select-input > div.mud-input-slot.mud-input-root.mud-input-root-outlined.mud-input-root-adorned-end.mud-select-input{
+    border: none !important;
+}*/
