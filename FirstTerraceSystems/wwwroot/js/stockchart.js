@@ -479,7 +479,7 @@ function dragdropchart () {
         helper: "clone",
         revert: "invalid"
     });
-    $("div").disableSelection();
+    $(".chartBox").disableSelection();
 }
 
 function addChartDblClickListener(chartContainer) {
@@ -501,6 +501,7 @@ function addChartDblClickListener(chartContainer) {
             chart.style.height = originalHeight;
             chart.style.left = originalLeft;
             chart.style.top = originalTop;
+            
         } else {
             // Otherwise, enlarge the chart and save its original size and position
             chart.classList.add('fullscreen');
