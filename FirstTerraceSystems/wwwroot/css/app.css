@@ -168,7 +168,7 @@ h1:focus {
     border-radius: 0;
     height: 46px;
     width: 100%;
-    text-transform: capitalize;
+    text-transform: none;
     font-size: 14px;
     font-family: "Work Sans", sans-serif !important;
     font-weight: 600;
@@ -177,6 +177,7 @@ h1:focus {
     transition: all 0.3s;
     margin-top:20px;
 }
+
 .signIn.questions .mud-button {
     padding: 22px 0;
 }
@@ -277,6 +278,9 @@ h1:focus {
     border-radius: 20px;
     overflow: hidden;
 }
+.login-img {
+    height: 100% !important;
+}
 
 .signUp p {
     font-size: 18px;
@@ -360,10 +364,7 @@ h1:focus {
 .mud-input-helper-text.mud-input-error{
     padding-left:30px;
 }
-.questions {
-   max-height: 92vh;
-    border-radius: 50px;
-}
+
 
 [data-sidebar=dark] body {
     background-color: #202527;
