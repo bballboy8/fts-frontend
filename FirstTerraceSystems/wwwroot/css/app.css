@@ -263,6 +263,9 @@ h1:focus {
     border-radius: 20px;
     overflow: hidden;
 }
+.login-img {
+    height: 100% !important;
+}
 
 .signUp p {
     font-size: 18px;
@@ -346,7 +349,7 @@ h1:focus {
 .mud-input-helper-text.mud-input-error{
     padding-left:30px;
 }
-.questions {
+/*.questions {
     height: 92vh;
     border-radius: 50px;
-}
+}*/
