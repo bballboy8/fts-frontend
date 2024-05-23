@@ -392,3 +392,66 @@ h1:focus {
 /*div.mud-input.mud-input-outlined.mud-input-adorned-end.mud-shrink.mud-select-input > div.mud-input-slot.mud-input-root.mud-input-root-outlined.mud-input-root-adorned-end.mud-select-input{
     border: none !important;
 }*/
+.gridly {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.brick {
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.chartBox {
+    width: calc(33.33% - 20px);
+    height: 300px;
+    background: inherit;
+}
+
+.brick.large {
+    width: 99%;
+    height: 99%;
+    background: white;
+}
+
+    .brick.large.fullscreen {
+        position: fixed;
+        width: 60%;
+        height: 60%;
+        z-index: 9999;
+        left: 10%;
+        top: 10%;
+        resize: both;
+        overflow: auto;
+    }
+
+.single-chart {
+    width: 95vw;
+    height: 92vh;
+}
+
+.six-chart {
+    width: calc(33.33% - 20px);
+    height: 45vh;
+}
+
+.four-chart {
+    width: 48vw;
+    height: 45vh;
+}
+
+.split-chart {
+    width: 48vw;
+    height: 90vh;
+}
+
+.eight-chart {
+    width: calc(25.33% - 20px);
+    height: 45vh;
+}

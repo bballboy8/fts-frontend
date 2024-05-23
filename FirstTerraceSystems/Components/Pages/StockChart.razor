@@ -1,4 +1,4 @@
-﻿@* @page "/stockchart"
+﻿@page "/stockchart"
 
 @using MudBlazor
 
@@ -35,10 +35,10 @@
         }
         else if (activeIndex == 2)
         {
-            await JS.InvokeVoidAsync("loadStockChart2", "");
+            await JSRuntime.InvokeVoidAsync("loadStockChart2", "");
         }
     }
 }
 
 
- *@
+ 

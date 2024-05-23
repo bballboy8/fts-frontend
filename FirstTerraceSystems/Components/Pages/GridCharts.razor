@@ -1,85 +1,39 @@
 ﻿@page "/gridCharts"
 
-<style type="text/css">
-    .gridly {
-        position: relative;
-        width: 100%;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center; 
-    }
-
-    .brick {
-        margin: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-
-    .chartBox{
-        width: calc(33.33% - 20px);
-        height: 300px;
-        background: inherit;
-    }
-
-        .brick.large {
-            width: 99%;
-            height: 99%;
-            background: white;
-        }
-
-            .brick.large.fullscreen {
-                position: fixed;
-                width: 70%; /* Adjust the width for fullscreen */
-                height: 70%; /* Adjust the height for fullscreen */
-                z-index: 9999;
-                left: 10%;
-                top: 10%;
-                resize: both; /* Allow both vertical and horizontal resizing */
-                overflow: auto; /* Add scrollbars if necessary */
-            }
-</style>
-
-
 <div id="sortable" class="gridly ">
-    <div class="chartBox"><div class="brick large" id="chartContainer1"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer2"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer3"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer4"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer5"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer6"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer7"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer8"></div></div>
-    <div class="chartBox"><div class="brick large" id="chartContainer9"></div></div>
+    @foreach (var chartId in chartIds)
+    {
+        <div class="chartBox">
+            <div class="brick large" id="@chartId"></div>
+        </div>
+    }
 </div>
-@* <div id="sortable" class="gridly ">
-    <div class="brick large" id="chartContainer1"></div>
-    <div class="brick large" id="chartContainer2"></div>
-    <div class="brick large" id="chartContainer3"></div>
-    <div class="brick large" id="chartContainer4"></div>
-    <div class="brick large" id="chartContainer5"></div>
-    <div class="brick large" id="chartContainer6"></div>
-    <div class="brick large" id="chartContainer7"></div>
-    <div class="brick large" id="chartContainer8"></div>
-    <div class="brick large" id="chartContainer9"></div>
-</div> *@
 
-    
 @code
 {
+    private List<string> chartIds = new List<string>
+    {
+        "chartContainer1",
+        "chartContainer2",
+        "chartContainer3",
+        "chartContainer4",
+        "chartContainer5",
+        "chartContainer6",
+        "chartContainer7",
+        "chartContainer8",
+        "chartContainer9"
+    };
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            for (int i = 1; i <= 9; i++)
+            foreach (var chartId in chartIds)
             {
-                
-                await JSRuntime.InvokeVoidAsync("loadMultiStockChart", $"chartContainer{i}");
-                await JSRuntime.InvokeVoidAsync("addChartDblClickListener", $"chartContainer{i}");
+                await JSRuntime.InvokeVoidAsync("loadMultiStockChart", chartId);
+                await JSRuntime.InvokeVoidAsync("addChartDblClickListener", chartId);
             }
             await JSRuntime.InvokeVoidAsync("dragdropchart");
-          
         }
     }
 

@@ -667,20 +667,6 @@ window.loadMultiStockChart = async (id) => {
         navigator: { enabled: false, adaptToUpdateData: false }
     });
 };
-/*function allowDrop(ev) {
-    ev.preventDefault();
-}
-
-function drag(ev) {
-    ev.dataTransfer.setData("text", ev.target.id);
-}
-
-function drop(ev) {
-    ev.preventDefault();
-    var data = ev.dataTransfer.getData("text");
-    ev.target.appendChild(document.getElementById(data));
-}*/
-
 
 function dragdropchart () {
     $("#sortable").sortable({
@@ -703,10 +689,9 @@ function addChartDblClickListener(chartContainer) {
     var originalTop = chart.style.top;
 
     chart.addEventListener('dblclick', function openFullChart(e) {
-        e.stopPropagation(); // Prevents the event from bubbling up the DOM tree, preventing any parent handlers from being notified of the event
+        e.stopPropagation(); 
 
         if (chart.classList.contains('fullscreen')) {
-            // If the chart is already in fullscreen, reset it to its original size and position
             chart.classList.remove('fullscreen');
             chart.style.position = originalPosition;
             chart.style.width = originalWidth;
@@ -715,7 +700,7 @@ function addChartDblClickListener(chartContainer) {
             chart.style.top = originalTop;
             
         } else {
-            // Otherwise, enlarge the chart and save its original size and position
+            
             chart.classList.add('fullscreen');
             originalPosition = chart.style.position;
             originalWidth = chart.style.width;
@@ -723,18 +708,18 @@ function addChartDblClickListener(chartContainer) {
             originalLeft = chart.style.left;
             originalTop = chart.style.top;
         }
-        document.removeEventListener('dblclick', openFullChart); // Remove the event listener
-        // Add a click event listener to the document
+        document.removeEventListener('dblclick', openFullChart); 
+      
         document.addEventListener('dblclick', function resetChart(e) {
-            // If the clicked target is not the chart, reset the chart
+           
             if (e.target !== chart) {
-                chart.classList.remove('fullscreen'); // Remove the fullscreen class to reset the chart
+                chart.classList.remove('fullscreen'); 
                 chart.style.position = originalPosition;
                 chart.style.width = originalWidth;
                 chart.style.height = originalHeight;
                 chart.style.left = originalLeft;
                 chart.style.top = originalTop;
-                document.removeEventListener('dblclick', resetChart); // Remove the event listener
+                document.removeEventListener('dblclick', resetChart); 
             }
         });
     });
@@ -759,3 +744,40 @@ let loadTemplates = (e) => {
     }
     e.stopPropagation();
 }
+
+
+    
+window.loadTemplates = function (numberOfCharts, cssClass) {
+       
+        Highcharts.charts.forEach(chart => {
+            if (chart) {
+                chart.destroy();
+            }
+        });
+
+        
+        var chartContainers = document.querySelectorAll('.chart-container');
+        chartContainers.forEach(container => {
+            container.remove();
+        });
+
+      
+        var gridly = document.getElementById('sortable');
+        gridly.innerHTML = ''; 
+        for (var i = 1; i <= numberOfCharts; i++) {
+            var chartBox = document.createElement('div');
+            chartBox.className = cssClass;
+
+            var brick = document.createElement('div');
+            brick.className = 'brick large';
+            brick.id = 'chartContainer' + i;
+            chartBox.appendChild(brick);
+            gridly.appendChild(chartBox);
+            loadMultiStockChart(brick.id);
+            if (cssClass != 'single-chart') {
+                addChartDblClickListener(brick.id);
+            }
+        }
+    };
+
+    
