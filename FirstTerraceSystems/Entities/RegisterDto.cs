@@ -15,8 +15,7 @@ namespace FirstTerraceSystems.Entities
         [Required(ErrorMessage = "Lastname is required.")]
         public string last_name { get; set; }
 
-        [Required(ErrorMessage = "Username is required.")]
-        public string user_id { get; set; }
+        public string user_id { get; set; } 
 
         [Required(ErrorMessage = "Email is required.")]
         public string email { get; set; }

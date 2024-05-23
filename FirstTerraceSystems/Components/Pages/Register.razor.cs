@@ -38,7 +38,7 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 first_name = _registerDto.first_name,
                 last_name = _registerDto.last_name,
-                user_id = _registerDto.user_id,
+                user_id = _registerDto.email ,
                 email = _registerDto.email.ToLower(),
                 password = _registerDto.password,
                 confirm_password = _registerDto.confirm_password,
@@ -58,10 +58,10 @@ namespace FirstTerraceSystems.Components.Pages
                     question_3 = _registerQuestion.Question_3,
                     question_4 = _registerQuestion.Question_4,
                     question_5 = _registerQuestion.Question_5,
-                    question_6 = _registerQuestion.Question_6,
+                    question_6 = _registerQuestion.Question_6 ,
                     question_7 = _registerQuestion.Question_7,
-                    question_8 = _registerQuestion.Question_8,
-                    question_9 = _registerQuestion.Question_9,
+                    question_8 = _registerQuestion.Question_8 ,
+                    question_9 = _registerQuestion.Question_9 ,
                 }
             };
 
