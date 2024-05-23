@@ -409,7 +409,7 @@ h1:focus {
 }
 
 .chartBox {
-    width: calc(33.33% - 20px);
+    width: calc(33.33% - 10px);
     height: 300px;
     background: inherit;
 }
@@ -437,7 +437,7 @@ h1:focus {
 }
 
 .six-chart {
-    width: calc(33.33% - 20px);
+    width: calc(33.33% - 10px);
     height: 45vh;
 }
 
