@@ -540,3 +540,22 @@ window.changeBackgroundColor = (isDarkMode) => {
 
     });
 }; 
+
+let loadTemplates = (e) => {
+    let showDropDownClass = 'show';
+    let templateDropDown = document.getElementById("load-template-dropdown");
+    if (templateDropDown.classList.contains(showDropDownClass)) {
+        templateDropDown.classList.remove(showDropDownClass);
+        e.currentTarget.classList.remove("display-Option-clicked-color");
+        templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
+            ct.classList.remove('display-Option-clicked-color');
+        });
+    } else {
+        templateDropDown.classList.add(showDropDownClass);
+        e.currentTarget.classList.add("display-Option-clicked-color");
+        templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
+            ct.classList.add('display-Option-clicked-color');
+        });
+    }
+    e.stopPropagation();
+}
