@@ -20,13 +20,13 @@ namespace FirstTerraceSystems.Entities
         [Required(ErrorMessage = "Question 5 is required.")]
         public string Question_5 { get; set; }
        
-        public string Question_6 { get; set; } 
+        public string Question_6 { get; set; } = string.Empty;
       
-        public string Question_7 { get; set; }
+        public string Question_7 { get; set; } = string.Empty;
       
-        public string Question_8 { get; set; }
+        public string Question_8 { get; set; } = string.Empty;
      
-        public string Question_9 { get; set; }
+        public string Question_9 { get; set; } = string.Empty;
 
     }
 }
