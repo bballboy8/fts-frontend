@@ -195,7 +195,7 @@ window.loadStockChart1 = async () => {
         yAxis: [{
             labels: {
                 align: 'left',
-                x:5,
+                x: 5,
                 style: {
                     color: fontColor
                 }
@@ -542,7 +542,7 @@ window.changeBackgroundColor = (mode) => {
         }
 
     });
-}; 
+};
 
 
 window.loadMultiStockChart = async (id) => {
@@ -559,16 +559,26 @@ window.loadMultiStockChart = async (id) => {
         ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
         volume.push([data[i][0], data[i][5]]);
     }
+  
 
-    Highcharts.stockChart(id, {
+    const singleDataStockChart = Highcharts.stockChart(id, {
         chart: {
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
             //marginRight: 100, //margin after chart
+
         },
+
         rangeSelector: {
-            selected: 4
+            selected: 4,
+            inputEnabled: false,
+            buttonTheme: {
+                visibility: 'hidden'
+            },
+            labelStyle: {
+                visibility: 'hidden'
+            },x: 70
         },
         xAxis: [{
             offset: 0,
@@ -593,9 +603,9 @@ window.loadMultiStockChart = async (id) => {
             lineWidth: 0,
             opposite: false
         }],
-        /*title: {
-            text: 'AAPL Historical'
-        },*/
+        //title: {
+        //    text: 'aapl historical'
+        //},
         yAxis: [{
             labels: {
                 align: 'left',
@@ -645,9 +655,9 @@ window.loadMultiStockChart = async (id) => {
             type: 'candlestick',
             name: 'AAPL',
             data: ohlc,
-            dataGrouping: {
-                units: groupingUnits
-            },
+            //dataGrouping: {
+            //    units: groupingUnits
+            //},
             color: '#C01620', // Color for the fall
             upColor: '#16C05A', // Color for the rise
         }, {
@@ -662,13 +672,34 @@ window.loadMultiStockChart = async (id) => {
             upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
         }],
         exporting: {
-            enabled: false // Disable export
+            buttons: {
+                contextButton: {
+                    enabled: false
+                },
+                closeButton: {
+                    text: 'XNYS:SPX &nbsp &nbsp  ✖',
+                    onclick: function () {
+                        this.container.parentNode.remove();
+                    },
+                }
+            }
         },
-        navigator: { enabled: false, adaptToUpdateData: false }
+        navigation: {
+            buttonOptions: {
+                align: 'left',
+                verticalAlign: 'top'
+            }
+        },
+        navigator: {
+            enabled: false, adaptToUpdateData: false,
+        },
+
     });
+
 };
 
-function dragdropchart () {
+
+function dragdropchart() {
     $("#sortable").sortable({
         revert: true
     });
@@ -689,7 +720,7 @@ function addChartDblClickListener(chartContainer) {
     var originalTop = chart.style.top;
 
     chart.addEventListener('dblclick', function openFullChart(e) {
-        e.stopPropagation(); 
+        e.stopPropagation();
 
         if (chart.classList.contains('fullscreen')) {
             chart.classList.remove('fullscreen');
@@ -698,9 +729,9 @@ function addChartDblClickListener(chartContainer) {
             chart.style.height = originalHeight;
             chart.style.left = originalLeft;
             chart.style.top = originalTop;
-            
+
         } else {
-            
+
             chart.classList.add('fullscreen');
             originalPosition = chart.style.position;
             originalWidth = chart.style.width;
@@ -708,18 +739,18 @@ function addChartDblClickListener(chartContainer) {
             originalLeft = chart.style.left;
             originalTop = chart.style.top;
         }
-        document.removeEventListener('dblclick', openFullChart); 
-      
+        document.removeEventListener('dblclick', openFullChart);
+
         document.addEventListener('dblclick', function resetChart(e) {
-           
+
             if (e.target !== chart) {
-                chart.classList.remove('fullscreen'); 
+                chart.classList.remove('fullscreen');
                 chart.style.position = originalPosition;
                 chart.style.width = originalWidth;
                 chart.style.height = originalHeight;
                 chart.style.left = originalLeft;
                 chart.style.top = originalTop;
-                document.removeEventListener('dblclick', resetChart); 
+                document.removeEventListener('dblclick', resetChart);
             }
         });
     });
@@ -746,38 +777,38 @@ let loadTemplates = (e) => {
 }
 
 
-    
+
 window.loadTemplates = function (numberOfCharts, cssClass) {
-       
-        Highcharts.charts.forEach(chart => {
-            if (chart) {
-                chart.destroy();
-            }
-        });
 
-        
-        var chartContainers = document.querySelectorAll('.chart-container');
-        chartContainers.forEach(container => {
-            container.remove();
-        });
-
-      
-        var gridly = document.getElementById('sortable');
-        gridly.innerHTML = ''; 
-        for (var i = 1; i <= numberOfCharts; i++) {
-            var chartBox = document.createElement('div');
-            chartBox.className = cssClass;
-
-            var brick = document.createElement('div');
-            brick.className = 'brick large';
-            brick.id = 'chartContainer' + i;
-            chartBox.appendChild(brick);
-            gridly.appendChild(chartBox);
-            loadMultiStockChart(brick.id);
-            if (cssClass != 'single-chart') {
-                addChartDblClickListener(brick.id);
-            }
+    Highcharts.charts.forEach(chart => {
+        if (chart) {
+            chart.destroy();
         }
-    };
+    });
 
-    
+
+    var chartContainers = document.querySelectorAll('.chart-container');
+    chartContainers.forEach(container => {
+        container.remove();
+    });
+
+
+    var gridly = document.getElementById('sortable');
+    gridly.innerHTML = '';
+    for (var i = 1; i <= numberOfCharts; i++) {
+        var chartBox = document.createElement('div');
+        chartBox.className = cssClass;
+
+        var brick = document.createElement('div');
+        brick.className = 'brick large';
+        brick.id = 'chartContainer' + i;
+        chartBox.appendChild(brick);
+        gridly.appendChild(chartBox);
+        loadMultiStockChart(brick.id);
+        if (cssClass != 'single-chart') {
+            addChartDblClickListener(brick.id);
+        }
+    }
+};
+
+

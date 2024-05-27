@@ -189,3 +189,12 @@ main {
     padding: 5px 10px 5px 10px;
     gap: 10px;
 }
+
+
+[data-sidebar=dark] .market-time-text {
+    color: #ffffff;
+}
+
+[data-sidebar=light] .market-time-text {
+    color: #202527;
+}

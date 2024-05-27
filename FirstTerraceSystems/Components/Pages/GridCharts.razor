@@ -1,38 +1,21 @@
 ﻿@page "/gridCharts"
 
 <div id="sortable" class="gridly ">
-    @foreach (var chartId in chartIds)
-    {
-        <div class="chartBox">
-            <div class="brick large" id="@chartId"></div>
-        </div>
-    }
+
+    <div class="single-chart">
+        <div class="brick large" id="chartContainer1"></div>
+    </div>
 </div>
 
 @code
 {
-    private List<string> chartIds = new List<string>
-    {
-        "chartContainer1",
-        "chartContainer2",
-        "chartContainer3",
-        "chartContainer4",
-        "chartContainer5",
-        "chartContainer6",
-        "chartContainer7",
-        "chartContainer8",
-        "chartContainer9"
-    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            foreach (var chartId in chartIds)
-            {
-                await JSRuntime.InvokeVoidAsync("loadMultiStockChart", chartId);
-                await JSRuntime.InvokeVoidAsync("addChartDblClickListener", chartId);
-            }
+            await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer1");
+            await JSRuntime.InvokeVoidAsync("addChartDblClickListener", "chartContainer1");
             await JSRuntime.InvokeVoidAsync("dragdropchart");
         }
     }
