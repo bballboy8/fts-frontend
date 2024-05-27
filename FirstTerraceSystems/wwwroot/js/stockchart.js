@@ -1,5 +1,4 @@
-﻿
-let backgroundColor = '#202527';
+﻿let backgroundColor = '#202527';
 let fontColor = '#ffffff';
 let isDarkMode = true;
 window.loadStockChart = async () => {
