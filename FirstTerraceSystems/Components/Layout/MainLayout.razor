@@ -10,7 +10,14 @@
     @* <div class="sidebar">
     <NavMenu />
     </div> *@
-
+    <div id="pageLoader">
+        <div class="loading-wave">
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+        </div>
+    </div>
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
         {
@@ -46,7 +53,7 @@
                     <span class="market-time-text">MARKET <span style="font-weight: 700;">OPEN</span></span>
                 </div>
 
-                <MudButton Variant="Variant.Outlined" Class="mr-2" Color="Color.Success" @onclick="Logout">Logout</MudButton>
+                <MudButton Variant="Variant.Outlined" Class="mr-2" Color="Color.Success" id="logOut" @onclick="Logout">Logout</MudButton>
                 <MudSwitch @bind-Checked="@IsDarkMode" Color="Color.Primary" Class="w-auto" ValueChanged="@((bool newValue) => ToggleDarkMode(newValue))" />
             </div>
         }
@@ -89,9 +96,14 @@
 
     private async Task Logout()
     {
+        await JSRuntime.InvokeVoidAsync("showLoader");
+
         var model = new LoginDto();
         await AuthenticationService.Logout(model);
+
         NavigationManager.NavigateTo("/login");
         StateHasChanged();
+
     }
+
 }

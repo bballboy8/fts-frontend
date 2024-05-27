@@ -1,4 +1,5 @@
-﻿let backgroundColor = '#202527';
+﻿
+let backgroundColor = '#202527';
 let fontColor = '#ffffff';
 let isDarkMode = true;
 window.loadStockChart = async () => {
@@ -559,3 +560,13 @@ let loadTemplates = (e) => {
     }
     e.stopPropagation();
 }
+
+window.showLoader = () => {
+    var loader = document.getElementById('pageLoader');
+    loader.style.display = 'flex';
+    setTimeout(function () {
+        loader.style.display = 'none';
+    }, 1600);
+}
+
+
