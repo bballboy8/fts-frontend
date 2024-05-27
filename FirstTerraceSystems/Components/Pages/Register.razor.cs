@@ -36,6 +36,7 @@ namespace FirstTerraceSystems.Components.Pages
         {
             var registerDto = new RegisterModel
             {
+                Id = _registerDto.Id,
                 first_name = _registerDto.first_name,
                 last_name = _registerDto.last_name,
                 user_id = _registerDto.email ,
@@ -66,7 +67,7 @@ namespace FirstTerraceSystems.Components.Pages
             };
 
             var registerResponse = await AuthenticationService.Registration(registerDto);
-            if (registerResponse != null)
+            if (registerResponse.Message != null)
             {
                 _snackBar.Add("Registration successful", Severity.Success);
                 NavigationManager.NavigateTo("/login");

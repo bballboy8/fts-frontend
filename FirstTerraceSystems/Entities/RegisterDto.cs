@@ -9,6 +9,8 @@ namespace FirstTerraceSystems.Entities
 {
     public class RegisterDto
     { 
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "Firstname is required.")]
         public string first_name { get; set; }
 
