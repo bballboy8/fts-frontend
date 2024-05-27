@@ -490,7 +490,14 @@ window.changeBackgroundColor = (mode) => {
     document.body.style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
     //document.getElementById("headbar").style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
     document.documentElement.setAttribute('data-sidebar', isDarkMode ? 'dark' : 'light');
-
+    if (isDarkMode) {
+        document.body.className = '';
+        document.body.classList.add("dark-body");
+    }
+    else {
+        document.body.className = '';
+        document.body.classList.add("light-body");
+    }
 
     // Update text color for all axes labels
     document.querySelectorAll('.highcharts-xaxis-labels text, .highcharts-yaxis-labels text').forEach(label => {

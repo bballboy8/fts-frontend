@@ -389,6 +389,14 @@ h1:focus {
     background-color: #5B6970;
     border-radius: 5px;
 }
+
+[data-sidebar=dark] .content:not(:has(.signIn)) {
+    background-color: #202527;
+}
+
+[data-sidebar=light] .content:not(:has(.signIn)) {
+    background-color: #ffffff;
+}
 /*div.mud-input.mud-input-outlined.mud-input-adorned-end.mud-shrink.mud-select-input > div.mud-input-slot.mud-input-root.mud-input-root-outlined.mud-input-root-adorned-end.mud-select-input{
     border: none !important;
 }*/
