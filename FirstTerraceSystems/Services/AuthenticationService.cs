@@ -61,10 +61,7 @@ namespace FirstTerraceSystems.Services
             var authContent = await authResult.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<RegisterResponseDto>(authContent, _options);
 
-            if (!authResult.IsSuccessStatusCode)
-                return result;
-
-            return new RegisterResponseDto();
+            return result;
         }
 
 

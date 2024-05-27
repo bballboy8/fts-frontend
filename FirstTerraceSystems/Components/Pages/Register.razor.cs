@@ -74,7 +74,7 @@ namespace FirstTerraceSystems.Components.Pages
             }
             else
             {
-                Error = registerResponse?.Message ?? "An error occurred during registration.";
+                Error = registerResponse?.Detail ?? "An error occurred during registration.";
                 ShowAuthError = true;
                 _snackBar.Add(Error, Severity.Error);
             }
