@@ -1,4 +1,5 @@
 ﻿@page "/register"
+@* @page "/register"
 @if (ShowRegister)
 {
     <div class="signIn signUp questions w-50">
@@ -13,7 +14,7 @@
                         <MudTextField T="string" @bind-Value="@_registerDto.email" For="@(() => _registerDto.email)" Placeholder="Email" InputMode="InputMode.email" InputType="InputType.Email"></MudTextField>
                         <MudTextField T="string" @bind-Value="@_registerDto.password" For="@(() => _registerDto.password)" Placeholder="Password" InputType="InputType.Password"></MudTextField>
                         <MudTextField T="string" @bind-Value="@_registerDto.confirm_password" For="@(() => _registerDto.confirm_password)" Placeholder="Confirm Password" InputType="InputType.Password"></MudTextField>
-                       
+
                         <MudButton ButtonType="ButtonType.Submit">Continue</MudButton>
                         <MudButton class="create-new" ButtonType="ButtonType.Submit" Href="/login">Back</MudButton>
                     </MudPaper>
@@ -66,3 +67,105 @@ else
 
 }
 
+ *@
+@if (ShowRegister)
+{
+    <div class="row justify-content-center w-100">
+        <div class="col-sm-8 col-lg-4">
+            <div Class="signIn signUp questions login-content">
+                <EditForm Model="@_registerDto" OnValidSubmit="(() => ShowRegister = false)">
+                    <DataAnnotationsValidator />
+                    <img src="../images/logo.png" Alt="logo" class="logo" />
+                    <div>
+                        <div>
+                            <InputText @bind-Value="@_registerDto.first_name" DisplayName="First name" placeholder="First name"></InputText>
+                            <ValidationMessage For="@(() => _registerDto.first_name)" />
+                            <InputText @bind-Value="@_registerDto.last_name" DisplayName="Last name" placeholder="Last name"></InputText>
+                            <ValidationMessage For="@(() => _registerDto.last_name)" />
+                            <InputText type="email" @bind-Value="@_registerDto.email" DisplayName="Email" placeholder="Email"></InputText>
+                            <ValidationMessage For="@(() => _registerDto.email)" />
+                            <InputText type="password" @bind-Value="@_registerDto.password" DisplayName="Password" placeholder="Password"></InputText>
+                            <ValidationMessage For="@(() => _registerDto.password)" />
+                            <InputText type="password" @bind-Value="@_registerDto.confirm_password" DisplayName="Confirm Password" placeholder="Confirm Password"></InputText>
+                            <ValidationMessage For="@(() => _registerDto.confirm_password)" />
+                        </div>
+                        <Button Class="login-btn" Type="ButtonType.Submit">Continue</Button>
+                        <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+}
+else
+{
+    <div class="row justify-content-center w-100">
+        <div class="col-sm-8 col-lg-4">
+            <div Class="signIn signUp questions login-content">
+                <EditForm Model="@_registerQuestion" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <p>Before we continue, we require a bit of information regarding your trading experience.</p>
+                    <div>
+                        <div>
+                            <div class="position-relative">
+                                <InputSelect @bind-Value="_registerQuestion.Question_1" Label="Question 1">
+                                    <option value="">Question 1</option>
+                                    <option value="Tyrannosaur">Tyrannosaur</option>
+                                    <option value="Triceratops">Triceratops</option>
+                                    <option value="Henon Rex">Henon Rex</option>
+                                </InputSelect>
+                                <img src="../images/vector.png" />
+                            </div>
+                            <ValidationMessage For="@(() => _registerQuestion.Question_1)" />
+                            <div class="position-relative">
+                            <InputSelect @bind-Value="_registerQuestion.Question_2" Label="Question 2">
+                                    <option value="">Question 2</option>
+                                    <option value="Tyrannosaur">Tyrannosaur</option>
+                                    <option value="Triceratops">Triceratops</option>
+                                    <option value="Henon Rex">Henon Rex</option>
+                            </InputSelect>
+                            <img src="../images/vector.png" />
+                        </div>
+                            <ValidationMessage For="@(() => _registerQuestion.Question_2)" />
+                            <div class="position-relative">
+                            <InputSelect @bind-Value="_registerQuestion.Question_3" Label="Question 3">
+                                    <option value="">Question 3</option>
+                                    <option value="Tyrannosaur">Tyrannosaur</option>
+                                    <option value="Triceratops">Triceratops</option>
+                                    <option value="Henon Rex">Henon Rex</option>
+                        </InputSelect>
+                        <img src="../images/vector.png" />
+                    </div>
+                            <ValidationMessage For="@(() => _registerQuestion.Question_3)" />
+                            <div class="position-relative">
+                            <InputSelect @bind-Value="_registerQuestion.Question_4" Label="Question 4">
+                                    <option value="">Question 4</option>
+                                    <option value="Tyrannosaur">Tyrannosaur</option>
+                                    <option value="Triceratops">Triceratops</option>
+                                    <option value="Henon Rex">Henon Rex</option>
+                    </InputSelect>
+                    <img src="../images/vector.png" />
+            </div>
+                            <ValidationMessage For="@(() => _registerQuestion.Question_4)" />
+                            <div class="position-relative">
+                            <InputSelect @bind-Value="_registerQuestion.Question_5" Label="Question 5">
+                                    <option value="">Question 5</option>
+                                    <option value="Tyrannosaur">Tyrannosaur</option>
+                                    <option value="Triceratops">Triceratops</option>
+                                    <option value="Henon Rex">Henon Rex</option>
+            </InputSelect>
+            <img src="../images/vector.png" />
+        </div>
+                            <ValidationMessage For="@(() => _registerQuestion.Question_5)" />
+                        </div>
+                        <Button Class="login-btn" Type="ButtonType.Submit">Create account</Button>
+                        <Button class="login-btn create-new" @onclick="BackToRegistration"> Back</Button>
+
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+}

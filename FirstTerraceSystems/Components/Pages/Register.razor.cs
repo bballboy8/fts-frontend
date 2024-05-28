@@ -1,9 +1,9 @@
-﻿using FirstTerraceSystems.Entities;
+﻿using BlazorBootstrap;
+using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using MudBlazor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +21,7 @@ namespace FirstTerraceSystems.Components.Pages
         [Inject] public IAuthenticationService AuthenticationService { get; set; }
         [Inject] public NavigationManager NavigationManager { get; set; }
         [Parameter] public RegisterModel RegisterModal { get; set; } = new();
-        [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
+       /* [CascadingParameter] private MudDialogInstance MudDialog { get; set; }*/
 
         public bool ShowAuthError { get; set; }
         public string Error { get; set; }
@@ -68,14 +68,16 @@ namespace FirstTerraceSystems.Components.Pages
             var registerResponse = await AuthenticationService.Registration(registerDto);
             if (registerResponse != null)
             {
-                _snackBar.Add("Registration successful", Severity.Success);
+                ToastService.Notify(new(ToastType.Success, "Registration successful"));
+                //_snackBar.Add("Registration successful", Severity.Success);
                 NavigationManager.NavigateTo("/login");
             }
             else
             {
                 Error = registerResponse?.Message ?? "An error occurred during registration.";
                 ShowAuthError = true;
-                _snackBar.Add(Error, Severity.Error);
+                //_snackBar.Add(Error, Severity.Error);
+                ToastService.Notify(new(ToastType.Warning, Error));
             }
         }
 

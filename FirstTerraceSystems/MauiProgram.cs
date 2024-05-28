@@ -4,7 +4,6 @@ using FirstTerraceSystems.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MudBlazor.Services;
 
 namespace FirstTerraceSystems
 {
@@ -21,7 +20,7 @@ namespace FirstTerraceSystems
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            builder.Services.AddMudServices();
+            builder.Services.AddBlazorBootstrap();
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://52.0.33.126:8000/") });
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

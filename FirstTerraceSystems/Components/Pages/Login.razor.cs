@@ -20,8 +20,26 @@ namespace FirstTerraceSystems.Components.Pages
         public bool ShowAuthError { get; set; }
         public string Error { get; set; }
 
+        public bool emailError { get; set; }
+        public bool passwordError { get; set; }
+
+        void CheckValidation()
+        {
+            if (string.IsNullOrEmpty(_loginDto.Email))
+            {
+                emailError = true;
+            }
+
+            if (string.IsNullOrEmpty(_loginDto.Password))
+            {
+                passwordError = true;
+            }
+        }
+
         public async Task ExecuteLogin(EditContext context)
         {
+            
+
             ShowAuthError = false;
             var result = await AuthenticationService.Login(_loginDto);
             if (!string.IsNullOrEmpty(result.Detail))

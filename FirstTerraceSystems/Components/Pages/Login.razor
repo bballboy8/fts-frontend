@@ -1,7 +1,7 @@
 ﻿@page "/"
 @page "/login"
 
-<div class="signIn">
+@* <div class="signIn">
     <EditForm Model="@_loginDto" OnValidSubmit="ExecuteLogin">
         <DataAnnotationsValidator />
     <MudGrid Class="justify-center" Spacing="0">
@@ -26,4 +26,47 @@
         </MudItem>
     </MudGrid>
     </EditForm>
+</div> *@
+
+<div class="signIn">
+    <div class="row g-0 justify-content-center">
+        <div class="col-6 col-xl-5">
+            <div class="login-content">
+                <EditForm Model="@_loginDto" OnValidSubmit="ExecuteLogin">
+                    <DataAnnotationsValidator />
+                    <img src="../images/logo.png" Alt="logo" class="logo" />
+                    <div>
+                        <div>
+                            <div class="login-input">
+                                <InputText class="mb-3 mb-xl-4" type="email" @bind-Value="@_loginDto.Email" DisplayName="Email" placeholder="Email"></InputText>
+                                <ValidationMessage For="@(() => _loginDto.Email)" />
+                            </div>
+                            <div class="login-input">
+
+                                <InputText type="password" class="mb-3 mb-xl-4" @bind-Value="@_loginDto.Password" DisplayName="Password" placeholder="Password"></InputText>
+                                <ValidationMessage For="@(() => _loginDto.Password)" />
+                            </div>
+
+                            @if (ShowAuthError)
+                            {
+                                <span class="text-danger">@Error</span>
+                            }
+                        </div>
+                        <Button Class="login-btn" Type="ButtonType.Submit">Sign in</Button>
+                        <Button Class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</Button>
+                        <span class="separator">OR</span>
+                        <Button class="social-media mb-4"><img src="../images/devicon_google.png" alt="devivon_google" />Continue using Google ID</Button>
+                        <Button class="social-media"><img src="../images/apple.png" alt="apple" />Continue using Apple ID</Button>
+
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+        <div class="col-6 col-xl-7">
+
+            <img src="../images/login-bg.png" Alt="login-bg" Class="login-img" />
+
+        </div>
+    </div>
+
 </div>
