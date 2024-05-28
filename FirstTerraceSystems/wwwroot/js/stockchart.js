@@ -687,6 +687,7 @@ window.loadMultiStockChart = async (id) => {
                     text: 'XNYS:SPX &nbsp &nbsp  ✖',
                     onclick: function () {
                         this.container.parentNode.remove();
+                        DotNet.invokeMethodAsync('', 'LoadTemplate', numberOfCharts);
                     },
                 }
             }

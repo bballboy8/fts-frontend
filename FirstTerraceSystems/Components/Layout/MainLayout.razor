@@ -22,8 +22,8 @@
                         DISPLAY OPTIONS
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Save layout</a>
-                        <a class="dropdown-item" href="#">Load layout</a>
+                        <a class="dropdown-item">Save layout</a>
+                        <a class="dropdown-item">Load layout</a>
 
                         <div class="dropdown dropend">
                             <a class="dropdown-item dropdown-toggle sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load template</a>
@@ -98,8 +98,12 @@
         StateHasChanged();
     }
 
+    [JSInvokable]
     private async Task LoadTemplate(int numberOfCharts)
     {
+        if (!NavigationManager.Uri.ToLower().Contains("gridCharts"))
+            NavigationManager.NavigateTo("/gridCharts");
+
         var cssClass = "container";
         switch (numberOfCharts)
         {

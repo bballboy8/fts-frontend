@@ -31,7 +31,7 @@ namespace FirstTerraceSystems.Components.Pages
             }
             else
             {
-                NavigationManager.NavigateTo("/stockchart");
+                NavigationManager.NavigateTo("/gridCharts");
             }
         }
     }
