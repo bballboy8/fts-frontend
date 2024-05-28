@@ -39,13 +39,13 @@
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
         <GenerateAppInstallerFile>True</GenerateAppInstallerFile>
         <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-        <PackageCertificateThumbprint>BE327204720CEF65865473FD8EB8E36D2398FFA0</PackageCertificateThumbprint>
         <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
         <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
         <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
         <GenerateTestArtifacts>True</GenerateTestArtifacts>
         <AppInstallerUri>C:\Program Files</AppInstallerUri>
         <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+        <PackageCertificateKeyFile>FirstTerraceSystems_TemporaryKey.pfx</PackageCertificateKeyFile>
     </PropertyGroup>
 
     <ItemGroup>

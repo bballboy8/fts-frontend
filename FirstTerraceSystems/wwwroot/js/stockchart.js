@@ -1,6 +1,17 @@
 ﻿let backgroundColor = '#202527';
 let fontColor = '#ffffff';
 let isDarkMode = true;
+const LayoutChartClasses = {
+    1: "single-chart",
+    2: "split-chart",
+    4: "four-chart",
+    6: "six-chart",
+    8: "eight-chart"
+};
+
+function fnGetLayoutChartClass(numberOfCharts) {
+    return LayoutChartClasses[numberOfCharts];
+}
 
 window.loadStockChart = async () => {
     const data = await fetch(
@@ -557,16 +568,13 @@ window.loadMultiStockChart = async (id) => {
         'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
     ).then(response => response.json());
 
-    const ohlc = [],
-        volume = [],
-        dataLength = data.length,
-        groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
+    const ohlc = [], volume = [], dataLength = data.length, groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
 
     for (let i = 0; i < dataLength; i += 1) {
         ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
         volume.push([data[i][0], data[i][5]]);
     }
-  
+
 
     const singleDataStockChart = Highcharts.stockChart(id, {
         chart: {
@@ -576,7 +584,6 @@ window.loadMultiStockChart = async (id) => {
             //marginRight: 100, //margin after chart
 
         },
-
         rangeSelector: {
             selected: 4,
             inputEnabled: false,
@@ -585,7 +592,11 @@ window.loadMultiStockChart = async (id) => {
             },
             labelStyle: {
                 visibility: 'hidden'
-            },x: 70
+            },
+            /*verticalAlign: 'top',*/
+            buttonSpacing: 10,
+            x: 65,
+            y: 0
         },
         xAxis: [{
             offset: 0,
@@ -598,7 +609,8 @@ window.loadMultiStockChart = async (id) => {
             },
             lineWidth: 0,
             opposite: false
-        }, {
+        },
+        {
             offset: 0,
             labels: {
                 align: 'left',
@@ -633,7 +645,8 @@ window.loadMultiStockChart = async (id) => {
             resize: {
                 enabled: true
             }
-        }, {
+        },
+        {
             labels: {
                 align: 'left',
                 x: 5,
@@ -667,7 +680,8 @@ window.loadMultiStockChart = async (id) => {
             //},
             color: '#C01620', // Color for the fall
             upColor: '#16C05A', // Color for the rise
-        }, {
+        },
+        {
             type: 'column',
             name: 'Volume',
             data: volume,
@@ -681,14 +695,28 @@ window.loadMultiStockChart = async (id) => {
         exporting: {
             buttons: {
                 contextButton: {
-                    enabled: false
+                    enabled: false,
                 },
                 closeButton: {
-                    text: 'XNYS:SPX &nbsp &nbsp  ✖',
-                    onclick: function () {
-                        this.container.parentNode.remove();
-                        DotNet.invokeMethodAsync('', 'LoadTemplate', numberOfCharts);
-                    },
+                    x: 0,
+                    y: 0,
+                    //symbolX: 100,
+                    //symbolY: 10,
+                    //width: 210,
+                    //height: 28,
+                    enabled: true,
+                    className: 'btn btn-sm',
+                    text: 'XNYS:SPX &nbsp &nbsp ✖',
+                    onclick: function (e) {
+                        let count = Highcharts.charts.filter(item => item !== undefined).length;
+                        if (count > 1) {
+                            this.container.parentNode.remove();
+                            this.destroy();
+                            let count = Highcharts.charts.filter(item => item !== undefined).length;
+                            let cssClass = fnGetLayoutChartClass(count);
+                            if (cssClass) window.loadTemplates(count, cssClass);
+                        }
+                    }
                 }
             }
         },
@@ -699,9 +727,9 @@ window.loadMultiStockChart = async (id) => {
             }
         },
         navigator: {
-            enabled: false, adaptToUpdateData: false,
+            enabled: false,
+            adaptToUpdateData: false,
         },
-
     });
 
 };
