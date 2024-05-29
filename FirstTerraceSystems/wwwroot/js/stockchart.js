@@ -524,7 +524,8 @@ window.changeBackgroundColor = (mode) => {
             chart.update({
                 chart: {
                     backgroundColor: backgroundColor,
-                    borderColor: isDarkMode ? "#5B6970" : "#ffffff",
+                    borderColor: isDarkMode ? "#ffffff" : "#5B6970",
+                    borderWidth: 1,
                 },
                 xAxis: [{
                     labels: {
