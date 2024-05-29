@@ -22,18 +22,18 @@
                         DISPLAY OPTIONS
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item">Save layout</a>
-                        <a class="dropdown-item">Load layout</a>
+                        <a role="button" class="dropdown-item">Save layout</a>
+                        <a role="button" class="dropdown-item">Load layout</a>
 
                         <div class="dropdown dropend">
                             <a class="dropdown-item dropdown-toggle sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load template</a>
                             <div class="dropdown-menu" id="load-template-dropdown">
-                               
-                                <a class="dropdown-item load-template"  @onclick="() => LoadTemplate(1)"><span class="chart-1"></span> 1 chart</a>
-                                <a class="dropdown-item load-template"  @onclick="() => LoadTemplate(2)"><span class="main-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span>2 charts</a>
-                                <a class="dropdown-item load-template"  @onclick="() => LoadTemplate(4)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-2"></span> <span class="chart-2"></span></span> <span class="chart-3-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span></span>4 charts</a>
-                                <a class="dropdown-item load-template"  @onclick="() => LoadTemplate(6)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-6"></span> <span class="chart-6"></span></span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> </span>6 charts</a>
-                                <a class="dropdown-item load-template"  @onclick="() => LoadTemplate(8)"><span style="margin-top: -7px;"><span class="chart-8-grid"> <span class="chart-8"></span> <span class="chart-8"></span></span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> </span>8 charts</a>
+
+                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(1)"><span class="chart-1"></span> 1 chart</a>
+                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(2)"><span class="main-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span>2 charts</a>
+                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(4)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-2"></span> <span class="chart-2"></span></span> <span class="chart-3-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span></span>4 charts</a>
+                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(6)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-6"></span> <span class="chart-6"></span></span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> </span>6 charts</a>
+                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(8)"><span style="margin-top: -7px;"><span class="chart-8-grid"> <span class="chart-8"></span> <span class="chart-8"></span></span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> </span>8 charts</a>
 
                             </div>
                         </div>
@@ -97,7 +97,7 @@
     }
 
     [JSInvokable]
-    private async Task LoadTemplate(int numberOfCharts)
+    public async Task LoadTemplate(int numberOfCharts)
     {
         if (!NavigationManager.Uri.ToLower().Contains("gridCharts"))
             NavigationManager.NavigateTo("/gridCharts");
