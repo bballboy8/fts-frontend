@@ -817,6 +817,26 @@ let loadTemplates = (e) => {
 
 window.loadTemplates = function (numberOfCharts, cssClass) {
 
+    try {
+        if (cssClass != 'single-chart') {
+            $("#sortable").sortable({
+                revert: true
+            });
+            $("#draggable").draggable({
+                connectToSortable: "#sortable",
+                helper: "clone",
+                revert: "invalid"
+            });
+            $(".chartBox").disableSelection();
+        }
+        else {
+            $("#draggable").draggable("disable");
+            $("#sortable").sortable("disable");
+        }
+    } catch (e) {
+
+    }
+
     Highcharts.charts.forEach(chart => {
         if (chart) {
             chart.destroy();
@@ -828,7 +848,6 @@ window.loadTemplates = function (numberOfCharts, cssClass) {
     chartContainers.forEach(container => {
         container.remove();
     });
-
 
     var gridly = document.getElementById('sortable');
     gridly.innerHTML = '';

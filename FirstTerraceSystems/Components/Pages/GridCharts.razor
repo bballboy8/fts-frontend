@@ -15,8 +15,6 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer1");
-            await JSRuntime.InvokeVoidAsync("addChartDblClickListener", "chartContainer1");
-            await JSRuntime.InvokeVoidAsync("dragdropchart");
         }
     }
 
