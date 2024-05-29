@@ -849,3 +849,10 @@ window.loadTemplates = function (numberOfCharts, cssClass) {
 };
 
 
+window.showLoader = () => {
+    var loader = document.getElementById('pageLoader');
+    loader.style.display = 'flex';
+    setTimeout(function () {
+        loader.style.display = 'none';
+    }, 1600);
+}
