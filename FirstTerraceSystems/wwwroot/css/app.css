@@ -269,20 +269,22 @@ h1:focus {
     color: #fff !important;
     transition: all 0.3s;
 }
-        
 
-        .signIn input:focus,
-        .signIn input:hover {
-            border-color: #fff !important;
-        }
+    .signIn input:focus,
+    .signIn input:hover {
+        border-color: #fff !important;
+    }
 
-    
-.signIn .social-media {
-    color: #5B6970 !important;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
+    .signIn .social-media {
+        color: #5B6970 !important;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    .signIn .social-media:hover {
+        border-color: #fff !important;
+        color: #fff !important;
+    }
 
     .signIn .social-media img {
         margin-right: 15px;
@@ -445,4 +447,28 @@ h1:focus {
 .form-switch .form-check-input {
     width: 2.5em !important;
     height: 20px;
+}
+.dropdown-item:focus, .dropdown-item:hover {
+    color: #25E2A2 !important;
+}
+.content {
+    height: calc(100vh - 58px);
+}
+@media(min-height:600px) and (max-height:900px){
+    .four-chart {
+        width: 46vw;
+    }
+
+    .split-chart {
+        width: 46vw;
+        height: 88vh;
+    }
+    .content {
+        height: calc(100vh - 56px);
+    }
+    .single-chart {
+        width: 95vw;
+        height: 88vh;
+    }
+
 }
