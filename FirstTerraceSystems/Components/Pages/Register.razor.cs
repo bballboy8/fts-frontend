@@ -66,7 +66,7 @@ namespace FirstTerraceSystems.Components.Pages
             };
 
             var registerResponse = await AuthenticationService.Registration(registerDto);
-            if (registerResponse != null)
+            if (registerResponse.Message != null)
             {
                 ToastService.Notify(new(ToastType.Success, "Registration successful"));
                 //_snackBar.Add("Registration successful", Severity.Success);
@@ -74,7 +74,7 @@ namespace FirstTerraceSystems.Components.Pages
             }
             else
             {
-                Error = registerResponse?.Message ?? "An error occurred during registration.";
+                Error = registerResponse?.Detail ?? "An error occurred during registration.";
                 ShowAuthError = true;
                 //_snackBar.Add(Error, Severity.Error);
                 ToastService.Notify(new(ToastType.Warning, Error));
