@@ -135,13 +135,13 @@ function removeChart(chart) {
     chart.destroy();
     var totalCharts = $("#chartList .chart-box").length;
 
+    debugger;
     var cssClass = "col-12";
     if (totalCharts == 1) {
-        debugger
         cssClass = "col-12";
-        $("#draggable").draggable("disable");
-        $("#chartList").sortable("disable");
-        
+        $("#chartList").sortable({
+            disabled: true
+        });
     }
     else if (totalCharts <= 4) {
         cssClass = "col-6";
@@ -184,6 +184,7 @@ function addChartBox(totalCharts, chartIndx) {
     $("#chartList").append(chartBox);
     addChart(chartContainerId);
 
+
     if (totalCharts > 2) {
         $("#chartList .chart-box").removeClass('chart-height-100');
         $("#chartList .chart-box").addClass('chart-height-50');
@@ -195,7 +196,6 @@ function addChartBox(totalCharts, chartIndx) {
 
     if (totalCharts > 1) {
         addChartDblClickListener(chartContainerId);
-        dragdropchart();
     }
 
 }
@@ -210,17 +210,25 @@ function createDashboard(totalCharts) {
             addChartBox(totalCharts, indx);
         }
     }
+
+    if (totalCharts != 1) {
+        $("#chartList").sortable({
+            disabled: false
+        });
+    }
 }
 async function LoadData() {
-    const data = await fetch(
-        'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
-    ).then(response => response.json());
+    if (dataLength == 0) {
+        const data = await fetch(
+            'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
+        ).then(response => response.json());
 
-    dataLength = data.length;
+        dataLength = data.length;
 
-    for (let i = 0; i < dataLength; i += 1) {
-        ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
-        volume.push([data[i][0], data[i][5]]);
+        for (let i = 0; i < dataLength; i += 1) {
+            ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
+            volume.push([data[i][0], data[i][5]]);
+        }
     }
 }
 

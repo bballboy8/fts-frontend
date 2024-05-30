@@ -741,11 +741,11 @@ function dragdropchart() {
     $("#chartList").sortable({
         revert: true
     });
-    $("#draggable").draggable({
-        connectToSortable: "#chartList",
-        helper: "clone",
-        revert: "invalid"
-    });
+    //$("#draggable").draggable({
+    //    connectToSortable: "#chartList",
+    //    helper: "clone",
+    //    revert: "invalid"
+    //});
     $(".chart-container").disableSelection();
 }
 
