@@ -49,7 +49,7 @@ namespace FirstTerraceSystems.Components.Pages
             }
             else
             {
-                NavigationManager.NavigateTo("/gridCharts");
+                NavigationManager.NavigateTo("/multiChats");
             }
         }
     }

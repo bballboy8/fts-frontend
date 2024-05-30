@@ -86,7 +86,7 @@
             else
             {
                 await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
-                NavigationManager.NavigateTo("/gridCharts");
+                NavigationManager.NavigateTo("/multiChats");
                 // NavigationManager.NavigateTo("/stockchart");
             }
         }
@@ -103,32 +103,9 @@
     }
 
     [JSInvokable]
-    public async Task LoadTemplate(int numberOfCharts)
+    public async Task LoadTemplate(int totalCharts)
     {
-        if (!NavigationManager.Uri.ToLower().Contains("gridCharts"))
-            NavigationManager.NavigateTo("/gridCharts");
-
-        var cssClass = "container";
-        switch (numberOfCharts)
-        {
-            case 1:
-                cssClass = "single-chart";
-                break;
-            case 2:
-                cssClass = "split-chart";
-                break;
-            case 4:
-                cssClass = "four-chart";
-                break;
-            case 6:
-                cssClass = "six-chart";
-                break;
-            case 8:
-                cssClass = "eight-chart";
-                break;
-        }
-
-        await JSRuntime.InvokeVoidAsync("loadTemplates", numberOfCharts, cssClass);
+        await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts);
     }
 
 }

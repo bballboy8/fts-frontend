@@ -392,16 +392,16 @@ h1:focus {
     background: white;
 }
 
-    .brick.large.fullscreen {
-        position: fixed;
-        width: 60%;
-        height: 60%;
-        z-index: 9999;
-        left: 10%;
-        top: 10%;
-        resize: both;
-        overflow: auto;
-    }
+#chartList .fullscreen {
+    position: fixed;
+    width: 60%;
+    height: 60%;
+    z-index: 9999;
+    left: 10%;
+    top: 10%;
+    resize: both;
+    overflow: auto;
+}
 
 .single-chart {
     width: 95vw;
@@ -528,4 +528,17 @@ h1:focus {
     align-items: center;
     backdrop-filter: blur(5px);
     z-index: 9999;
+}
+
+.chart-box .chart-container {
+        height: 100%;
+        width: 100%;
+}
+
+.chart-height-50 {
+    height: calc(50vh - 40px);
+}
+
+.chart-height-100 {
+    height: calc(100vh - 80px);
 }

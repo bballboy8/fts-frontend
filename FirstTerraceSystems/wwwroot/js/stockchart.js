@@ -738,15 +738,15 @@ window.loadMultiStockChart = async (id) => {
 
 
 function dragdropchart() {
-    $("#sortable").sortable({
+    $("#chartList").sortable({
         revert: true
     });
     $("#draggable").draggable({
-        connectToSortable: "#sortable",
+        connectToSortable: "#chartList",
         helper: "clone",
         revert: "invalid"
     });
-    $(".chartBox").disableSelection();
+    $(".chart-container").disableSelection();
 }
 
 function addChartDblClickListener(chartContainer) {
@@ -758,8 +758,12 @@ function addChartDblClickListener(chartContainer) {
     var originalTop = chart.style.top;
 
     chart.addEventListener('dblclick', function openFullChart(e) {
+        debugger
         e.stopPropagation();
-
+        var totalCharts = Highcharts.charts.filter(item => item !== undefined).length
+        if (totalCharts == 1) {
+            return;
+        }
         if (chart.classList.contains('fullscreen')) {
             chart.classList.remove('fullscreen');
             chart.style.position = originalPosition;
@@ -768,8 +772,8 @@ function addChartDblClickListener(chartContainer) {
             chart.style.left = originalLeft;
             chart.style.top = originalTop;
 
-        } else {
-
+        }
+        else {
             chart.classList.add('fullscreen');
             originalPosition = chart.style.position;
             originalWidth = chart.style.width;

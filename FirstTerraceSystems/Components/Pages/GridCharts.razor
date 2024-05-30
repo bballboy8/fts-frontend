@@ -2,14 +2,13 @@
 
 <div id="sortable" class="gridly ">
 
-    <div class="single-chart">
+    <div  id="sortable" class="single-chart">
         <div class="brick large" id="chartContainer1"></div>
     </div>
 </div>
 
 @code
 {
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -17,5 +16,6 @@
             await JSRuntime.InvokeVoidAsync("loadMultiStockChart", "chartContainer1");
         }
     }
-
 }
+
+

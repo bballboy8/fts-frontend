@@ -1,0 +1,18 @@
+﻿@page "/multiChats"
+
+    <div class="container-fluid">
+        <div id="chartList" class="row"></div>
+    </div>
+
+
+@code
+{
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("LoadData");
+            await JSRuntime.InvokeVoidAsync("createDashboard", 1);
+        }
+    }
+}
