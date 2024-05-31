@@ -7,7 +7,7 @@
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
 <div class="page">
-    <div id="pageLoader">
+    @* <div id="pageLoader">
         <div class="loading-wave">
             <div class="loading-bar"></div>
             <div class="loading-bar"></div>
@@ -15,7 +15,7 @@
             <div class="loading-bar"></div>
         </div>
     </div>
-
+ *@
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
         {
@@ -95,7 +95,7 @@
 
     private async Task Logout()
     {
-        await JSRuntime.InvokeVoidAsync("showLoader");
+        // await JSRuntime.InvokeVoidAsync("showLoader");
         var model = new LoginDto();
         await AuthenticationService.Logout(model);
         NavigationManager.NavigateTo("/login");

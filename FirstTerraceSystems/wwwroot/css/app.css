@@ -269,7 +269,10 @@ h1:focus {
     color: #fff !important;
     transition: all 0.3s;
 }
-
+/*.signIn input {
+    background-color: #fff;
+    color: #000 !important;
+}*/
     .signIn input:focus,
     .signIn input:hover {
         border-color: #fff !important;
@@ -541,4 +544,12 @@ h1:focus {
 
 .chart-height-100 {
     height: calc(100vh - 80px);
+}
+
+.login-image{
+    width:722px;
+    height:100%;
+}
+::-ms-reveal {
+    filter: invert(100%);
 }

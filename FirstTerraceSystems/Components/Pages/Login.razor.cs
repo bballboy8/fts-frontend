@@ -36,7 +36,7 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
-        public async Task ExecuteLogin(EditContext context)
+        public async Task ExecuteLogin()
         {
             
 

@@ -519,7 +519,6 @@ window.changeBackgroundColor = (mode) => {
     // Update chart backgrounds and series colors for all Highcharts charts
 
     Highcharts.charts.forEach(chart => {
-        debugger
         if (chart) {
             chart.update({
                 chart: {
@@ -758,7 +757,6 @@ function addChartDblClickListener(chartContainer) {
     var originalTop = chart.style.top;
 
     chart.addEventListener('dblclick', function openFullChart(e) {
-        debugger
         e.stopPropagation();
         var totalCharts = Highcharts.charts.filter(item => item !== undefined).length
         if (totalCharts == 1) {

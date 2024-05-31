@@ -129,7 +129,7 @@ function addChart(charContainerId) {
 function removeChart(chart) {
 
     if ($("#chartList .chart-box").length == 1)
-        return;
+        return; 
 
     $(chart.renderTo).closest(".chart-box").remove();
     chart.destroy();

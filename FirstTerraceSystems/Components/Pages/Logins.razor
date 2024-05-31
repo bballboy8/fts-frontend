@@ -1,0 +1,103 @@
+﻿@page "/"
+@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using FirstTerraceSystems.Entities
+<div class="signIn">
+    <div class="row g-0 justify-content-center">
+        <div class="col-6 col-xl-5">
+            <div class="login-content">
+                <img src="../images/logo.png" Alt="logo" class="logo" />
+                <EditForm Model="@_loginDto" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="login-input">
+                       @*  <label for="email">Email</label> *@
+                        <InputText id="email" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Email" autocomplete="off" placeholder="Email" />
+                        <ValidationMessage For="@(() => _loginDto.Email)" />
+                    </div>
+                    <div class="login-input">
+                       @*  <label for="password">Password</label> *@
+                        <InputText id="password" type="password" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Password" placeholder="Password" />
+                        <ValidationMessage For="@(() => _loginDto.Password)" />
+                    </div>
+                    @if (ShowAuthError)
+                    {
+                        <span class="text-danger">@Error</span>
+                    }
+                    <button class="login-btn" type="Submit">Sign in</button>
+                    <button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</button>
+                    <span class="separator">OR</span>
+                    <button class="social-media mb-4"><img src="../images/devicon_google.png" alt="devivon_google" />Continue using Google ID</button>
+                    <button class="social-media"><img src="../images/apple.png" alt="apple" />Continue using Apple ID</button>
+
+                    @*  <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-secondary" @onclick="Register">Register</button>
+
+                    <hr />
+
+                    <button type="button" class="btn btn-dark" @onclick="LoginWithApple">Login with Apple</button>
+                    <button type="button" class="btn btn-danger" @onclick="LoginWithGoogle">Login with Google</button> *@
+                </EditForm>
+            </div>
+        </div>
+        <div class="col-6 col-xl-7">
+            <div class="login-image">
+            <img src="../images/login-bg.png" Alt="login-bg" class="login-img" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject]
+    public IAuthenticationService AuthenticationService { get; set; }
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+    private LoginModel loginModel = new LoginModel();
+    private LoginDto _loginDto = new LoginDto();
+    public bool ShowAuthError { get; set; }
+    public string Error { get; set; }
+    private async Task HandleValidSubmit()
+    {
+        // Handle the form submission (e.g., authenticate the user)
+
+        ShowAuthError = false;
+        var result = await AuthenticationService.Login(_loginDto);
+        if (!string.IsNullOrEmpty(result.Detail))
+        {
+            Error = result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail;
+            ShowAuthError = true;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/multiChats");
+        }
+    }
+
+    private void Register()
+    {
+        // Handle the registration process
+        NavigationManager.NavigateTo("/register");
+    }
+
+    private void LoginWithApple()
+    {
+        // Handle Apple login
+    }
+
+    private void LoginWithGoogle()
+    {
+        // Handle Google login
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Password is required")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long")]
+        public string Password { get; set; }
+    }
+}

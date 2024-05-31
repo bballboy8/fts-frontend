@@ -66,7 +66,7 @@ namespace FirstTerraceSystems.Components.Pages
             };
 
             var registerResponse = await AuthenticationService.Registration(registerDto);
-            if (registerResponse.Message != null)
+            if (registerResponse.Message == "User signed up successfully")
             {
                 ToastService.Notify(new(ToastType.Success, "Registration successful"));
                 //_snackBar.Add("Registration successful", Severity.Success);
