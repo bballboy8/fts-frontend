@@ -182,9 +182,6 @@ function addChartBox(totalCharts, chartIndx) {
     var chartContainerId = "chart-" + chartIndx
     var chartBox = $(`<div class="chart-box ${cssClass}"><div class="chart-container" id=${chartContainerId}></div></div>`);
     $("#chartList").append(chartBox);
-    addChart(chartContainerId);
-
-
     if (totalCharts > 2) {
         $("#chartList .chart-box").removeClass('chart-height-100');
         $("#chartList .chart-box").addClass('chart-height-50');
@@ -193,6 +190,11 @@ function addChartBox(totalCharts, chartIndx) {
         $("#chartList .chart-box").removeClass('chart-height-50');
         $("#chartList .chart-box").addClass('chart-height-100');
     }
+
+    addChart(chartContainerId);
+
+
+   
 
     if (totalCharts > 1) {
         addChartDblClickListener(chartContainerId);
