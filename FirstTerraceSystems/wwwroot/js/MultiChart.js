@@ -79,11 +79,29 @@ function addChart(charContainerId) {
             split: true
         },
         series: [{
-            type: 'candlestick',
             name: 'AAPL',
-            data: ohlc,
+            data: ohlc.map(function (point, i) {
+                if (i === 0 || point[1] > ohlc[i - 1][1]) {
+                    return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
+                } else {
+                    return { x: point[0], y: point[1], color: 'red' }; // Lower
+                }
+            }),
             color: '#C01620', // Color for the fall
             upColor: '#16C05A', // Color for the rise
+            lineWidth: 0,
+            marker: {
+                enabled: true,
+                radius: 4
+            },
+            tooltip: {
+                valueDecimals: 2
+            },
+            states: {
+                hover: {
+                    lineWidthPlus: 0
+                }
+            }
         },
         {
             type: 'column',
