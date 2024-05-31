@@ -5,16 +5,16 @@
     <div class="row justify-content-center w-100">
         <div class="col-sm-8 col-lg-4">
             <div Class="signIn signUp questions login-content">
-                <EditForm Model="@_registerDto" OnValidSubmit="(() => ShowRegister = false)">
+                <EditForm Model="@_registerDto" OnValidSubmit="(() => ShowRegister = false)" autocomplete="no">
                     <DataAnnotationsValidator />
                     <img src="../images/logo.png" Alt="logo" class="logo" />
                     <div>
                         <div>
-                            <InputText @bind-Value="@_registerDto.first_name" DisplayName="First name" placeholder="First name"></InputText>
+                            <InputText @bind-Value="@_registerDto.first_name" DisplayName="First name" placeholder="First name" autocomplete="no"></InputText>
                             <ValidationMessage For="@(() => _registerDto.first_name)" />
-                            <InputText @bind-Value="@_registerDto.last_name" DisplayName="Last name" placeholder="Last name"></InputText>
+                            <InputText @bind-Value="@_registerDto.last_name" DisplayName="Last name" placeholder="Last name" autocomplete="no"></InputText>
                             <ValidationMessage For="@(() => _registerDto.last_name)" />
-                            <InputText type="email" @bind-Value="@_registerDto.email" DisplayName="Email" placeholder="Email"></InputText>
+                            <InputText type="email" @bind-Value="@_registerDto.email" DisplayName="Email" placeholder="Email" autocomplete="no"></InputText>
                             <ValidationMessage For="@(() => _registerDto.email)" />
                             <InputText type="password" @bind-Value="@_registerDto.password" DisplayName="Password" placeholder="Password"></InputText>
                             <ValidationMessage For="@(() => _registerDto.password)" />
