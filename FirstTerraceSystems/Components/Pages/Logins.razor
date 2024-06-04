@@ -22,8 +22,9 @@
                     {
                         <span class="text-danger">@Error</span>
                     }
-                    <button class="login-btn" type="Submit">Sign in</button>
-                    <button type="button" class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</button>
+
+                    <button class="login-btn create-new" type="Submit">Sign in</button>
+                    <button type="button" class="login-btn create-new sign-in-down" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</button>
                     <span class="separator">OR</span>
                     <button type="button" class="social-media mb-4"><img src="../images/devicon_google.png" alt="devivon_google" />Continue using Google ID</button>
                     <button type="button" class="social-media"><img src="../images/apple.png" alt="apple" />Continue using Apple ID</button>

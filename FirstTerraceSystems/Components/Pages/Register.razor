@@ -21,7 +21,7 @@
                             <InputText type="password" @bind-Value="@_registerDto.confirm_password" DisplayName="Confirm Password" placeholder="Confirm Password"></InputText>
                             <ValidationMessage For="@(() => _registerDto.confirm_password)" />
                         </div>
-                        <Button Class="login-btn" Type="ButtonType.Submit">Continue</Button>
+                        <Button Class="login-btn create-new" Type="ButtonType.Submit">Continue</Button>
                         <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
                     </div>
                 </EditForm>
@@ -91,9 +91,11 @@ else
         </div>
                             <ValidationMessage For="@(() => _registerQuestion.Question_5)" />
                         </div>
+
                         <Button Class="login-btn" Type="ButtonType.Submit">Create account</Button>
                         <Button class="login-btn create-new" @onclick="BackToRegistration">Back</Button>
                         <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back to Login</Button>
+
                     </div>
                 </EditForm>
             </div>
