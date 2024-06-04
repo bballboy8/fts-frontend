@@ -92,8 +92,8 @@ else
                             <ValidationMessage For="@(() => _registerQuestion.Question_5)" />
                         </div>
                         <Button Class="login-btn" Type="ButtonType.Submit">Create account</Button>
-                        <Button class="login-btn create-new" @onclick="BackToRegistration"> Back</Button>
-
+                        <Button class="login-btn create-new" @onclick="BackToRegistration">Back</Button>
+                        <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Home</Button>
                     </div>
                 </EditForm>
             </div>
