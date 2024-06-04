@@ -205,18 +205,25 @@ h1:focus {
     justify-content:unset !important;
     overflow: auto;
 }
+
 /*.signIn button.login-btn.create-new:last-child {
+
+.signIn button.login-btn.create-new:last-child {
     margin-bottom: 0;
 }
 .signIn button.login-btn.create-new {
     background: transparent;
     color: #25E2A2;
+
     margin-bottom:20px;
     margin-top: 0;
 }*/
 .signIn button.login-btn.create-new.sign-in-down{
-margin-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 20px;
 }
+   
+
 
 .signIn button.login-btn.create-new {
     background: transparent;
@@ -224,6 +231,12 @@ margin-bottom: 0;
     margin-top: 0;
     margin-bottom: 20px;
 }
+
+    .signIn button.login-btn:hover {
+        background: transparent;
+        color: #25E2A2;
+    }
+
 
     .signIn button.login-btn:hover {
         background: transparent;
