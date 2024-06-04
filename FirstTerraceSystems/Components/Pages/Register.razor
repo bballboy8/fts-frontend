@@ -51,48 +51,48 @@ else
                             </div>
                             <ValidationMessage For="@(() => _registerQuestion.Question_1)" />
                             <div class="position-relative">
-                            <InputSelect @bind-Value="_registerQuestion.Question_2" Label="Question 2">
+                                <InputSelect @bind-Value="_registerQuestion.Question_2" Label="Question 2">
                                     <option value="">Question 2</option>
                                     <option value="Tyrannosaur">Tyrannosaur</option>
                                     <option value="Triceratops">Triceratops</option>
                                     <option value="Henon Rex">Henon Rex</option>
-                            </InputSelect>
-                            <img src="../images/vector.png" />
-                        </div>
+                                </InputSelect>
+                                <img src="../images/vector.png" />
+                            </div>
                             <ValidationMessage For="@(() => _registerQuestion.Question_2)" />
                             <div class="position-relative">
-                            <InputSelect @bind-Value="_registerQuestion.Question_3" Label="Question 3">
+                                <InputSelect @bind-Value="_registerQuestion.Question_3" Label="Question 3">
                                     <option value="">Question 3</option>
                                     <option value="Tyrannosaur">Tyrannosaur</option>
                                     <option value="Triceratops">Triceratops</option>
                                     <option value="Henon Rex">Henon Rex</option>
-                        </InputSelect>
-                        <img src="../images/vector.png" />
-                    </div>
+                                </InputSelect>
+                                <img src="../images/vector.png" />
+                            </div>
                             <ValidationMessage For="@(() => _registerQuestion.Question_3)" />
                             <div class="position-relative">
-                            <InputSelect @bind-Value="_registerQuestion.Question_4" Label="Question 4">
+                                <InputSelect @bind-Value="_registerQuestion.Question_4" Label="Question 4">
                                     <option value="">Question 4</option>
                                     <option value="Tyrannosaur">Tyrannosaur</option>
                                     <option value="Triceratops">Triceratops</option>
                                     <option value="Henon Rex">Henon Rex</option>
-                    </InputSelect>
-                    <img src="../images/vector.png" />
-            </div>
+                                </InputSelect>
+                                <img src="../images/vector.png" />
+                            </div>
                             <ValidationMessage For="@(() => _registerQuestion.Question_4)" />
                             <div class="position-relative">
-                            <InputSelect @bind-Value="_registerQuestion.Question_5" Label="Question 5">
+                                <InputSelect @bind-Value="_registerQuestion.Question_5" Label="Question 5">
                                     <option value="">Question 5</option>
                                     <option value="Tyrannosaur">Tyrannosaur</option>
                                     <option value="Triceratops">Triceratops</option>
                                     <option value="Henon Rex">Henon Rex</option>
-            </InputSelect>
-            <img src="../images/vector.png" />
-        </div>
+                                </InputSelect>
+                                <img src="../images/vector.png" />
+                            </div>
                             <ValidationMessage For="@(() => _registerQuestion.Question_5)" />
                         </div>
 
-                        <Button Class="login-btn" Type="ButtonType.Submit">Create account</Button>
+                        <Button Class="login-btn create-new" Type="ButtonType.Submit">Create account</Button>
                         <Button class="login-btn create-new" @onclick="BackToRegistration">Back</Button>
                         <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back to Login</Button>
 
@@ -100,6 +100,6 @@ else
                 </EditForm>
             </div>
         </div>
-    </div>
+    </div>        
 
 }
