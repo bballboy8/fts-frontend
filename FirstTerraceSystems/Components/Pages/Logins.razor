@@ -7,15 +7,15 @@
         <div class="col-6 col-xl-5">
             <div class="login-content">
                 <img src="../images/logo.png" Alt="logo" class="logo" />
-                <EditForm Model="@_loginDto" OnValidSubmit="HandleValidSubmit" autocomplete="no">
+                <EditForm Model="@_loginDto" OnValidSubmit="HandleValidSubmit" autocomplete="off" aria-autocomplete="none">
                     <DataAnnotationsValidator />
 
                     <div class="login-input">
-                        <InputText id="email" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Email" autocomplete="no" placeholder="Email" />
+                        <InputText id="email" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Email" autocomplete="off" aria-autocomplete="none" placeholder="Email" />
                         <ValidationMessage For="@(() => _loginDto.Email)" />
                     </div>
                     <div class="login-input">
-                        <InputText id="password" type="password" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Password" placeholder="Password" />
+                        <InputText id="password" type="password" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Password" placeholder="Password" autocomplete="new-password" aria-autocomplete="none" />
                         <ValidationMessage For="@(() => _loginDto.Password)" />
                     </div>
                     @if (ShowAuthError)
