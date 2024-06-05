@@ -735,7 +735,6 @@ window.loadMultiStockChart = async (id) => {
 
 };
 
-
 function dragdropchart() {
     $("#chartList").sortable({
         revert: true
@@ -878,3 +877,19 @@ window.showLoader = () => {
         loader.style.display = 'none';
     }, 1600);
 }
+
+$(document).ready(function () {
+    $("body").on("click", ".password-toggle", function () {
+        var inputType = $(".txt-password-input", $(this).closest(".password-input")).prop("type");
+        if (inputType == 'text') {
+            $(".txt-password-input", $(this).closest(".password-input")).prop("type", "password");
+            $(this).removeClass("bi-eye-slash");
+            $(this).addClass("bi-eye");
+        }
+        else {
+            $(".txt-password-input", $(this).closest(".password-input")).prop("type", "text");
+            $(this).addClass("bi-eye-slash");
+            $(this).removeClass("bi-eye");
+        }
+    })
+});

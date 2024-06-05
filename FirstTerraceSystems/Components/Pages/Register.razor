@@ -16,10 +16,16 @@
                             <ValidationMessage For="@(() => _registerDto.last_name)" />
                             <InputText type="email" @bind-Value="@_registerDto.email" DisplayName="Email" placeholder="Email" autocomplete="off" aria-autocomplete="none"></InputText>
                             <ValidationMessage For="@(() => _registerDto.email)" />
-                            <InputText type="password" @bind-Value="@_registerDto.password" DisplayName="Password" placeholder="Password" autocomplete="new-password" aria-autocomplete="none"></InputText>
-                            <ValidationMessage For="@(() => _registerDto.password)" />
-                            <InputText type="password" @bind-Value="@_registerDto.confirm_password" DisplayName="Confirm Password" placeholder="Confirm Password"></InputText>
-                            <ValidationMessage For="@(() => _registerDto.confirm_password)" />
+                            <div class="password-input">
+                                <InputText class="txt-password-input" type="password" @bind-Value="@_registerDto.password" DisplayName="Password" placeholder="Password" autocomplete="new-password" aria-autocomplete="none"></InputText>
+                                <i class="password-toggle bi bi-eye"></i>
+                                <ValidationMessage For="@(() => _registerDto.password)" />
+                            </div>
+                            <div class="password-input">
+                                <InputText class="txt-password-input" type="password" @bind-Value="@_registerDto.confirm_password" DisplayName="Confirm Password" placeholder="Confirm Password"></InputText>
+                                <i class="password-toggle bi bi-eye"></i>
+                                <ValidationMessage For="@(() => _registerDto.confirm_password)" />
+                            </div>
                         </div>
                         <Button Class="login-btn create-new" Type="ButtonType.Submit">Continue</Button>
                         <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
@@ -100,6 +106,6 @@ else
                 </EditForm>
             </div>
         </div>
-    </div>        
+    </div>
 
 }
