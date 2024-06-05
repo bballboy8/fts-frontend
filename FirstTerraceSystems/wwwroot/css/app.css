@@ -12,15 +12,21 @@ a, .btn-link {
     --chart-bg-color: #ffffff;
     --font-color: #202527;
 }
+
 [data-theme="dark"] {
     --chart-bg-color: #202527;
     --font-color: #ffffff;
 }
+
 [data-theme="light"] {
     --chart-bg-color: #202527;
     --font-color: #ffffff;
 }
 
+input[type=password]::-ms-reveal,
+input[type=password]::-ms-clear {
+    display: none;
+}
 
 .btn-primary {
     color: #fff;
@@ -54,19 +60,41 @@ h1:focus {
     display: inline-block;
     margin-top: 0px;
     width: 100%;
-    position:relative;
-    top:-18px;
+    position: relative;
+    top: -18px;
 }
-.login-input{
-    position:relative;
-    margin-bottom:15px;
+
+.login-input {
+    position: relative;
+    margin-bottom: 15px;
 }
+
     .login-input .validation-message {
         position: absolute;
         bottom: 0px;
-        top:unset;
+        top: unset;
         left: 0;
     }
+
+.password-input {
+    position: relative;
+}
+
+    .password-input input[type=password] {
+        padding-right: 25px;
+    }
+
+    .password-input .password-toggle {
+        position: absolute;
+        top: 12px;
+        right: 20px;
+        color: #5B6970;
+        cursor: pointer;
+    }
+
+        .password-input .password-toggle:hover {
+            color: #fff;
+        }
 
 #blazor-error-ui {
     background: lightyellow;
@@ -134,7 +162,7 @@ h1:focus {
 .mud-tab {
     background: #2D3539 !important;
     min-height: 100% !important;
-    color:#fff!important;
+    color: #fff !important;
 }
 
     .mud-tab.mud-tab-active {
@@ -163,8 +191,8 @@ h1:focus {
 .login-content {
     background-color: #2D3539 !important;
     padding: 50px;
-    text-align:center;
-    border-radius:20px 0 0 20px;
+    text-align: center;
+    border-radius: 20px 0 0 20px;
 }
 
 .signIn > * {
@@ -176,10 +204,10 @@ h1:focus {
     overflow: hidden;
 }
 
- 
-    .logo {
-        margin-bottom: 40px;
-    }
+
+.logo {
+    margin-bottom: 40px;
+}
 
 .signIn button.login-btn {
     background: transparent;
@@ -200,9 +228,10 @@ h1:focus {
 .signIn.questions .mud-button {
     padding: 22px 0;
 }
+
 .signIn.questions .mud-paper {
     max-height: 92vh;
-    justify-content:unset !important;
+    justify-content: unset !important;
     overflow: auto;
 }
 
@@ -218,11 +247,11 @@ h1:focus {
     margin-bottom:20px;
     margin-top: 0;
 }*/
-.signIn button.login-btn.create-new.sign-in-down{
+.signIn button.login-btn.create-new.sign-in-down {
     margin-top: 0;
     margin-bottom: 20px;
 }
-   
+
 
 
 .signIn button.login-btn.create-new {
@@ -232,16 +261,16 @@ h1:focus {
     margin-bottom: 20px;
 }
 
-    .signIn button.login-btn:hover {
-        background: transparent;
-        color: #25E2A2;
-    }
+.signIn button.login-btn:hover {
+    background: transparent;
+    color: #25E2A2;
+}
 
 
-    .signIn button.login-btn:hover {
-        background: transparent;
-        color: #25E2A2;
-    }
+.signIn button.login-btn:hover {
+    background: transparent;
+    color: #25E2A2;
+}
 
 .signIn button.login-btn.create-new:hover {
     background: #25E2A2;
@@ -295,7 +324,7 @@ h1:focus {
     color: #fff !important;
     transition: all 0.3s;
 }
-/*.signIn input {
+    /*.signIn input {
     background-color: #fff;
     color: #000 !important;
 }*/
@@ -304,12 +333,13 @@ h1:focus {
         border-color: #fff !important;
     }
 
-    .signIn .social-media {
-        color: #5B6970 !important;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-    }
+.signIn .social-media {
+    color: #5B6970 !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
     .signIn .social-media:hover {
         border-color: #fff !important;
         color: #fff !important;
@@ -321,8 +351,8 @@ h1:focus {
 
 
 .login-img {
-   max-width:100%;
-   height:100%;
+    max-width: 100%;
+    height: 100%;
     border-radius: 0px 20px 20px 0px;
 }
 
@@ -342,8 +372,9 @@ h1:focus {
     -webkit-appearance: none;
     -moz-appearance: none;
     text-indent: 1px;
-    position:relative;
+    position: relative;
 }
+
     .signUp select + img {
         position: absolute;
         content: "";
@@ -352,17 +383,17 @@ h1:focus {
         right: 20px;
     }
 
-    .signUp select option{
-        color:#000;
+    .signUp select option {
+        color: #000;
     }
 
 
 
 
 
-    [data-sidebar=dark] body {
-        background-color: #202527;
-    }
+[data-sidebar=dark] body {
+    background-color: #202527;
+}
 
 [data-sidebar=light] body {
     background-color: #ffffff;
@@ -375,6 +406,7 @@ h1:focus {
 [data-sidebar=light] #headbar {
     background-color: #ffffff;
 }
+
 .display-options {
     max-width: 20% !important;
     margin-left: 79% !important;
@@ -456,34 +488,39 @@ h1:focus {
     width: calc(25.33% - 20px);
     height: 45vh;
 }
-@media(min-width:1200px) and (max-width:1499px){
+
+@media(min-width:1200px) and (max-width:1499px) {
 
     .signIn {
         transform: scale(0.7);
     }
 }
+
 @media(max-width:1199px) {
-    .signIn  {
-        transform:scale(0.5);
+    .signIn {
+        transform: scale(0.5);
     }
-   
 }
 
 .signUp select,
 .signUp input {
     margin-bottom: 20px;
 }
+
 .form-switch .form-check-input {
     width: 2.5em !important;
     height: 20px;
 }
+
 .dropdown-item:focus, .dropdown-item:hover {
     color: #25E2A2 !important;
 }
+
 .content {
     height: calc(100vh - 58px);
 }
-@media(min-height:600px) and (max-height:900px){
+
+@media(min-height:600px) and (max-height:900px) {
     .four-chart {
         width: 46vw;
     }
@@ -492,14 +529,15 @@ h1:focus {
         width: 46vw;
         height: 88vh;
     }
+
     .content {
         height: calc(100vh - 56px);
     }
+
     .single-chart {
         width: 95vw;
         height: 88vh;
     }
-
 }
 
 .loading-wave {
@@ -560,8 +598,8 @@ h1:focus {
 }
 
 .chart-box .chart-container {
-        height: 100%;
-        width: 100%;
+    height: 100%;
+    width: 100%;
 }
 
 .chart-height-50 {
@@ -572,10 +610,11 @@ h1:focus {
     height: calc(100vh - 80px);
 }
 
-.login-image{
-    width:722px;
-    height:100%;
+.login-image {
+    width: 722px;
+    height: 100%;
 }
+
 ::-ms-reveal {
     filter: invert(100%);
 }

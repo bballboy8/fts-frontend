@@ -14,8 +14,9 @@
                         <InputText id="email" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Email" autocomplete="off" aria-autocomplete="none" placeholder="Email" />
                         <ValidationMessage For="@(() => _loginDto.Email)" />
                     </div>
-                    <div class="login-input">
-                        <InputText id="password" type="password" class="mb-3 mb-xl-4" @bind-Value="_loginDto.Password" placeholder="Password" autocomplete="new-password" aria-autocomplete="none" />
+                    <div class="login-input password-input">
+                        <InputText id="password" type="password" class="mb-3 mb-xl-4 txt-password-input" @bind-Value="_loginDto.Password" placeholder="Password" autocomplete="new-password" aria-autocomplete="none" />
+                        <i class="password-toggle bi bi-eye"></i>
                         <ValidationMessage For="@(() => _loginDto.Password)" />
                     </div>
                     @if (ShowAuthError)
@@ -33,7 +34,7 @@
         </div>
         <div class="col-6 col-xl-7">
             <div class="login-image">
-            <img src="../images/login-bg.png" Alt="login-bg" class="login-img" />
+                <img src="../images/login-bg.png" Alt="login-bg" class="login-img" />
             </div>
         </div>
     </div>
