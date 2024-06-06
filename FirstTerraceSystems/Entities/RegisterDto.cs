@@ -18,6 +18,7 @@ namespace FirstTerraceSystems.Entities
         public string user_id { get; set; } 
 
         [Required(ErrorMessage = "Email is required.")]
+        [RegularExpression(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", ErrorMessage = "Invalid email format.")]
         public string email { get; set; }
         public string company_name { get; set; }
         public string phone { get; set; }
