@@ -10,10 +10,72 @@ function addChart(charContainerId) {
             borderColor: "#5B6970",
         },
         rangeSelector: {
-            selected: 4,
+            buttons: [
+                {
+                    type: 'minute',
+                    count: 1,
+                    text: '1M'
+                },
+                {
+                    type: 'minute',
+                    count: 3,
+                    text: '3M'
+                },
+                {
+                    type: 'minute',
+                    count: 30,
+                    text: '30M'
+                },
+                {
+                    type: 'hour',
+                    count: 1,
+                    text: '1H'
+                },
+                {
+                    type: 'day',
+                    count: 1,
+                    text: '1D'
+                },
+                {
+                    type: 'day',
+                    count: 3,
+                    text: '3D'
+                },
+                //{
+                //    type: 'month',
+                //    count: 6,
+                //    text: '6m'
+                //},
+                //{
+                //    type: 'all',
+                //    text: 'All'
+                //}
+            ],
+            //selected: 0,
             inputEnabled: false,
             buttonTheme: {
-                visibility: 'hidden'
+                //visibility: 'hidden',
+                fill: '#272C2F', // Background color of the buttons
+                stroke: '#272C2F', // Border color of the buttons
+                style: {
+                    color: '#FFFFFF', // Text color of the buttons
+                    //fontWeight: 'bold' // Bold font weight
+                },
+                states: {
+                    hover: {
+                        fill: '#5B6970', // Background color when hovered
+                        //style: {
+                        //    color: '#000000' // Text color when hovered
+                        //}
+                    },
+                    select: {
+                        fill: '#272C2F', // Background color when selected
+                        style: {
+                            color: '#FFFFFF', // Text color when selected
+                            fontWeight: 'bold'
+                        }
+                    }
+                }
             },
             labelStyle: {
                 visibility: 'hidden'
@@ -124,12 +186,30 @@ function addChart(charContainerId) {
                     y: 0,
                     enabled: true,
                     className: 'btn btn-sm',
+                    theme: {
+                        fill: '#5B6970', // Set the button background color
+                        stroke: '#5B6970', // Set the button border color
+                        //'stroke-width': 2, // Set the button border width
+                        style: {
+                            color: '#FFFFFF', // Set the button text color
+                            //fontWeight: 'bold' // Set the button text font weight
+                        },
+                        states: {
+                            hover: {
+                                fill: '#5B6970', // Set the button background color on hover
+                                stroke: '#5B6970', // Set the button border color on hover
+                                //style: {
+                                //    color: '#ffffff' // Set the button text color on hover
+                                //}
+                            },
+                        }
+                    },
                     text: 'XNYS:SPX &nbsp &nbsp ✖',
                     onclick: function (e) {
                         removeChart(this);
-                    }
+                    },
                 }
-            }
+            },
         },
         navigation: {
             buttonOptions: {
@@ -147,13 +227,12 @@ function addChart(charContainerId) {
 function removeChart(chart) {
 
     if ($("#chartList .chart-box").length == 1)
-        return; 
+        return;
 
     $(chart.renderTo).closest(".chart-box").remove();
     chart.destroy();
     var totalCharts = $("#chartList .chart-box").length;
 
-    debugger;
     var cssClass = "col-12";
     if (totalCharts == 1) {
         cssClass = "col-12";
@@ -212,7 +291,7 @@ function addChartBox(totalCharts, chartIndx) {
     addChart(chartContainerId);
 
 
-   
+
 
     if (totalCharts > 1) {
         addChartDblClickListener(chartContainerId);
