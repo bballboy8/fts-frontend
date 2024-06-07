@@ -74,7 +74,12 @@ function addChart(charContainerId) {
                             color: '#FFFFFF', // Text color when selected
                             fontWeight: 'bold'
                         }
-                    }
+                    },
+                    //disabled: {
+                    //    style: {
+                    //        color: '#CCCCCC', // Text color when disabled
+                    //    }
+                    //}
                 }
             },
             labelStyle: {
@@ -226,19 +231,23 @@ function addChart(charContainerId) {
 
 function removeChart(chart) {
 
-    if ($("#chartList .chart-box").length == 1)
+    if ($("#chartList .chart-box").length == 1) 
         return;
 
-    $(chart.renderTo).closest(".chart-box").remove();
+    var chartContaner = $(chart.renderTo);
+    var chartId = chartContaner.data("chart-id");
+    $(".chart-box.chart-box-" + chartId).remove();
+    $("#popup-chart-" + chartId).remove();
+
     chart.destroy();
     var totalCharts = $("#chartList .chart-box").length;
 
     var cssClass = "col-12";
     if (totalCharts == 1) {
         cssClass = "col-12";
-        $("#chartList").sortable({
-            disabled: true
-        });
+        $("#chartList").sortable({ disabled: true });
+        if (!$(".chart-container").hasClass("chart-popup"))
+            $(".chart-container").off("dblclick");
     }
     else if (totalCharts <= 4) {
         cssClass = "col-6";
@@ -276,9 +285,10 @@ function addChartBox(totalCharts, chartIndx) {
     else if (totalCharts == 8) {
         cssClass = "col-3";
     }
-    var chartContainerId = "chart-" + chartIndx
-    var chartBox = $(`<div class="chart-box ${cssClass}"><div class="chart-container" id=${chartContainerId}></div></div>`);
+    var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
+    var chartBox = $(`<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $("#chartList").append(chartBox);
+
     if (totalCharts > 2) {
         $("#chartList .chart-box").removeClass('chart-height-100');
         $("#chartList .chart-box").addClass('chart-height-50');
@@ -290,11 +300,46 @@ function addChartBox(totalCharts, chartIndx) {
 
     addChart(chartContainerId);
 
-
-
-
     if (totalCharts > 1) {
-        addChartDblClickListener(chartContainerId);
+        //addChartDblClickListener(chartContainerId);
+
+
+        //chartBox.resizable();
+        //chartBox.draggable({
+        //    containment: "#chartList",
+        //    start: function (event, ui) {
+        //        $("#chartList .chart-box").each(function (e, i) {
+        //            $(this).css({ zIndex: 0 });
+        //        });
+        //        $(this).css({ zIndex: 1 });
+        //    },
+        //    //stop: function (event, ui) {
+        //    //}
+        //});
+
+        $(".chart-container", chartBox).on("dblclick", function () {
+            if ($(this).hasClass("chart-popup")) {
+                $(this).removeClass("chart-popup");
+                var chartIndx = $(this).data("chart-id");
+                $(this).appendTo($(".chart-box-" + chartIndx));
+                $("#popup-chart-" + chartIndx).remove();
+            }
+            else {
+                if ($("#chartList .chart-box").length == 1) {
+                    $(".chart-container", chartBox).off("dblclick");
+                    return;
+                }
+                    
+
+                $(this).addClass("chart-popup");
+                var chartIndx = $(this).data("chart-id");
+                var opUpChart = $(`<div id="popup-chart-${chartIndx}" style="height:50vh;width:50vw;position:absolute;top:10Vh;left:10vw;"></div>`);
+                $(this).appendTo(opUpChart);
+                opUpChart.resizable();
+                opUpChart.draggable();
+                $("body").append(opUpChart);
+            }
+        });
     }
 
 }
@@ -311,9 +356,7 @@ function createDashboard(totalCharts) {
     }
 
     if (totalCharts != 1) {
-        $("#chartList").sortable({
-            disabled: false
-        });
+        $("#chartList").sortable({ disabled: false });
     }
 }
 async function LoadData() {

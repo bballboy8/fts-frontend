@@ -597,7 +597,7 @@ h1:focus {
     z-index: 9999;
 }
 
-.chart-box .chart-container {
+.chart-container {
     height: 100%;
     width: 100%;
 }
