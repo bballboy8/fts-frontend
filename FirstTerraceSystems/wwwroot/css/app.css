@@ -618,3 +618,6 @@ h1:focus {
 ::-ms-reveal {
     filter: invert(100%);
 }
+.highcharts-button-box:hover {
+    fill: #5b6970;
+}
