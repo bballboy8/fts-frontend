@@ -14,22 +14,22 @@ function addChart(charContainerId) {
                 {
                     type: 'minute',
                     count: 1,
-                    text: '1M'
+                    text: '1m'
                 },
                 {
                     type: 'minute',
                     count: 3,
-                    text: '3M'
+                    text: '3m'
                 },
                 {
                     type: 'minute',
                     count: 30,
-                    text: '30M'
+                    text: '30m'
                 },
                 {
                     type: 'hour',
                     count: 1,
-                    text: '1H'
+                    text: '1h'
                 },
                 {
                     type: 'day',
@@ -38,8 +38,8 @@ function addChart(charContainerId) {
                 },
                 {
                     type: 'day',
-                    count: 3,
-                    text: '3D'
+                    count: 2,
+                    text: '2D'
                 },
                 //{
                 //    type: 'month',
