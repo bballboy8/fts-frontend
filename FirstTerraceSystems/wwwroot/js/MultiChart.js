@@ -38,8 +38,8 @@ function addChart(charContainerId) {
                 },
                 {
                     type: 'day',
-                    count: 2,
-                    text: '2D'
+                    count: 3,
+                    text: '3D'
                 },
                 //{
                 //    type: 'month',
