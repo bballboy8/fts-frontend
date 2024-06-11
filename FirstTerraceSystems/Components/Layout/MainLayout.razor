@@ -6,16 +6,18 @@
 @inject NavigationManager NavigationManager
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject StateContainerService StateContainer
+
 <div class="page">
     @* <div id="pageLoader">
-        <div class="loading-wave">
-            <div class="loading-bar"></div>
-            <div class="loading-bar"></div>
-            <div class="loading-bar"></div>
-            <div class="loading-bar"></div>
-        </div>
+    <div class="loading-wave">
+    <div class="loading-bar"></div>
+    <div class="loading-bar"></div>
+    <div class="loading-bar"></div>
+    <div class="loading-bar"></div>
     </div>
- *@
+    </div>
+    *@
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
         {
@@ -62,6 +64,7 @@
         </article>
     </main>
 </div>
+
 <Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
 
 
@@ -69,7 +72,16 @@
     private bool IsDarkMode = true;
     private void ToggleDarkMode(bool newValue)
     {
+        var allJSRuntimes = StateContainer.JSRuntimes;
+
         IsDarkMode = newValue;
+        if (allJSRuntimes != null)
+        {
+            foreach (var jsRuntime in allJSRuntimes)
+            {
+                jsRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
+            }
+        }
         JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
     }
 
@@ -102,10 +114,39 @@
         StateHasChanged();
     }
 
-    [JSInvokable]
-    public async Task LoadTemplate(int totalCharts)
+    private async Task LoadTemplate(int totalCharts)
     {
         await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts);
+
+
+        for (int index = 1; index < Application.Current!.Windows.Count; index++)
+        {
+            var window = Application.Current!.Windows[index];
+            Application.Current?.CloseWindow(window);
+        }
+    }
+
+
+    [JSInvokable]
+    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, object chartId, object ohlc, object volume, object groupingUnits)
+    {
+
+        // await jsObject.InvokeVoidAsync("changeBackgroundColor", false);
+
+        // await jsObject.InvokeVoidAsync("popUpChart", "log");
+        var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, groupingUnits);
+        var window = new Window(chartWindow);
+
+        // window.Destroying += (sender, e) =>
+        // {
+        //     Console.WriteLine("Destroying");
+        // };
+
+        Application.Current?.OpenWindow(window);
+        // Application.Current?.CloseWindow(window);
+
+        // return Task.FromResult(chart.ToString());
+        return chartId;
     }
 
 }

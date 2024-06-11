@@ -30,6 +30,8 @@ namespace FirstTerraceSystems
             builder.Services.AddAuthorizationCore();
             builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+            builder.Services.AddSingleton<StateContainerService>();
+
             return builder.Build();
         }
     }

@@ -1,0 +1,41 @@
+﻿@inject IJSRuntime JSRuntime
+@inject StateContainerService StateContainer
+
+<div @ref="ER_ChartWindow"></div>
+
+@code {
+
+
+    [Parameter]
+    public object? ChartIndx { get; set; }
+
+    [Parameter]
+    public object? OhlcData { get; set; }
+
+    [Parameter]
+    public object? VolumeData { get; set; }
+
+    [Parameter]
+    public object? GroupingUnits { get; set; }
+
+    private ElementReference ER_ChartWindow { get; set; }
+
+    protected override void OnInitialized()
+    {
+        StateContainer.AddJSRuntimes(JSRuntime);
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("popoutChartWindow", ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits);
+        }
+    }
+
+    public void Dispose()
+    {
+        
+    }
+}

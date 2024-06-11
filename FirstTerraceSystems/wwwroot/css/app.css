@@ -621,3 +621,16 @@ h1:focus {
 .highcharts-button-box:hover {
     fill: #5b6970;
 }
+
+.btn-drag {
+    cursor: move;
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+}
+
+    .btn-drag:active {
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
+    }
