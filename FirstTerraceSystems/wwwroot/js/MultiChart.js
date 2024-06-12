@@ -458,10 +458,8 @@ function createDashboard(totalCharts) {
 //    }
 //}
 
-var test;
+
 function LoadData(resultData) {
-    test = resultData;
-    console.log(resultData);
     ohlc = []; volume = [];
     resultData.forEach(item => {
         var ohlcPoint = { x: new Date(item.t).getTime(), y: item.o, color: 'green' };
