@@ -1,8 +1,44 @@
 ﻿
-var ohlc = [], volume = [], dataLength = 0, groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
-
-function addChart(charContainerId, ohlc, volume, groupingUnits, isDragable = true) {
+//var ohlc = [], volume = [], dataLength = 0, groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
+var ohlc = [], volume = [], dataLength = 0;
+var groupingUnits = [
+    [
+        'millisecond', // unit name
+        [1, 2, 5, 10, 20, 25, 50, 100, 200, 500] // allowed multiples
+    ],
+    [
+        'second',
+        [1, 2, 5, 10, 15, 30]
+    ],
+    [
+        'minute',
+        [1, 2, 5, 10, 15,]
+    ],
+    [
+        'hour',
+        [1, 2, 3, 4, 6, 8, 12]
+    ],
+    [
+        'day',
+        [1]
+    ],
+    [
+        'week',
+        [1]
+    ],
+    [
+        'month',
+        [1, 3, 6]
+    ],
+    [
+        'year',
+        null
+    ]
+];
     
+
+function addChart(charContainerId, pOHLC, pVolume, groupingUnits, isDragable = true) {
+
     Highcharts.stockChart(charContainerId, {
         chart: {
             backgroundColor: backgroundColor,
@@ -148,13 +184,14 @@ function addChart(charContainerId, ohlc, volume, groupingUnits, isDragable = tru
         series: [
             {
                 name: 'AAPL',
-                data: ohlc.map(function (point, i) {
-                    if (i === 0 || point[1] > ohlc[i - 1][1]) {
-                        return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
-                    } else {
-                        return { x: point[0], y: point[1], color: 'red' }; // Lower
-                    }
-                }),
+                //data: ohlc.map(function (point, i) {
+                //    if (i === 0 || point[1] > ohlc[i - 1][1]) {
+                //        return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
+                //    } else {
+                //        return { x: point[0], y: point[1], color: 'red' }; // Lower
+                //    }
+                //}),
+                data: pOHLC,
                 color: '#C01620', // Color for the fall
                 upColor: '#16C05A', // Color for the rise
                 lineWidth: 0,
@@ -174,7 +211,7 @@ function addChart(charContainerId, ohlc, volume, groupingUnits, isDragable = tru
             {
                 type: 'column',
                 name: 'Volume',
-                data: volume,
+                data: pVolume,
                 yAxis: 1,
                 dataGrouping: {
                     units: groupingUnits
@@ -209,7 +246,7 @@ function addChart(charContainerId, ohlc, volume, groupingUnits, isDragable = tru
                             },
                         }
                     },
-                    text: 'XNYS:SPX &nbsp &nbsp ✖',
+                    text: 'XNYS:AAPL &nbsp &nbsp ✖',
                     //onclick: function (e) {
                     //    removeChart(this);
                     //},
@@ -464,18 +501,35 @@ function createDashboard(totalCharts) {
     }
 }
 
-async function LoadData() {
-    if (dataLength == 0) {
-        const data = await fetch(
-            'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
-        ).then(response => response.json());
 
-        dataLength = data.length;
+//async function LoadData() {
+//    if (dataLength == 0) {
+//        const data = await fetch(
+//            'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
+//        ).then(response => response.json());
 
-        for (let i = 0; i < dataLength; i += 1) {
-            ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
-            volume.push([data[i][0], data[i][5]]);
+//        dataLength = data.length;
+
+//        for (let i = 0; i < dataLength; i += 1) {
+//            ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
+//            volume.push([data[i][0], data[i][5]]);
+//        }
+//    }
+//}
+
+
+function LoadData(resultData) {    
+    //ohlc = data.map(item => [new Date(item.t).getTime(), item.o, item.h, item.l, item.c]);
+    //volume = data.map(item => [new Date(item.t).getTime(), item.v]);
+    ohlc = []; volume = [];
+    resultData.forEach(item => {
+        var ohlcPoint = { x: new Date(item.t).getTime(), y: item.o, color: 'green' };
+        var volumPoint = { x: new Date(item.t).getTime(), y: item.v, color: 'green' };
+        if (item.o < item.c) {
+            ohlcPoint.color = 'red';
+            volumPoint.color = 'red';
         }
-    }
+        ohlc.push(ohlcPoint);
+        volume.push(volumPoint);
+    }); 
 }
-
