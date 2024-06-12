@@ -1,17 +1,32 @@
 ﻿@page "/multiChats"
+@using FirstTerraceSystems.Entities.Nasdaq
+@inject NsdaqService NsdaqService
 
-    <div class="container-fluid">
-        <div id="chartList" class="row"></div>
-    </div>
+<div class="container-fluid">
+    <div id="chartList" class="row"></div>
+</div>
 
 
 @code
 {
+
+    private IEnumerable<EquitiesBarModal>? EquitiesBars { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var To = DateTime.Now;
+        var from = To.AddDays(-1);
+        from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
+
+        EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (EquitiesBars != null)
         {
-            await JSRuntime.InvokeVoidAsync("LoadData");
+            await JSRuntime.InvokeVoidAsync("LoadData", EquitiesBars);
+            // await JSRuntime.InvokeVoidAsync("LoadData");
             await JSRuntime.InvokeVoidAsync("createDashboard", 1);
         }
     }
