@@ -20,7 +20,7 @@ var groupingUnits = [
     ],
     [
         'day',
-        [1]
+        [1,3]
     ],
     [
         'week',
@@ -35,9 +35,9 @@ var groupingUnits = [
         null
     ]
 ];
-    
 
-function addChart(charContainerId, pOHLC, pVolume, groupingUnits, isDragable = true) {
+
+function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = true) {
 
     Highcharts.stockChart(charContainerId, {
         chart: {
@@ -183,14 +183,7 @@ function addChart(charContainerId, pOHLC, pVolume, groupingUnits, isDragable = t
         },
         series: [
             {
-                name: 'AAPL',
-                //data: ohlc.map(function (point, i) {
-                //    if (i === 0 || point[1] > ohlc[i - 1][1]) {
-                //        return { x: point[0], y: point[1], color: 'green' }; // Higher or first point
-                //    } else {
-                //        return { x: point[0], y: point[1], color: 'red' }; // Lower
-                //    }
-                //}),
+                name: 'AAPL',                
                 data: pOHLC,
                 color: '#C01620', // Color for the fall
                 upColor: '#16C05A', // Color for the rise
@@ -214,7 +207,7 @@ function addChart(charContainerId, pOHLC, pVolume, groupingUnits, isDragable = t
                 data: pVolume,
                 yAxis: 1,
                 dataGrouping: {
-                    units: groupingUnits
+                    units: pGroupingUnits
                 },
                 color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
                 upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
@@ -247,14 +240,9 @@ function addChart(charContainerId, pOHLC, pVolume, groupingUnits, isDragable = t
                         }
                     },
                     text: 'XNYS:AAPL &nbsp &nbsp ✖',
-                    //onclick: function (e) {
-                    //    removeChart(this);
-                    //},
-                    ...(isDragable ? {
-                        onclick: function (e) {
-                            removeChart(this);
-                        }
-                    } : {})
+                    onclick: function (e) {
+                        if (isDragable) removeChart(this);
+                    },                    
                 },
                 dragButton: {
                     x: 360,
@@ -279,8 +267,6 @@ function addChart(charContainerId, pOHLC, pVolume, groupingUnits, isDragable = t
                     text: '✥',
                     onclick: async function (e) {
                         var jsObjectReference = DotNet.createJSObjectReference(window);
-                        console.log(this);
-
                         var chartId = $(this.renderTo).data("chart-id");
                         removeChart(this);
                         await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits)
@@ -317,7 +303,7 @@ function removeChart(chart) {
     var cssClass = "col-12";
     if (totalCharts == 1) {
         cssClass = "col-12";
-        $("#chartList").sortable({ disabled: true });
+        //$("#chartList").sortable({ disabled: true });
         if (!$(".chart-container").hasClass("chart-popup"))
             $(".chart-container").off("dblclick");
     }
@@ -372,44 +358,15 @@ function addChartBox(totalCharts, chartIndx) {
     addChart(chartContainerId, ohlc, volume, groupingUnits);
 
     if (totalCharts > 1) {
-        //addChartDblClickListener(chartContainerId);
-
-
-        //chartBox.resizable();
-        //chartBox.draggable({
-        //    containment: "#chartList",
-        //    start: function (event, ui) {
-        //        $("#chartList .chart-box").each(function (e, i) {
-        //            $(this).css({ zIndex: 0 });
-        //        });
-        //        $(this).css({ zIndex: 1 });
-        //    },
-        //    //stop: function (event, ui) {
-        //    //}
-        //});
-
-        $(".chart-container", chartBox).on("dblclick", function () {
-            if ($(this).hasClass("chart-popup")) {
-                $(this).removeClass("chart-popup");
-                var chartIndx = $(this).data("chart-id");
-                $(this).appendTo($(".chart-box-" + chartIndx));
-                $("#popup-chart-" + chartIndx).remove();
+        $(".chart-container", chartBox).on("dblclick", async function () {
+            var eleData = $(this).data();
+            var chartId = eleData.chartId;
+            var jsObjectReference = DotNet.createJSObjectReference(window);            
+            if (eleData.highchartsChart >= 0) {
+                var chart = Highcharts.charts[eleData.highchartsChart]
+                if (chart) removeChart(chart);
             }
-            else {
-                if ($("#chartList .chart-box").length == 1) {
-                    $(".chart-container", chartBox).off("dblclick");
-                    return;
-                }
-
-
-                $(this).addClass("chart-popup");
-                var chartIndx = $(this).data("chart-id");
-                var opUpChart = $(`<div id="popup-chart-${chartIndx}" style="height:50vh;width:50vw;position:absolute;top:10Vh;left:10vw;"></div>`);
-                $(this).appendTo(opUpChart);
-                opUpChart.resizable();
-                opUpChart.draggable();
-                $("body").append(opUpChart);
-            }
+            await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
         });
     }
 }
@@ -461,27 +418,15 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
 
     addChart(chartContainerId, ohlc, volume, groupingUnits);
 
-    $(".chart-container", chartBox).on("dblclick", function () {
-        if ($(this).hasClass("chart-popup")) {
-            $(this).removeClass("chart-popup");
-            var chartIndx = $(this).data("chart-id");
-            $(this).appendTo($(".chart-box-" + chartIndx));
-            $("#popup-chart-" + chartIndx).remove();
+    $(".chart-container", chartBox).off("dblclick").on("dblclick", async function () {
+        var eleData = $(this).data();
+        var chartId = eleData.chartId;
+        var jsObjectReference = DotNet.createJSObjectReference(window);
+        if (eleData.highchartsChart >= 0) {
+            var chart = Highcharts.charts[eleData.highchartsChart]
+            if (chart) removeChart(chart);
         }
-        else {
-            if ($("#chartList .chart-box").length == 1) {
-                $(".chart-container", chartBox).off("dblclick");
-                return;
-            }
-
-            $(this).addClass("chart-popup");
-            var chartIndx = $(this).data("chart-id");
-            var opUpChart = $(`<div id="popup-chart-${chartIndx}" style="height:50vh;width:50vw;position:absolute;top:10Vh;left:10vw;"></div>`);
-            $(this).appendTo(opUpChart);
-            opUpChart.resizable();
-            opUpChart.draggable();
-            $("body").append(opUpChart);
-        }
+        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
     });
 }
 
@@ -494,10 +439,6 @@ function createDashboard(totalCharts) {
         for (var indx = 1; indx <= Number(totalCharts); indx++) {
             addChartBox(totalCharts, indx);
         }
-    }
-
-    if (totalCharts != 1) {
-        $("#chartList").sortable({ disabled: false });
     }
 }
 
@@ -517,10 +458,10 @@ function createDashboard(totalCharts) {
 //    }
 //}
 
-
-function LoadData(resultData) {    
-    //ohlc = data.map(item => [new Date(item.t).getTime(), item.o, item.h, item.l, item.c]);
-    //volume = data.map(item => [new Date(item.t).getTime(), item.v]);
+var test;
+function LoadData(resultData) {
+    test = resultData;
+    console.log(resultData);
     ohlc = []; volume = [];
     resultData.forEach(item => {
         var ohlcPoint = { x: new Date(item.t).getTime(), y: item.o, color: 'green' };
@@ -531,5 +472,5 @@ function LoadData(resultData) {
         }
         ohlc.push(ohlcPoint);
         volume.push(volumPoint);
-    }); 
+    });
 }
