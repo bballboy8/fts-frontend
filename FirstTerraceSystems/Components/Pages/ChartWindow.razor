@@ -22,7 +22,7 @@
 
     protected override void OnInitialized()
     {
-        StateContainer.AddJSRuntimes(JSRuntime);
+        StateContainerService.AddChartPage(new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime });
         base.OnInitialized();
     }
 
@@ -30,12 +30,8 @@
     {
         if (firstRender)
         {
+            await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
             await JSRuntime.InvokeVoidAsync("popoutChartWindow", ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits);
         }
-    }
-
-    public void Dispose()
-    {
-        
     }
 }

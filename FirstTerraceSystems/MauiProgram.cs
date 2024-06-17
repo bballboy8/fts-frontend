@@ -21,6 +21,7 @@ namespace FirstTerraceSystems
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddBlazorBootstrap();
+            builder.Services.AddBlazorBootstrap();
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://52.0.33.126:8000/") });
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

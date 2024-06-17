@@ -7,17 +7,11 @@
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject StateContainerService StateContainer
+@inject ToastService ToastService
+
+<Toasts class="p-3" Messages="Messages" Placement="ToastsPlacement.BottomCenter" />
 
 <div class="page">
-    @* <div id="pageLoader">
-    <div class="loading-wave">
-    <div class="loading-bar"></div>
-    <div class="loading-bar"></div>
-    <div class="loading-bar"></div>
-    <div class="loading-bar"></div>
-    </div>
-    </div>
-    *@
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
         {
@@ -29,13 +23,14 @@
                         DISPLAY OPTIONS
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a role="button" class="dropdown-item">Save layout</a>
-                        <a role="button" class="dropdown-item">Load layout</a>
+                        <a role="button" class="dropdown-item" @onclick="() => SaveLayout()">Save Layout</a>
+                        @* <a role="button" class="dropdown-item">Load layout</a> *@
 
                         <div class="dropdown dropend">
-                            <a class="dropdown-item dropdown-toggle sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load template</a>
+                            <a class="dropdown-item dropdown-toggle sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load Layout</a>
                             <div class="dropdown-menu" id="load-template-dropdown">
 
+                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(5)"><span style="margin-top: -7px;"><span class="default-chart-2-grid"> <span class="default-chart-2"></span> <span class="default-chart-2"></span></span> <span class="default-chart-3-grid"><span class="default-chart-3"></span> <span class="default-chart-3"></span> <span class="default-chart-3"></span> </span></span> Default Layout  </a>
                                 <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(1)"><span class="chart-1"></span> 1 chart</a>
                                 <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(2)"><span class="main-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span>2 charts</a>
                                 <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(4)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-2"></span> <span class="chart-2"></span></span> <span class="chart-3-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span></span>4 charts</a>
@@ -69,20 +64,20 @@
 
 
 @code {
-    private bool IsDarkMode = true;
-    private void ToggleDarkMode(bool newValue)
-    {   
-        var allJSRuntimes = StateContainer.JSRuntimes;
 
-        IsDarkMode = newValue;
-        if (allJSRuntimes != null)
+    private List<ToastMessage> Messages { get; set; } = new();
+    private bool IsDarkMode = true;
+    private void ToggleDarkMode(bool value)
+    {
+        IsDarkMode = value;
+
+        foreach (var chartPage in StateContainerService.ChartPages)
         {
-            foreach (var jsRuntime in allJSRuntimes)
-            {
-                jsRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
-            }
+            chartPage?.JSRuntime?.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
         }
+
         JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
+        StateContainerService.IsDarkMode = IsDarkMode;
     }
 
     protected override async Task OnInitializedAsync()
@@ -114,14 +109,24 @@
         StateHasChanged();
     }
 
+    private async Task SaveLayout()
+    {
+        await JSRuntime.InvokeVoidAsync("saveLayout");
+        ShowMessage("Layout Saved!");
+    }
+
     private async Task LoadTemplate(int totalCharts)
     {
         await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts);
 
+        StateContainerService.IsAllowCloseAllWindows = true;
 
-        for (int index = 1; index < Application.Current!.Windows.Count; index++)
+
+        var parentWindow = Application.Current!.Windows[0];
+        var needToCloseWindows = Application.Current.Windows.OfType<Window>().Where(w => w != parentWindow).ToList();
+
+        foreach (var window in needToCloseWindows)
         {
-            var window = Application.Current!.Windows[index];
             Application.Current?.CloseWindow(window);
         }
     }
@@ -130,23 +135,17 @@
     [JSInvokable]
     public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, object chartId, object ohlc, object volume, object groupingUnits)
     {
-
-        // await jsObject.InvokeVoidAsync("changeBackgroundColor", false);
-
-        // await jsObject.InvokeVoidAsync("popUpChart", "log");
+        StateContainerService.IsAllowCloseAllWindows = false;
         var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, groupingUnits);
         var window = new Window(chartWindow);
-
-        // window.Destroying += (sender, e) =>
-        // {
-        //     Console.WriteLine("Destroying");
-        // };
-
         Application.Current?.OpenWindow(window);
-        // Application.Current?.CloseWindow(window);
+        return await Task.FromResult(chartId);
+    }
 
-        // return Task.FromResult(chart.ToString());
-        return chartId;
+    private void ShowMessage(string message, ToastType toastType = ToastType.Success)
+    {
+        var toastMessage = new ToastMessage { Type = toastType, Message = message, };
+        Messages.Add(toastMessage);
     }
 
 }

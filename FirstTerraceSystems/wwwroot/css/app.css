@@ -602,12 +602,20 @@ h1:focus {
     width: 100%;
 }
 
+.chart-box {    
+    margin-bottom: var(--bs-gutter-x);
+}
+
 .chart-height-50 {
-    height: calc(50vh - 40px);
+    height: calc(50vh - 52px);
 }
 
 .chart-height-100 {
     height: calc(100vh - 80px);
+}
+
+.chart-height-33 {
+    height: calc(33.33vh - 42px);
 }
 
 .login-image {
@@ -618,9 +626,10 @@ h1:focus {
 ::-ms-reveal {
     filter: invert(100%);
 }
-/*.highcharts-button-box:hover {
+
+.highcharts-button-box:hover {
     fill: #5b6970;
-}*/
+}
 
 .btn-drag {
     cursor: move;

@@ -1,4 +1,5 @@
 using FirstTerraceSystems.Components.Pages;
+using FirstTerraceSystems.Services;
 using Microsoft.JSInterop;
 
 namespace FirstTerraceSystems;
@@ -47,7 +48,12 @@ public partial class ChartWindowPage : ContentPage
 
     protected override void OnDisappearing()
     {
-        _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits);
+        if (!StateContainerService.IsAllowCloseAllWindows)
+        {
+            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits);
+        }
+
+        StateContainerService.RemoveChartPage(_chartIndx.ToString());
         base.OnDisappearing();
     }
 }

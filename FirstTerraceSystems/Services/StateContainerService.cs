@@ -11,28 +11,24 @@ namespace FirstTerraceSystems.Services
 {
     internal class StateContainerService
     {
-        public List<IJSRuntime>? JSRuntimes { get; set; }
-        public List<ChartPageModal>? ChartPages { get; set; }
+        public static bool IsAllowCloseAllWindows { get; set; } = false;
+        public static bool IsDarkMode { get; set; } = true;
 
-        public void AddChartPage(ChartPageModal chartPage)
+        public static List<ChartPageModal> ChartPages { get; set; } = [];
+
+        public static void AddChartPage(ChartPageModal chartPage)
         {
-            ChartPages ??= new();
+            RemoveChartPage(chartPage.ChartId);
             ChartPages.Add(chartPage);
         }
 
-        public void RemoveChartPage(string chartId)
+        public static void RemoveChartPage(string? chartId)
         {
             var page = ChartPages?.FirstOrDefault(cp => cp.ChartId == chartId);
             if (page != null)
             {
                 ChartPages?.Remove(page);
             }
-        }
-
-        public void AddJSRuntimes(IJSRuntime jSRuntime)
-        {
-            JSRuntimes ??= new();
-            JSRuntimes.Add(jSRuntime);
         }
     }
 }
