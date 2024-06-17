@@ -15,7 +15,7 @@
     protected override async Task OnInitializedAsync()
     {
         var To = DateTime.Now;
-        var from = To.AddDays(-1);
+        var from = To.AddDays(-3);
         from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
 
         EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
@@ -26,8 +26,8 @@
         if (EquitiesBars != null)
         {
             await JSRuntime.InvokeVoidAsync("LoadData", EquitiesBars);
-            // await JSRuntime.InvokeVoidAsync("LoadData");
             await JSRuntime.InvokeVoidAsync("createDashboard", 1);
+            // await JSRuntime.InvokeVoidAsync("loadDashboard");
         }
     }
 }

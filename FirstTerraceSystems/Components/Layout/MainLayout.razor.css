@@ -31,10 +31,10 @@ main {
             text-decoration: underline;
         }
 
-        .top-row ::deep a:first-child {
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .top-row ::deep a:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
 @media (max-width: 640.98px) {
     .top-row {
@@ -75,6 +75,7 @@ main {
         padding-right: 1.5rem !important;
     }
 }
+
 .dropdown-submenu {
     position: relative;
 }
@@ -84,10 +85,12 @@ main {
         left: 100%;
         margin-top: -1px;
     }
+
 .dropdown-menu {
     background-color: transparent;
     margin-left: -3.6em !important;
 }
+
 .dropdown-item {
     color: #FFFFFF;
     font-size: 14px;
@@ -98,19 +101,24 @@ main {
     margin-top: 2px;
     background-color: #5B6970;
 }
+
     .dropdown-item:first-child {
         border-radius: 5px 5px 0px 0px;
     }
-.dropdown-item.dropdown-toggle.sub-menu {
-    border-radius: 0px 0px 5px 5px;
-}
-.dropdown-item:hover {
-    background-color: #5B6970;
-    text-decoration: none !important;
-}
-.dropend .dropdown-toggle::after{
+
+    .dropdown-item.dropdown-toggle.sub-menu {
+        border-radius: 0px 0px 5px 5px;
+    }
+
+    .dropdown-item:hover {
+        background-color: #5B6970;
+        text-decoration: none !important;
+    }
+
+.dropend .dropdown-toggle::after {
     margin-left: 90px;
 }
+
 .layout-btn {
     width: 154.18px;
     height: 30px;
@@ -122,6 +130,7 @@ main {
     font-weight: bold;
     color: #FFFFFF;
 }
+
 .chart-1 {
     display: inline-flex;
     width: 31px !important;
@@ -130,6 +139,7 @@ main {
     border-color: #FFFFFF;
     border-radius: 2px;
 }
+
 .chart-2 {
     display: inline-flex;
     width: 15px !important;
@@ -138,6 +148,7 @@ main {
     border-color: #FFFFFF;
     border-radius: 2px;
 }
+
 .chart-6 {
     display: inline-flex;
     width: 9px !important;
@@ -146,6 +157,7 @@ main {
     border-color: #FFFFFF;
     border-radius: 1px;
 }
+
 .chart-8 {
     display: inline-flex;
     width: 6px !important;
@@ -154,35 +166,43 @@ main {
     border-color: #FFFFFF;
     border-radius: 1px;
 }
-    .chart-3-grid {
-        display: inline-grid;
-        gap: 4px;
-    }
-#load-template-dropdown{
+
+.chart-3-grid {
+    display: inline-grid;
+    gap: 4px;
+}
+
+#load-template-dropdown {
     margin-left: 0px !important;
 }
+
 .chart-8-grid {
     display: inline-grid;
     gap: 2px;
 }
+
 .dropdown-item.load-template {
     display: inline-flex;
     gap: 10px;
 }
+
 .display-Option-clicked-color {
     background-color: #272C2F !important;
 }
+
 .market-time {
     width: 100px;
     height: 30px;
     padding: 5px 10px 5px 10px;
     gap: 10px;
 }
+
 .market-time-text {
     font-weight: 400;
     font-size: 13px;
     color: #FFFFFF;
 }
+
 .market-open {
     width: 114px;
     height: 30px;
@@ -197,4 +217,31 @@ main {
 
 [data-sidebar=light] .market-time-text {
     color: #202527;
+}
+
+.default-chart-2-grid {
+    display: inline-grid;
+    gap: 5px;
+}
+
+.default-chart-2 {
+    display: inline-flex;
+    width: 15px !important;
+    height: 6px !important;
+    border: 1px solid !important;
+    border-radius: 2px;
+}
+
+.default-chart-3 {
+    display: inline-flex;
+    border: 1px solid !important;
+    border-color: #FFFFFF;
+    border-radius: 2px;
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.default-chart-3-grid {
+    display: inline-grid;
+    gap: -1px;
 }
