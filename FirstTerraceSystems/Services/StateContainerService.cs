@@ -12,6 +12,7 @@ namespace FirstTerraceSystems.Services
     internal class StateContainerService
     {
         public static bool IsAllowCloseAllWindows { get; set; } = false;
+        public static bool IsMainPage { get; set; } = true;
         public static bool IsDarkMode { get; set; } = true;
 
         public static List<ChartPageModal> ChartPages { get; set; } = [];

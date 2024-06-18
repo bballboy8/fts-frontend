@@ -176,7 +176,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                 lineWidth: 0,
                 marker: {
                     enabled: true,
-                    radius: 4
+                    radius: 2
                 },
                 tooltip: {
                     valueDecimals: 2
@@ -415,7 +415,6 @@ function removeChart(chart) {
 
 
     if (totalCharts == 5) {
-        debugger
         var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
         var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
 
@@ -521,6 +520,9 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
     if (totalCharts == 1) {
         cssClass = "col-12";
     }
+    else if (totalCharts == 5) {
+        cssClass = "col-12";
+    }
     else if (totalCharts <= 4) {
         cssClass = "col-6";
     }
@@ -534,19 +536,35 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
     $("#chartList .chart-box").removeClass('col-3').removeClass('col-4').removeClass('col-6').removeClass('col-12');
     $("#chartList .chart-box").addClass(cssClass);
 
-
     var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
     var chartBox = $(`<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
 
     $("#chartList").append(chartBox);
 
-    //Add Chart Height Class
-    if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100');
+    if (totalCharts == 5) {
+        var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
+        var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
+
+        $("#chartList .chart-box").slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
+        $("#chartList .chart-box").appendTo(chartListCol1.find('#chartListCol1'));
+
+        $("#chartList").append(chartListCol1).append(chartListCol2);
+
+    } else {
+        $("#chartList .chart-box").appendTo('#chartList');
+        $("#chartListCol1").parent().remove();
+        $("#chartListCol2").parent().remove();
+    }
+
+    if (totalCharts == 5) {
+        $('#chartListCol1 .chart-box').removeClass('chart-height-100').removeClass('chart-height-33').addClass('chart-height-50');
+        $('#chartListCol2 .chart-box').removeClass('chart-height-100').removeClass('chart-height-50').addClass('chart-height-33');
+    } else if (totalCharts > 2) {
+        $("#chartList .chart-box").removeClass('chart-height-100').removeClass('chart-height-33');
         $("#chartList .chart-box").addClass('chart-height-50');
     }
     else {
-        $("#chartList .chart-box").removeClass('chart-height-50');
+        $("#chartList .chart-box").removeClass('chart-height-50').removeClass('chart-height-33');
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 

@@ -8,6 +8,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject StateContainerService StateContainer
 @inject ToastService ToastService
+@inject WindowsSerivce WindowsSerivce
 
 <Toasts class="p-3" Messages="Messages" Placement="ToastsPlacement.BottomCenter" />
 
@@ -92,6 +93,8 @@
             }
             else
             {
+
+                WindowsSerivce.RevertWindowResize();
                 await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
                 NavigationManager.NavigateTo("/multiChats");
                 // NavigationManager.NavigateTo("/stockchart");
@@ -136,6 +139,7 @@
     public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, object chartId, object ohlc, object volume, object groupingUnits)
     {
         StateContainerService.IsAllowCloseAllWindows = false;
+        StateContainerService.IsMainPage = false;
         var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, groupingUnits);
         var window = new Window(chartWindow);
         Application.Current?.OpenWindow(window);
