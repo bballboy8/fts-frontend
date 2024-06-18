@@ -1,5 +1,6 @@
 ﻿@inject IJSRuntime JSRuntime
 @inject StateContainerService StateContainer
+@inject WindowsSerivce WindowsSerivce
 
 <div @ref="ER_ChartWindow"></div>
 
@@ -22,6 +23,7 @@
 
     protected override void OnInitialized()
     {
+        WindowsSerivce.RevertWindowResize();
         StateContainerService.AddChartPage(new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime });
         base.OnInitialized();
     }
