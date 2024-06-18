@@ -1,5 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using FirstTerraceSystems.AuthProviders;
+using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Configuration;
@@ -27,13 +28,13 @@ namespace FirstTerraceSystems
             builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();
 #endif
+            builder.Services.AddScoped<SqlLiteService>();
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddAuthorizationCore();
             builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
             builder.Services.AddScoped<NsdaqService>();
             builder.Services.AddSingleton<StateContainerService>();
-
             return builder.Build();
         }
     }

@@ -1,13 +1,16 @@
 ﻿@using FirstTerraceSystems.AuthProviders
 @using FirstTerraceSystems.Entities
 @using Microsoft.AspNetCore.Components.Authorization
-
+@using System.Timers
 @inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject StateContainerService StateContainer
 @inject ToastService ToastService
+@using FirstTerraceSystems.Entities.Nasdaq
+@inject NsdaqService NsdaqService
+@inject SqlLiteService SqlLiteService
 
 <Toasts class="p-3" Messages="Messages" Placement="ToastsPlacement.BottomCenter" />
 
@@ -80,8 +83,10 @@
         StateContainerService.IsDarkMode = IsDarkMode;
     }
 
+    System.Timers.Timer timer;
     protected override async Task OnInitializedAsync()
     {
+
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
 
         if (!NavigationManager.Uri.ToLower().Contains("register"))
@@ -97,7 +102,6 @@
                 // NavigationManager.NavigateTo("/stockchart");
             }
         }
-
     }
 
     private async Task Logout()

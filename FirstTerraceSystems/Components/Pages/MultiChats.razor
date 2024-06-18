@@ -1,6 +1,7 @@
 ﻿@page "/multiChats"
 @using FirstTerraceSystems.Entities.Nasdaq
 @inject NsdaqService NsdaqService
+@inject SqlLiteService SqlliteService
 
 <div class="container-fluid">
     <div id="chartList" class="row"></div>
@@ -17,17 +18,19 @@
         var To = DateTime.Now;
         var from = To.AddDays(-3);
         from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
-
-        EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
+        var result = SqlliteService.GetSymbolicData();
+        if(result == null || string.IsNullOrEmpty(result.Data))
+        {
+            var data = await NsdaqService.GetSymbolicData(To, "AAPL");
+            SqlliteService.StoreSymbolicData(data);
+        }
+        //EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (EquitiesBars != null)
-        {
-            await JSRuntime.InvokeVoidAsync("LoadData", EquitiesBars);
-            await JSRuntime.InvokeVoidAsync("createDashboard", 1);
-            // await JSRuntime.InvokeVoidAsync("loadDashboard");
-        }
+        var symbolicdata = SqlliteService.GetSymbolicData();
+        await JSRuntime.InvokeVoidAsync("LoadData", symbolicdata.Data);
+        await JSRuntime.InvokeVoidAsync("createDashboard", 1);
     }
 }

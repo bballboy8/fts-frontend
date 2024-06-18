@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using FirstTerraceSystems.Entities.Nasdaq;
+
 namespace FirstTerraceSystems.Services
 {
     public class NsdaqService
@@ -16,7 +17,7 @@ namespace FirstTerraceSystems.Services
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
             });
-            _client.BaseAddress = new Uri("https://restapi.clouddataservice.nasdaq.com");
+            _client.BaseAddress = new Uri("http://52.0.33.126:8000/");
         }
 
 
@@ -95,6 +96,33 @@ namespace FirstTerraceSystems.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+                return null;
+            }
+        }
+
+        public async Task<string> GetSymbolicData(DateTime date, string symbol)
+        {
+            await EnsureTokenIsValidAsync();
+            string jsonData = JsonSerializer.Serialize(new  
+            {
+                target_date = date.ToString("yyyy-MM-d"),
+                symbol = symbol
+            });
+            var request = new HttpRequestMessage(HttpMethod.Post, "/nasdaq/get_data");
+
+            request.Headers.Add("Authorization", $"Bearer {_token}");
+
+            request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+            try
+            {
+                HttpResponseMessage response = await _client.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex2)
+            {
+                Exception ex = ex2;
                 Console.WriteLine(ex.Message);
                 return null;
             }

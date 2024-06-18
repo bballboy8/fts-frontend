@@ -616,14 +616,29 @@ function calculateZoomLevels(data) {
 }
 
 function LoadData(resultData) {
+    debugger
+    var result = JSON.parse(resultData);
+    var data = result.data;
+    dataLength = data.length;
+
+    //for (let i = 0; i < dataLength; i += 1) {
+    //    ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
+    //    volume.push([data[i][0], data[i][5]]);
+    //}
+
     ohlc = []; volume = [];
-    resultData.forEach(item => {
-        var ohlcPoint = { x: new Date(item.t).getTime(), y: item.o, color: 'green' };
-        var volumPoint = { x: new Date(item.t).getTime(), y: item.v, color: 'green' };
-        if (item.o < item.c) {
-            ohlcPoint.color = 'red';
-            volumPoint.color = 'red';
-        }
+    data.forEach(item => {
+        const date = new Date(item[1]);
+
+        // Add the timestamp (which is in milliseconds) to the date
+        const newDate = new Date(date.getTime() + item[0]);
+
+        var ohlcPoint = { x: newDate, y: item[4], color: 'green' };
+        var volumPoint = { x: newDate, y: item[4], color: 'green' };
+        //if (item.o < item.c) {
+        //    ohlcPoint.color = 'red';
+        //    volumPoint.color = 'red';
+        //}
         ohlc.push(ohlcPoint);
         volume.push(volumPoint);
     });
