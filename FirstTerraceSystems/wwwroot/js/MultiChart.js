@@ -281,31 +281,31 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         zoomChart(false, this);
                     },
                 },
-                minimizeButton: {
-                    align: 'right',
-                    verticalAlign: 'top',
-                    x: -60,
-                    enabled: isDragable,
-                    className: 'btn btn-sm',
-                    theme: {
-                        fill: '#272C2F',
-                        stroke: '#272C2F',
-                        style: {
-                            color: '#FFFFFF',
-                        },
-                        states: {
-                            hover: {
-                                fill: '#5B6970',
-                            },
-                        }
-                    },
-                    useHTML: true,
-                    text: '<i class="bi bi-dash-lg" tabindex="0"></i>',
-                    onclick: function (e) {
-                        console.log(e); 
-                        this.setSize(null, 100)
-                    },
-                },
+                //minimizeButton: {
+                //    align: 'right',
+                //    verticalAlign: 'top',
+                //    x: -60,
+                //    enabled: isDragable,
+                //    className: 'btn btn-sm',
+                //    theme: {
+                //        fill: '#272C2F',
+                //        stroke: '#272C2F',
+                //        style: {
+                //            color: '#FFFFFF',
+                //        },
+                //        states: {
+                //            hover: {
+                //                fill: '#5B6970',
+                //            },
+                //        }
+                //    },
+                //    useHTML: true,
+                //    text: '<i class="bi bi-dash-lg" tabindex="0"></i>',
+                //    onclick: function (e) {
+                //        console.log(e); 
+                //        this.setSize(null, 100)
+                //    },
+                //},
                 dragButton: {
                     align: 'right',
                     verticalAlign: 'top',
