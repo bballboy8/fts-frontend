@@ -79,16 +79,10 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                 fill: '#272C2F', // Background color of the buttons
                 stroke: '#272C2F', // Border color of the buttons
                 style: {
-                    color: '#FFFFFF', // Text color of the buttons
-                    //fontWeight: 'bold' // Bold font weight
+                    color: '#FFFFFF', // Text color of the buttons                    
                 },
                 states: {
-                    hover: {
-                        fill: '#5B6970', // Background color when hovered
-                        //style: {
-                        //    color: '#000000' // Text color when hovered
-                        //}
-                    },
+                    hover: { fill: '#5B6970' },
                     select: {
                         fill: '#272C2F', // Background color when selected
                         style: {
@@ -96,11 +90,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                             fontWeight: 'bold'
                         }
                     },
-                    //disabled: {
-                    //    style: {
-                    //        color: '#CCCCCC', // Text color when disabled
-                    //    }
-                    //}
                 }
             },
             labelStyle: {
@@ -145,27 +134,9 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             },
             //height: '65%',
             lineWidth: 2,
-            resize: {
-                enabled: true
-            }
-        }
-        /*{
-            labels: {
-                align: 'left',
-                x: 5,
-                style: {
-                    color: fontColor
-                }
-            },
-            top: '65%',
-            height: '35%',
-            offset: 0,
-            gridLineWidth: 0,
-            lineWidth: 2
-        }*/],
-        tooltip: {
-            split: true
-        },
+            resize: { enabled: true }
+        }],
+        tooltip: { split: true },
         series: [
             {
                 name: 'AAPL',
@@ -173,41 +144,23 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                 color: '#C01620', // Color for the fall
                 upColor: '#16C05A', // Color for the rise
                 lineWidth: 0,
-                marker: {
-                    enabled: true,
-                    radius: 4
-                },
-                tooltip: {
-                    valueDecimals: 2
-                },
-                states: {
-                    hover: {
-                        lineWidthPlus: 0
-                    }
-                }
+                marker: { enabled: true, radius: 4 },
+                tooltip: { valueDecimals: 2 },
+                states: { hover: { lineWidthPlus: 0 } }
             }
-            /*{
-                type: 'column',
-                name: 'Volume',
-                data: pVolume,
-                yAxis: 1,
-                dataGrouping: {
-                    units: pGroupingUnits
-                },
-                color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
-                upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
-            }*/
         ],
         exporting: {
             buttons: {
                 contextButton: {
                     enabled: false,
                 },
-                toggle1: {
-                    text: 'XNYS:AAPL',
-                    className: 'toggleButton',
+
+                closeButton: {
+                    useHTML: true,
+                    enabled: true,
+                    className: 'btn btn-sm',
                     theme: {
-                        fill: '#272C2F', // Set the button background color
+                        fill: '#5B6970', // Set the button background color
                         stroke: '#5B6970', // Set the button border color
                         //'stroke-width': 2, // Set the button border width
                         style: {
@@ -224,28 +177,13 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                             },
                         }
                     },
-                    menuItems: [{
-                        text: 'AAPL',
-                        onclick: () => {
-
-                            //this.setMonthExtremes('Jan', 0);
-                            this.series[0].setData();
-                            return false;
-                        }
-                    }, {
-                        text: 'OHLC',
-                        onclick: () => {
-                            //this.setMonthExtremes('Feb', 1);
-                            return false;
-                        }
-                        },
-                        {
-                            text: 'TSLA',
-                            onclick: () => {
-                                return false;
-                            }
-                        }
-                    ]
+                    text: 'XNYS:AAPL &nbsp &nbsp',
+                    onclick: function (e) {
+                        debugger;
+                        $("#dvSymbolInput").remove();
+                        var input = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="AAPL"/><button id="btnUpdateChartSymbol" type="button">Ok</button></div>`)
+                        $("body").append(input);
+                    },
                 },
                 zoomInButton: {
                     x: 355,
@@ -375,6 +313,15 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             enabled: false,
             adaptToUpdateData: false,
         },
+    });
+
+    $("body").off("click", "#btnUpdateChartSymbol").on("click", "#btnUpdateChartSymbol", function () {
+        var dvInput = $(this).closest("#dvSymbolInput")
+        var symbol = $("#txtSymboleName", dvInput).val();
+        T5.dotReference.invokeMethodAsync("GetStockBySymbol", "symbol").then(x => {
+            debugger;
+        });
+        $("#dvSymbolInput").remove();
     });
 }
 
@@ -632,49 +579,26 @@ function calculateZoomLevels(data) {
 }
 
 function LoadData(resultData) {
-    //var result = JSON.parse(resultData);
-    //var data = result.data;
-    //dataLength = resultData.length;
-
     //for (let i = 0; i < dataLength; i += 1) {
     //    ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
     //    volume.push([data[i][0], data[i][5]]);
     //}
 
-    //ohlc = []; volume = [];
-    //var prevValue = 0;
-    //resultData.forEach(item => {
-
-    //    //let trackingID = 23782918273661;
-    //    let dt = new Date(item.date);
-    //    let millisecondsToAdd = item.trackingID / 1000000;
-    //    dt.setMilliseconds(dt.getMilliseconds() + millisecondsToAdd);
-
-    //    let formattedDate = dt.toISOString().replace("T", " ").substring(0, 23);
-
-    //    var ohlcPoint = { x: Date.parse(formattedDate), y: item.price, color: 'green' };
-    //    var volumPoint = { x: Date.parse(formattedDate), y: item.price, color: 'green' };
-    //    if (item[4] < prevValue) {
-    //        ohlcPoint.color = 'red';
-    //        volumPoint.color = 'red';
-    //    }
-    //    prevValue = item[4];
-    //    ohlc.push(ohlcPoint);
-    //    volume.push(volumPoint);
-    //});
-
-
 
     ohlc = [];
-    for (var i = 1; i < resultData.length; i++) {        
+    for (var i = 1; i < resultData.length; i++) {
         var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
         ohlc.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
     }
-
     calculateZoomLevels(ohlc);
 }
 
 function saveLayout() {
     localStorage.setItem('SavedLayout', $("#chartList .chart-box").length);
     console.log(localStorage.getItem('SavedLayout'));
+}
+var T5 = window.T5 || {};
+T5.dotReference = null;
+T5.SetDotNetReference = function (ldotreference) {
+    T5.dotReference = ldotreference;
 }

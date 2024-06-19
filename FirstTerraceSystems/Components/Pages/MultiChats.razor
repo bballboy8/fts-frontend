@@ -5,6 +5,7 @@
 @using System.Text
 @inject NsdaqService NsdaqService
 @inject SqlLiteService SqlliteService
+@inject IJSRuntime JS
 
 <style>
     #popup {
@@ -39,6 +40,8 @@
             Console.WriteLine(x);
             JSRuntime.InvokeVoidAsync("console.log", x);
         });
+        var lDotNetReference = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("T5.SetDotNetReference", lDotNetReference);
         //EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
     }
 
@@ -52,9 +55,10 @@
         await JSRuntime.InvokeVoidAsync("createDashboard", 1);
     }
 
-    [JSInvokable]
-    public async Task GetStockBySymbol(string symbol)
+    [JSInvokable("GetStockBySymbol")]
+    public async Task<dynamic> GetStockBySymbol(string symbol)
     {
-        
+        var symbolicdata = SqlliteService.GetSymbolicData("AAPL");
+        return symbolicdata;
     }
 }
