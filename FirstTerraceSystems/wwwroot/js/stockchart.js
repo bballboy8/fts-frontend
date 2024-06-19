@@ -878,6 +878,43 @@ window.showLoader = () => {
     }, 1600);
 }
 
+
+
+
+window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
+   
+    $(element).on('keydown', async function (event) {
+        var dropdownItems = $(this).find('.dropdown-item');
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            var focusedElement = $(document.activeElement);
+            var index = dropdownItems.index(focusedElement);
+
+            if (event.key === 'ArrowDown') {
+                index = (index + 1) % dropdownItems.length;
+            } else if (event.key === 'ArrowUp') {
+                index = (index - 1 + dropdownItems.length) % dropdownItems.length;
+            }
+
+            dropdownItems.eq(index).focus();
+        }
+        else if (event.key === 'Enter' || event.key === ' ') {
+            var itemType = $(document.activeElement).data('item-type');
+
+            if (itemType == 'savelayout') {
+                await dotNetObject.invokeMethodAsync('SaveLayout')
+            } else if (itemType = 'template') {
+                var totalCharts = $(document.activeElement).data('load-template');
+                var num = parseInt(totalCharts, 10);
+
+                if (!isNaN(num) && num > 0) {
+                    createDashboard(totalCharts);
+                }
+            }
+        }
+    });
+}
+
 $(document).ready(function () {
     $("body").on("click", ".password-toggle", function () {
         var inputType = $(".txt-password-input", $(this).closest(".password-input")).prop("type");
@@ -892,4 +929,16 @@ $(document).ready(function () {
             $(this).removeClass("bi-eye");
         }
     })
+
+    $('body').on('keydown', '.dropdown-toggle', function (event) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+
+            var isOpen = $(this).attr('aria-expanded') === 'true';
+
+            if (!isOpen && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+                $(this).dropdown('toggle');
+            }
+        }
+    });
 });

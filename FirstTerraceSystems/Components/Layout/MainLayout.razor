@@ -7,10 +7,10 @@
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject StateContainerService StateContainer
-@inject ToastService ToastService
+@inject BsToastService Toast
 @inject WindowsSerivce WindowsSerivce
 
-<Toasts class="p-3" Messages="Messages" Placement="ToastsPlacement.BottomCenter" />
+<Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
 
 <div class="page">
     <main>
@@ -19,25 +19,23 @@
             <div id="headbar" class="top-row px-4">
 
                 @* Display options code here *@
-                <div class="dropdown">
+                <div @ref="Er_DisplayOptions" class="dropdown" id="dropdownDisplayOptions">
                     <button class="btn btn-secondary dropdown-toggle layout-btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         DISPLAY OPTIONS
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a role="button" class="dropdown-item" @onclick="() => SaveLayout()">Save Layout</a>
+                        <a role="button" class="dropdown-item" data-item-type="savelayout" tabindex="8" @onclick="() => SaveLayout()">Save Layout</a>
                         @* <a role="button" class="dropdown-item">Load layout</a> *@
 
                         <div class="dropdown dropend">
                             <a class="dropdown-item dropdown-toggle sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load Layout</a>
                             <div class="dropdown-menu" id="load-template-dropdown">
-
-                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(5)"><span style="margin-top: -7px;"><span class="default-chart-2-grid"> <span class="default-chart-2"></span> <span class="default-chart-2"></span></span> <span class="default-chart-3-grid"><span class="default-chart-3"></span> <span class="default-chart-3"></span> <span class="default-chart-3"></span> </span></span> Default Layout  </a>
-                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(1)"><span class="chart-1"></span> 1 chart</a>
-                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(2)"><span class="main-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span>2 charts</a>
-                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(4)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-2"></span> <span class="chart-2"></span></span> <span class="chart-3-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span></span>4 charts</a>
-                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(6)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-6"></span> <span class="chart-6"></span></span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> </span>6 charts</a>
-                                <a role="button" class="dropdown-item load-template" @onclick="() => LoadTemplate(8)"><span style="margin-top: -7px;"><span class="chart-8-grid"> <span class="chart-8"></span> <span class="chart-8"></span></span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> </span>8 charts</a>
-
+                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="5" tabindex="2" @onclick="() => LoadTemplate(5)"><span style="margin-top: -7px;"><span class="default-chart-2-grid"> <span class="default-chart-2"></span> <span class="default-chart-2"></span></span> <span class="default-chart-3-grid"><span class="default-chart-3"></span> <span class="default-chart-3"></span> <span class="default-chart-3"></span> </span></span> Default Layout  </a>
+                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="1" tabindex="3" @onclick="() => LoadTemplate(1)"><span class="chart-1"></span> 1 chart</a>
+                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="2" tabindex="4" @onclick="() => LoadTemplate(2)"><span class="main-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span>2 charts</a>
+                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="4" tabindex="5" @onclick="() => LoadTemplate(4)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-2"></span> <span class="chart-2"></span></span> <span class="chart-3-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span></span>4 charts</a>
+                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="6" tabindex="6" @onclick="() => LoadTemplate(6)"><span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-6"></span> <span class="chart-6"></span></span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> </span>6 charts</a>
+                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="8" tabindex="7" @onclick="() => LoadTemplate(8)"><span style="margin-top: -7px;"><span class="chart-8-grid"> <span class="chart-8"></span> <span class="chart-8"></span></span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> </span>8 charts</a>
                             </div>
                         </div>
                     </div>
@@ -61,13 +59,9 @@
     </main>
 </div>
 
-<Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
-
-
 @code {
-
-    private List<ToastMessage> Messages { get; set; } = new();
     private bool IsDarkMode = true;
+    private ElementReference Er_DisplayOptions { get; set; }
     private void ToggleDarkMode(bool value)
     {
         IsDarkMode = value;
@@ -101,6 +95,7 @@
             }
         }
 
+        await JSRuntime.InvokeVoidAsync("LoadKeyBordEventToDisplayOptions", Er_DisplayOptions, DotNetObjectReference.Create(this));
     }
 
     private async Task Logout()
@@ -112,10 +107,11 @@
         StateHasChanged();
     }
 
-    private async Task SaveLayout()
+    [JSInvokable]
+    public async Task SaveLayout()
     {
         await JSRuntime.InvokeVoidAsync("saveLayout");
-        ShowMessage("Layout Saved!");
+        Toast.ShowSuccessMessage("Layout Saved!");
     }
 
     private async Task LoadTemplate(int totalCharts)
@@ -123,7 +119,6 @@
         await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts);
 
         StateContainerService.IsAllowCloseAllWindows = true;
-
 
         var parentWindow = Application.Current!.Windows[0];
         var needToCloseWindows = Application.Current.Windows.OfType<Window>().Where(w => w != parentWindow).ToList();
@@ -144,12 +139,6 @@
         var window = new Window(chartWindow);
         Application.Current?.OpenWindow(window);
         return await Task.FromResult(chartId);
-    }
-
-    private void ShowMessage(string message, ToastType toastType = ToastType.Success)
-    {
-        var toastMessage = new ToastMessage { Type = toastType, Message = message, };
-        Messages.Add(toastMessage);
     }
 
 }
