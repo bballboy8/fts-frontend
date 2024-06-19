@@ -2,6 +2,12 @@
 @page "/login"
 @using System.ComponentModel.DataAnnotations
 @using FirstTerraceSystems.Entities
+@using FirstTerraceSystems.Features
+@using FirstTerraceSystems.Models
+
+@inject NsdaqService NsdaqService
+@inject SqlLiteService SqlliteService
+
 <div class="signIn">
     <div class="row g-0 justify-content-center">
         <div class="col-6 col-xl-5">
@@ -58,7 +64,11 @@
             ShowAuthError = true;
         }
         else
-        {
+        {   
+            await NsdaqService.GetSymbolicData(DateTime.Now, "AAPL");
+
+            WebSocketClientConnection.NavigationManager = NavigationManager;
+            WebSocketClientConnection.SendStringAsync("start");
             NavigationManager.NavigateTo("/multiChats");
         }
     }

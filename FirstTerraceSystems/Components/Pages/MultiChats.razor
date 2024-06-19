@@ -1,7 +1,22 @@
 ﻿@page "/multiChats"
 @using FirstTerraceSystems.Entities.Nasdaq
+@using FirstTerraceSystems.Features
+@using System.Net.WebSockets
+@using System.Text
 @inject NsdaqService NsdaqService
 @inject SqlLiteService SqlliteService
+
+<style>
+    #popup {
+        display: none;
+        position: absolute;
+        border: 1px solid #000;
+        background-color: #fff;
+        padding: 10px;
+        z-index: 10000;
+    }
+</style>
+
 
 <div class="container-fluid">
     <div id="chartList" class="row"></div>
@@ -10,27 +25,36 @@
 
 @code
 {
-
     private IEnumerable<EquitiesBarModal>? EquitiesBars { get; set; }
+
+    private ClientWebSocket webSocket = new ClientWebSocket();
 
     protected override async Task OnInitializedAsync()
     {
-        var To = DateTime.Now;
-        var from = To.AddDays(-3);
-        from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
-        var result = SqlliteService.GetSymbolicData();
-        if(result == null || string.IsNullOrEmpty(result.Data))
+        // var To = DateTime.Now;
+        // var from = To.AddDays(-3);
+        // from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
+        WebSocketClientConnection.AddListener(x =>
         {
-            var data = await NsdaqService.GetSymbolicData(To, "AAPL");
-            SqlliteService.StoreSymbolicData(data);
-        }
+            Console.WriteLine(x);
+            JSRuntime.InvokeVoidAsync("console.log", x);
+        });
         //EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var symbolicdata = SqlliteService.GetSymbolicData();
-        await JSRuntime.InvokeVoidAsync("LoadData", symbolicdata.Data);
+        //Call api and update data to the sqllite
+        await NsdaqService.GetSymbolicData(DateTime.Today.AddDays(-1), "AAPL");
+        //
+        var symbolicdata = SqlliteService.GetSymbolicData("AAPL");
+        await JSRuntime.InvokeVoidAsync("LoadData", symbolicdata);
         await JSRuntime.InvokeVoidAsync("createDashboard", 1);
+    }
+
+    [JSInvokable]
+    public async Task GetStockBySymbol(string symbol)
+    {
+        
     }
 }

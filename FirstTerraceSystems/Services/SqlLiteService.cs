@@ -1,10 +1,5 @@
 ﻿using FirstTerraceSystems.Entities.Nasdaq;
 using SQLite;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FirstTerraceSystems.Services
 {
@@ -14,40 +9,38 @@ namespace FirstTerraceSystems.Services
 
         public SqlLiteService()
         {
-            var dbpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Nasdaq1.db");
+            var dbpath = Path.Combine(@"D:\", "FTS.db");
             _connection = new SQLiteConnection(dbpath);
-            _connection.CreateTable<EquitiesBarModal>();
-            _connection.CreateTable<NasdaqSymbolicData>();
+            _connection.CreateTable<SymbolicData>();
         }
 
-        public IEnumerable<EquitiesBarModal> GetData()
+        //public IEnumerable<EquitiesBarModal> GetData()
+        //{
+        //    var result = _connection.Table<EquitiesBarModal>().AsQueryable();
+        //    return result;
+        //}
+
+        public IEnumerable<dynamic> GetSymbolicData(string symbol)
         {
-            var result = _connection.Table<EquitiesBarModal>().AsQueryable();
+            var result = _connection.Table<SymbolicData>().Where(x => x.Symbol == symbol)
+                .Select(x => new { t = x.TimeStamp, p = x.Price }).ToList();
             return result;
         }
 
-        public NasdaqSymbolicData GetSymbolicData()
+        public void UpdateSymbolicDataToDB(NasdaqData data)
         {
-            var result = _connection.Table<NasdaqSymbolicData>().ToList();
-            return result.FirstOrDefault();
-        }
-
-        public int StoreSymbolicData(string equities)
-        {
-            return _connection.Insert(new NasdaqSymbolicData
+            List<SymbolicData> batch = new();
+            foreach (var item in data.Data)
             {
-                Data = equities,
-            });
-        }
-
-        public int Store(IEnumerable<EquitiesBarModal> equities)
-        {
-            return _connection.InsertAll(equities);
-        }
-
-        public void Delete()
-        {
-            _connection.DeleteAll<EquitiesBarModal>();
+                batch.Add(new SymbolicData(data.Headers, item));
+                if (batch.Count > 10000)
+                {
+                    _connection.InsertAll(batch);
+                    batch.Clear();
+                }
+            }
+            if (batch.Count > 0)
+                _connection.InsertAll(batch);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using FirstTerraceSystems.Entities.Nasdaq;
@@ -18,6 +19,7 @@ namespace FirstTerraceSystems.Services
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
             });
             _client.BaseAddress = new Uri("http://52.0.33.126:8000/");
+            _client.Timeout = TimeSpan.FromSeconds(3600); // 1 hour
         }
 
 
@@ -101,31 +103,34 @@ namespace FirstTerraceSystems.Services
             }
         }
 
-        public async Task<string> GetSymbolicData(DateTime date, string symbol)
+        public async Task GetSymbolicData(DateTime date, string symbol)
         {
-            await EnsureTokenIsValidAsync();
-            string jsonData = JsonSerializer.Serialize(new  
+            //await EnsureTokenIsValidAsync();
+            string jsonData = JsonSerializer.Serialize(new { target_date = date.ToString("yyyy-MM-d") });
+            HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
             {
-                target_date = date.ToString("yyyy-MM-d"),
-                symbol = symbol
-            });
-            var request = new HttpRequestMessage(HttpMethod.Post, "/nasdaq/get_data");
-
-            request.Headers.Add("Authorization", $"Bearer {_token}");
-
-            request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                //request.Headers.Add("Authorization", $"Bearer {_token}");
+                Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+            };
             try
             {
-                HttpResponseMessage response = await _client.SendAsync(request);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync();
+                //HttpResponseMessage response = await _client.SendAsync(request);
+                //response.EnsureSuccessStatusCode();                
+                //var data = await response.Content.ReadFromJsonAsync<NasdaqData>();
+
+                var data1Str = System.IO.File.ReadAllText(@"C:\Users\teamo\Desktop\test.json");
+                var data1 = JsonSerializer.Deserialize<NasdaqData>(data1Str);
+                //Updaye the data to the sqllite
+                SqlLiteService sqlLiteService = new SqlLiteService();
+                sqlLiteService.UpdateSymbolicDataToDB(data1);
             }
-            catch (Exception ex2)
+            catch (Exception ex)
             {
-                Exception ex = ex2;
                 Console.WriteLine(ex.Message);
-                return null;
+
             }
         }
     }
+
+
 }

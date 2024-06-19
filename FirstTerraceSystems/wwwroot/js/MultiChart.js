@@ -53,7 +53,6 @@ var groupingUnits = [
 
 
 function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = true) {
-
     Highcharts.stockChart(charContainerId, {
         chart: {
             backgroundColor: backgroundColor,
@@ -62,7 +61,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
         },
         plotOptions: {
             series: {
-                turboThreshold: 5000
+                turboThreshold: 0
             }
         },
         rangeSelector: {
@@ -107,7 +106,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             labelStyle: {
                 visibility: 'hidden'
             },
-            /*verticalAlign: 'top',*/
+            verticalAlign: 'top',
             buttonSpacing: 10,
             x: 66,
             y: 0
@@ -144,13 +143,13 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                     color: fontColor // Green color
                 }
             },
-            height: '65%',
+            //height: '65%',
             lineWidth: 2,
             resize: {
                 enabled: true
             }
-        },
-        {
+        }
+        /*{
             labels: {
                 align: 'left',
                 x: 5,
@@ -163,7 +162,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             offset: 0,
             gridLineWidth: 0,
             lineWidth: 2
-        }],
+        }*/],
         tooltip: {
             split: true
         },
@@ -186,8 +185,8 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         lineWidthPlus: 0
                     }
                 }
-            },
-            {
+            }
+            /*{
                 type: 'column',
                 name: 'Volume',
                 data: pVolume,
@@ -197,16 +196,16 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                 },
                 color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
                 upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
-            }
+            }*/
         ],
         exporting: {
             buttons: {
                 contextButton: {
                     enabled: false,
                 },
-                closeButton: {
-                    enabled: true,
-                    className: 'btn btn-sm',
+                toggle1: {
+                    text: 'XNYS:AAPL',
+                    className: 'toggleButton',
                     theme: {
                         fill: '#272C2F', // Set the button background color
                         stroke: '#5B6970', // Set the button border color
@@ -225,10 +224,28 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                             },
                         }
                     },
-                    text: 'XNYS:AAPL &nbsp &nbsp ✖',
-                    onclick: function (e) {
-                        if (isDragable) removeChart(this);
-                    },
+                    menuItems: [{
+                        text: 'AAPL',
+                        onclick: () => {
+
+                            //this.setMonthExtremes('Jan', 0);
+                            this.series[0].setData();
+                            return false;
+                        }
+                    }, {
+                        text: 'OHLC',
+                        onclick: () => {
+                            //this.setMonthExtremes('Feb', 1);
+                            return false;
+                        }
+                        },
+                        {
+                            text: 'TSLA',
+                            onclick: () => {
+                                return false;
+                            }
+                        }
+                    ]
                 },
                 zoomInButton: {
                     x: 355,
@@ -581,7 +598,6 @@ function createDashboard(totalCharts) {
     }
 }
 
-
 function loadDashboard() {
 
     var totalCharts = localStorage.getItem('SavedLayout') ?? 5;
@@ -616,32 +632,44 @@ function calculateZoomLevels(data) {
 }
 
 function LoadData(resultData) {
-    debugger
-    var result = JSON.parse(resultData);
-    var data = result.data;
-    dataLength = data.length;
+    //var result = JSON.parse(resultData);
+    //var data = result.data;
+    //dataLength = resultData.length;
 
     //for (let i = 0; i < dataLength; i += 1) {
     //    ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
     //    volume.push([data[i][0], data[i][5]]);
     //}
 
-    ohlc = []; volume = [];
-    data.forEach(item => {
-        const date = new Date(item[1]);
+    //ohlc = []; volume = [];
+    //var prevValue = 0;
+    //resultData.forEach(item => {
 
-        // Add the timestamp (which is in milliseconds) to the date
-        const newDate = new Date(date.getTime() + item[0]);
+    //    //let trackingID = 23782918273661;
+    //    let dt = new Date(item.date);
+    //    let millisecondsToAdd = item.trackingID / 1000000;
+    //    dt.setMilliseconds(dt.getMilliseconds() + millisecondsToAdd);
 
-        var ohlcPoint = { x: newDate, y: item[4], color: 'green' };
-        var volumPoint = { x: newDate, y: item[4], color: 'green' };
-        //if (item.o < item.c) {
-        //    ohlcPoint.color = 'red';
-        //    volumPoint.color = 'red';
-        //}
-        ohlc.push(ohlcPoint);
-        volume.push(volumPoint);
-    });
+    //    let formattedDate = dt.toISOString().replace("T", " ").substring(0, 23);
+
+    //    var ohlcPoint = { x: Date.parse(formattedDate), y: item.price, color: 'green' };
+    //    var volumPoint = { x: Date.parse(formattedDate), y: item.price, color: 'green' };
+    //    if (item[4] < prevValue) {
+    //        ohlcPoint.color = 'red';
+    //        volumPoint.color = 'red';
+    //    }
+    //    prevValue = item[4];
+    //    ohlc.push(ohlcPoint);
+    //    volume.push(volumPoint);
+    //});
+
+
+
+    ohlc = [];
+    for (var i = 1; i < resultData.length; i++) {        
+        var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
+        ohlc.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
+    }
 
     calculateZoomLevels(ohlc);
 }
