@@ -55,10 +55,15 @@ var groupingUnits = [
 function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = true) {
 
     Highcharts.stockChart(charContainerId, {
+
         chart: {
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
+            //events: {
+            //    load: function () {
+            //    }
+            //}
         },
         plotOptions: {
             series: {
@@ -66,6 +71,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             }
         },
         rangeSelector: {
+            height: 0,
             buttons: [{ type: 'minute', count: 1, text: '1m' },
             { type: 'minute', count: 3, text: '3m' },
             { type: 'minute', count: 30, text: '30m' },
@@ -77,31 +83,29 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             inputEnabled: false,
             buttonTheme: {
                 //visibility: 'hidden',
-                fill: '#272C2F', // Background color of the buttons
-                stroke: '#272C2F', // Border color of the buttons
+                fill: '#272C2F', 
+                stroke: '#272C2F',
                 style: {
-                    color: '#FFFFFF', // Text color of the buttons
-                    //fontWeight: 'bold' // Bold font weight
+                    color: '#FFFFFF',
                 },
                 states: {
                     hover: {
-                        fill: '#5B6970', // Background color when hovered
-                        //style: {
-                        //    color: '#000000' // Text color when hovered
-                        //}
+                        fill: '#5B6970', 
                     },
                     select: {
-                        fill: '#272C2F', // Background color when selected
+                        fill: '#5b6970', 
                         style: {
-                            color: '#FFFFFF', // Text color when selected
+                            color: '#FFFFFF',
                             fontWeight: 'bold'
                         }
                     },
-                    //disabled: {
-                    //    style: {
-                    //        color: '#CCCCCC', // Text color when disabled
-                    //    }
-                    //}
+                    disabled: {
+                        fill: '#272C2F',
+                        stroke: '#272C2F',
+                        style: {
+                            color: '#CCCCCC', 
+                        }
+                    }
                 }
             },
             labelStyle: {
@@ -207,21 +211,24 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                 closeButton: {
                     enabled: true,
                     className: 'btn btn-sm',
+
                     theme: {
-                        fill: '#272C2F', // Set the button background color
-                        stroke: '#5B6970', // Set the button border color
-                        //'stroke-width': 2, // Set the button border width
+                        fill: '#272C2F',
+                        stroke: '#5B6970',
                         style: {
-                            color: '#FFFFFF', // Set the button text color
-                            //fontWeight: 'bold' // Set the button text font weight
+                            color: '#FFFFFF', 
                         },
                         states: {
+                            select: {
+                                fill: '#5b6970',
+                                style: {
+                                    color: '#FFFFFF',
+                                    fontWeight: 'bold'
+                                }
+                            },
                             hover: {
-                                fill: '#5B6970', // Set the button background color on hover
-                                stroke: '#5B6970', // Set the button border color on hover
-                                //style: {
-                                //    color: '#ffffff' // Set the button text color on hover
-                                //}
+                                fill: '#5B6970', 
+                                stroke: '#5B6970',
                             },
                         }
                     },
@@ -243,13 +250,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         states: {
                             hover: {
                                 fill: '#5B6970',
-                            },
-                            select: {
-                                fill: '#272C2F',
-                                style: {
-                                    color: '#FFFFFF',
-                                    fontWeight: 'bold'
-                                }
                             },
                         }
                     },
@@ -273,13 +273,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                             hover: {
                                 fill: '#5B6970',
                             },
-                            select: {
-                                fill: '#272C2F',
-                                style: {
-                                    color: '#FFFFFF',
-                                    fontWeight: 'bold'
-                                }
-                            },
                         }
                     },
                     useHTML: true,
@@ -288,29 +281,51 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         zoomChart(false, this);
                     },
                 },
+                minimizeButton: {
+                    align: 'right',
+                    verticalAlign: 'top',
+                    x: -60,
+                    enabled: isDragable,
+                    className: 'btn btn-sm',
+                    theme: {
+                        fill: '#272C2F',
+                        stroke: '#272C2F',
+                        style: {
+                            color: '#FFFFFF',
+                        },
+                        states: {
+                            hover: {
+                                fill: '#5B6970',
+                            },
+                        }
+                    },
+                    useHTML: true,
+                    text: '<i class="bi bi-dash-lg" tabindex="0"></i>',
+                    onclick: function (e) {
+                        console.log(e); 
+                        this.setSize(null, 100)
+                    },
+                },
                 dragButton: {
                     align: 'right',
                     verticalAlign: 'top',
                     x: -30,
                     enabled: isDragable,
-                    className: 'btn btn-sm btn-drag ',
+                    className: 'btn btn-sm',
                     theme: {
-                        fill: '#5B6970', // Set the button background color
-                        stroke: '#5B6970', // Set the button border color
-                        //'stroke-width': 2, // Set the button border width
+                        fill: '#272C2F',
+                        stroke: '#272C2F',
                         style: {
-                            color: '#FFFFFF', // Set the button text color
-                            //fontWeight: 'bold' // Set the button text font weight
+                            color: '#FFFFFF',
                         },
                         states: {
                             hover: {
-                                fill: '#5B6970', // Set the button background color on hover
-                                stroke: '#5B6970', // Set the button border color on hover
+                                fill: '#5B6970',
                             },
                         }
                     },
                     useHTML: true,
-                    text: ' <i class="bi bi-window"></i> ',
+                    text: '<i class="bi bi-window" tabindex="0"></i> ',
                     onclick: async function (e) {
                         var jsObjectReference = DotNet.createJSObjectReference(window);
                         var chartId = $(this.renderTo).data("chart-id");
@@ -323,24 +338,22 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                     verticalAlign: 'top',
                     x: -2,
                     enabled: isDragable,
-                    className: 'btn btn-sm btn-drag ',
+                    className: 'btn btn-sm',
                     theme: {
-                        fill: '#5B6970', // Set the button background color
-                        stroke: '#5B6970', // Set the button border color
-                        //'stroke-width': 2, // Set the button border width
+                        fill: '#272C2F',
+                        stroke: '#272C2F',
                         style: {
-                            color: '#FFFFFF', // Set the button text color
-                            //fontWeight: 'bold' // Set the button text font weight
+                            color: '#FFFFFF',
                         },
                         states: {
                             hover: {
-                                fill: '#5B6970', // Set the button background color on hover
-                                stroke: '#5B6970', // Set the button border color on hover
+                                fill: '#5B6970',
+                                stroke: '#5B6970',
                             },
                         }
                     },
                     useHTML: true,
-                    text: ' <i class="bi bi-x-lg"></i> ',
+                    text: '<i class="bi bi-x-lg" tabindex="0"></i>',
 
                     onclick: function (e) {
                         if (isDragable) removeChart(this);
@@ -358,22 +371,47 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             enabled: false,
             adaptToUpdateData: false,
         },
+        accessibility: {
+            keyboardNavigation: {
+                focusBorder: {
+                    enabled: false
+                }
+            }
+        }
     });
 }
 
 function zoomChart(zoomIn, chart) {
-    if (zoomIn)
-        currentZoomLevel++;
-    else
-        currentZoomLevel--;
-    if (currentZoomLevel > 5)
-        currentZoomLevel = 5
-    if (currentZoomLevel < 1)
-        currentZoomLevel = 1
+    //if (zoomIn)
+    //    currentZoomLevel++;
+    //else
+    //    currentZoomLevel--;
+    //if (currentZoomLevel > 5)
+    //    currentZoomLevel = 5
+    //if (currentZoomLevel < 1)
+    //    currentZoomLevel = 1
 
-    if (currentZoomLevel >= 1 && currentZoomLevel <= 5) {
-        chart.xAxis.forEach(xAxes => xAxes.setExtremes(zoomLevels[currentZoomLevel - 1].min, zoomLevels[currentZoomLevel - 1].max));
+    //if (currentZoomLevel >= 1 && currentZoomLevel <= 5) {
+    //    chart.xAxis.forEach(xAxes => xAxes.setExtremes(zoomLevels[currentZoomLevel - 1].min, zoomLevels[currentZoomLevel - 1].max));
+    //}
+
+    var xAxis = chart.xAxis[0];
+    var extremes = chart.xAxis[0].getExtremes();
+    var range = extremes.max - extremes.min;
+    var newMin, newMax;
+
+    if (zoomIn) {
+        newMin = extremes.min + range * 0.2;
+        newMax = extremes.max - range * 0.2;
+    } else {
+        newMin = extremes.min - range * 0.2;
+        newMax = extremes.max + range * 0.2;
     }
+
+    newMin = Math.max(xAxis.dataMin, newMin);
+    newMax = Math.min(xAxis.dataMax, newMax);
+
+    xAxis.setExtremes(newMin, newMax);
 }
 
 function removeChart(chart) {
