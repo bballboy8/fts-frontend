@@ -16,7 +16,7 @@ namespace FirstTerraceSystems.Services
         public void RevertWindowResize()
         {
 #if WINDOWS
-            var window = App.Current.MainPage.Window.Handler.PlatformView as Microsoft.UI.Xaml.Window;
+            var window = App.Current?.MainPage?.Window.Handler.PlatformView as Microsoft.UI.Xaml.Window;
             var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(window);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);

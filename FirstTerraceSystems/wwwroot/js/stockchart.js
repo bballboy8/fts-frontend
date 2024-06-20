@@ -882,7 +882,7 @@ window.showLoader = () => {
 
 
 window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
-   
+
     $(element).on('keydown', async function (event) {
         var dropdownItems = $(this).find('.dropdown-item');
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -940,5 +940,9 @@ $(document).ready(function () {
                 $(this).dropdown('toggle');
             }
         }
+    });
+
+    $(document).bind("keydown", function (event) {
+        /*if ((event.which || event.keyCode) == 116) event.preventDefault();*/
     });
 });

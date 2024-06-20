@@ -96,7 +96,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         fill: '#5b6970', 
                         style: {
                             color: '#FFFFFF',
-                            fontWeight: 'bold'
+                            fontWeight: 'normal'
                         }
                     },
                     disabled: {
@@ -223,7 +223,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                                 fill: '#5b6970',
                                 style: {
                                     color: '#FFFFFF',
-                                    fontWeight: 'bold'
                                 }
                             },
                             hover: {
@@ -410,7 +409,6 @@ function zoomChart(zoomIn, chart) {
 
     newMin = Math.max(xAxis.dataMin, newMin);
     newMax = Math.min(xAxis.dataMax, newMax);
-
     xAxis.setExtremes(newMin, newMax);
 }
 

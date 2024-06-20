@@ -46,6 +46,7 @@
         <AppInstallerUri>C:\Program Files</AppInstallerUri>
         <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
         <PackageCertificateKeyFile>FirstTerraceSystems_TemporaryKey.pfx</PackageCertificateKeyFile>
+        <DefaultLanguage>en-us</DefaultLanguage>
     </PropertyGroup>
 
     <ItemGroup>
