@@ -52,29 +52,34 @@ namespace FirstTerraceSystems.Entities.Nasdaq
 
     public class SymbolicData
     {
-        public SymbolicData() { }
+        /*public SymbolicData() { 
+        }
         public SymbolicData(List<string> headers, object[] row)
-        {   
-            TrackingID = long.Parse(row[headers.IndexOf("trackingID")].ToString());
+        {
+            *//*TrackingID = long.Parse(row[headers.IndexOf("trackingID")].ToString());
             Date = row[headers.IndexOf("date")].ToString();
             MsgType = row[headers.IndexOf("msgType")].ToString();
             Symbol = row[headers.IndexOf("symbol")].ToString();
-            Price = decimal.Parse(row[headers.IndexOf("price")].ToString());
+            Price = decimal.Parse(row[headers.IndexOf("price")].ToString());*//*
 
-            
-            var dt = DateTime.ParseExact(Date, "yyyy-MM-dd", CultureInfo.InvariantCulture);            
-            dt = dt.AddMilliseconds(TrackingID / 1000000);
+
+            var dt = DateTime.ParseExact(Date.ToShortDateString(), "yyyy-MM-dd", CultureInfo.InvariantCulture);            
+            dt = dt.AddMilliseconds(long.Parse(TrackingID) / 1000000);
             TimeStamp = dt.ToString("yyyy-MM-ddTHH:mm:ss.fff");
             //2024-06-18T09:30:00.000
-        }
+        }*/
         [PrimaryKey, AutoIncrement]
         public long Id { get; set; }
-        public long TrackingID { get; set; }
-
-        public string Date { get; set; }
+        [JsonPropertyName("trackingid")]
+        public string TrackingID { get; set; }
+        [JsonPropertyName("date")]
+        public DateTime Date { get; set; }
+        [JsonPropertyName("msgtype")]
         public string MsgType { get; set; }
+        [JsonPropertyName("symbol")]
         public string Symbol { get; set; }
-        public decimal Price { get; set; }
+        [JsonPropertyName("price")]
+        public double Price { get; set; }
         public string TimeStamp { get; set; }
     }
 

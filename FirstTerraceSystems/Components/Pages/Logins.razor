@@ -64,11 +64,9 @@
             ShowAuthError = true;
         }
         else
-        {   
-            await NsdaqService.GetSymbolicData(DateTime.Now, "AAPL");
-
-            WebSocketClientConnection.NavigationManager = NavigationManager;
-            WebSocketClientConnection.SendStringAsync("start");
+        {               
+            //await NsdaqService.GetSymbolicData();
+            WebSocketClientConnection.NavigationManager = NavigationManager;            
             NavigationManager.NavigateTo("/multiChats");
         }
     }

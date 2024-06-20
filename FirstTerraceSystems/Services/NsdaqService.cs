@@ -103,10 +103,16 @@ namespace FirstTerraceSystems.Services
             }
         }
 
-        public async Task GetSymbolicData(DateTime date, string symbol)
+        public async Task GetSymbolicData()
         {
             //await EnsureTokenIsValidAsync();
-            string jsonData = JsonSerializer.Serialize(new { target_date = date.ToString("yyyy-MM-d") });
+            SqlLiteService sqlLiteService = new();
+            string dtStartDate = DateTime.Now.AddDays(-2).ToString("yyyy-MM-d HH:mm:ss");
+            var lastSymbol = sqlLiteService.GetLastSample();
+            if (lastSymbol != null)
+                dtStartDate = DateTime.Parse(lastSymbol.TimeStamp).ToString("yyyy-MM-d HH:mm:ss");
+
+            string jsonData = JsonSerializer.Serialize(new { start_datetime = dtStartDate, symbol = string.Empty });
             HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
             {
                 //request.Headers.Add("Authorization", $"Bearer {_token}");
@@ -114,20 +120,19 @@ namespace FirstTerraceSystems.Services
             };
             try
             {
-                //HttpResponseMessage response = await _client.SendAsync(request);
-                //response.EnsureSuccessStatusCode();                
-                //var data = await response.Content.ReadFromJsonAsync<NasdaqData>();
+                HttpResponseMessage response = await _client.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                var data = await response.Content.ReadFromJsonAsync<List<SymbolicData>>();
+                sqlLiteService.UpdateSymbolicDataToDB(data);
 
-                var data1Str = System.IO.File.ReadAllText(@"C:\Users\teamo\Desktop\test.json");
-                var data1 = JsonSerializer.Deserialize<NasdaqData>(data1Str);
-                //Updaye the data to the sqllite
-                SqlLiteService sqlLiteService = new SqlLiteService();
-                sqlLiteService.UpdateSymbolicDataToDB(data1);
+                //var data1Str = System.IO.File.ReadAllText(@"C:\Users\teamo\Desktop\test.json");
+                //var data1 = JsonSerializer.Deserialize<List<SymbolicData>>(data1Str);
+                ////Updaye the data to the sqllite                
+                //sqlLiteService.UpdateSymbolicDataToDB(data1);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-
             }
         }
     }

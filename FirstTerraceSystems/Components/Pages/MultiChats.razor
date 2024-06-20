@@ -40,6 +40,8 @@
             Console.WriteLine(x);
             JSRuntime.InvokeVoidAsync("console.log", x);
         });
+
+
         var lDotNetReference = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("T5.SetDotNetReference", lDotNetReference);
         //EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
@@ -48,17 +50,23 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         //Call api and update data to the sqllite
-        await NsdaqService.GetSymbolicData(DateTime.Today.AddDays(-1), "AAPL");
-        //
-        var symbolicdata = SqlliteService.GetSymbolicData("AAPL");
-        await JSRuntime.InvokeVoidAsync("LoadData", symbolicdata);
-        await JSRuntime.InvokeVoidAsync("createDashboard", 1);
+        if (firstRender)
+        {
+            WebSocketClientConnection.SendStringAsync("start");
+            await NsdaqService.GetSymbolicData();            
+        }
+
+        // var symbolicdata = SqlliteService.GetSymbolicData("AAPL");
+        //await JSRuntime.InvokeVoidAsync("LoadData", symbolicdata);
+
+
+        await JSRuntime.InvokeVoidAsync("loadDashboard", 1);
     }
 
     [JSInvokable("GetStockBySymbol")]
     public async Task<dynamic> GetStockBySymbol(string symbol)
     {
-        var symbolicdata = SqlliteService.GetSymbolicData("AAPL");
+        var symbolicdata = SqlliteService.GetSymbolicData(symbol);
         return symbolicdata;
     }
 }
