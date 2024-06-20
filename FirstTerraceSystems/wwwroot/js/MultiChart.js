@@ -148,9 +148,12 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     },
                     text: `XNYS:${symbol} &nbsp &nbsp`,
                     onclick: function (e) {
-                        debugger;
+                        let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
+                        if (symbolList == null) {
+                            symbolList = initialChartSymbols;
+                        }
                         $("#dvSymbolInput").remove();
-                        var input = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="AAPL"/><button id="btnUpdateChartSymbol" type="button" data-chart-id="${charContainerId}">Ok</button></div>`)
+                        var input = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="${symbolList[Number(charContainerId.split("-")[1]) - 1].symbol}"/><button id="btnUpdateChartSymbol" type="button" data-chart-id="${charContainerId}">Ok</button></div>`)
                         $("body").append(input);
                     },
                 },
