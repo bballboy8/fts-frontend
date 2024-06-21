@@ -574,7 +574,7 @@ function createDashboard(totalCharts) {
 
 function loadDashboard() {
 
-    var totalCharts = localStorage.getItem('SavedLayout') ?? 4;
+    var totalCharts = localStorage.getItem('SavedLayout') ?? 5;
     let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
     if (symbolList == null) {
         localStorage.setItem('ChartSymbols', JSON.stringify(initialChartSymbols));
