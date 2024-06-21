@@ -88,6 +88,7 @@ namespace FirstTerraceSystems.Entities.Nasdaq
             DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(dt, easternZone);
 
             TimeStamp = easternTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
+            Price = Price / 100;
         }
 
 

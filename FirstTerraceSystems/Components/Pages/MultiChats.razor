@@ -51,9 +51,7 @@
         {
             //WebSocketClientConnection.SendStringAsync("start");
             await NsdaqService.GetSymbolicData();
-            await webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
-            var buffer = Encoding.UTF8.GetBytes("start");
-            await webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+            await ConnectWebSocket();
             Listen();
             //await NsdaqService.GetSymbolicData();            
         }
@@ -64,8 +62,27 @@
 
         await JSRuntime.InvokeVoidAsync("loadDashboard", 1);
     }
+    int SocketConnectionTrial = 0;
+    private async Task ConnectWebSocket()
+    {
+        if (SocketConnectionTrial < 3)
+        {
+            try
+            {
+                await webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+                var buffer = Encoding.UTF8.GetBytes("start");
+                await webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                SocketConnectionTrial = 0;
+            }
+            catch (Exception)
+            {
+                SocketConnectionTrial++;
+            }
+        }
 
-    private async void Listen()
+    }
+
+    private async Task Listen()
     {
         // WebSocketClientConnection.AddListener(x =>
         //{
@@ -84,7 +101,7 @@
                     var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                     if (!message.Contains("start"))
                     {
-                        Console.WriteLine(message);
+                        await JSRuntime.InvokeVoidAsync("console.log", message);
                         var data = JsonSerializer.Deserialize<NasdaqData>(message);
                         SqlliteService.UpdateSymbolicsocketDataToDB(data);
                         await JSRuntime.InvokeVoidAsync("RefreshChartData");
@@ -93,8 +110,7 @@
             }
             catch (Exception ex)
             {
-
-                throw;
+                await ConnectWebSocket();   
             }
         }
     }

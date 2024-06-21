@@ -120,10 +120,10 @@ namespace FirstTerraceSystems.Services
             };
             try
             {
-                HttpResponseMessage response = await _client.SendAsync(request);
+                 HttpResponseMessage response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
-                var data1 = await response.Content.ReadFromJsonAsync<List<object>>();
                 var data = await response.Content.ReadFromJsonAsync<List<SymbolicData>>();
+                //var data1 = await response.Content.ReadFromJsonAsync<List<object>>();
                 sqlLiteService.UpdateSymbolicDataToDB(data);
 
                 //var data1Str = System.IO.File.ReadAllText(@"C:\Users\teamo\Desktop\test.json");

@@ -322,8 +322,14 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
 }
 
 function RefreshChartData() {
+    let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
+    if (symbolList == null) {
+        symbolList = initialChartSymbols;
+    }
     Highcharts.charts.forEach(chart => {
         if (chart) {
+            let chartId = chart.renderTo.id;
+            var symbol = symbolList[Number(chartId.split("-")[1]) - 1].symbol;
             loadSymbolData(symbol, function (seriesData) {
                 chart.series[0].update({
                     name: symbol,
@@ -336,14 +342,7 @@ function RefreshChartData() {
                     states: { hover: { lineWidthPlus: 0 } }
                 });
             });
-            let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
-            if (symbolList == null) {
-                symbolList = initialChartSymbols;
-            }
-            var indx = Number(chartId.split("-")[1]);
-            symbolList[indx - 1].symbol = symbol;
-            // Save the updated list back to localStorage
-            localStorage.setItem('ChartSymbols', JSON.stringify(symbolList));
+            
             console.log("Refreshed data");
         }
 

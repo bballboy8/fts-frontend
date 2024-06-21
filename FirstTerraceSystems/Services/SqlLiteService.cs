@@ -43,6 +43,9 @@ namespace FirstTerraceSystems.Services
                 DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(dt, easternZone);
 
                 item.TimeStamp = easternTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
+
+                item.Price = item.Price / 100;
+
                 batch.Add(item);
                 if (batch.Count > 10000)
                 {
