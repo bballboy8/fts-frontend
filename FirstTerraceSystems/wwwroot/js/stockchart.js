@@ -883,26 +883,32 @@ window.showLoader = () => {
 
 window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
 
+    const dropdownItems = $(element).find('.dropdown-item');
+    const itemCount = dropdownItems.length;
+
+    if (dropdownItems.length === 0) return;
     $(element).on('keydown', async function (event) {
-        var dropdownItems = $(this).find('.dropdown-item');
+
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+
             event.preventDefault();
-            var focusedElement = $(document.activeElement);
-            var index = dropdownItems.index(focusedElement);
 
-            if (event.key === 'ArrowDown') {
-                index = (index + 1) % dropdownItems.length;
-            } else if (event.key === 'ArrowUp') {
-                index = (index - 1 + dropdownItems.length) % dropdownItems.length;
+            if (itemCount === 0) return;
+
+            var currentIndex = dropdownItems.index(document.activeElement);
+            var isArrowDown = event.key === 'ArrowDown';
+
+            if (currentIndex === -1) {
+                dropdownItems.eq(isArrowDown ? 0 : itemCount - 1).focus();
+            } else {
+                dropdownItems.eq((currentIndex + (isArrowDown ? 1 : -1) + itemCount) % itemCount).focus();
             }
-
-            dropdownItems.eq(index).focus();
         }
         else if (event.key === 'Enter' || event.key === ' ') {
             var itemType = $(document.activeElement).data('item-type');
 
             if (itemType == 'savelayout') {
-                await dotNetObject.invokeMethodAsync('SaveLayout')
+                await dotNetObject.invokeMethodAsync('SaveLayout');
             } else if (itemType = 'template') {
                 var totalCharts = $(document.activeElement).data('load-template');
                 var num = parseInt(totalCharts, 10);
@@ -911,6 +917,8 @@ window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
                     createDashboard(totalCharts);
                 }
             }
+        } else if (event.key === 'Escape') {
+            $('.dropdown-toggle', this).eq(0).dropdown('toggle');
         }
     });
 }
@@ -940,9 +948,5 @@ $(document).ready(function () {
                 $(this).dropdown('toggle');
             }
         }
-    });
-
-    $(document).bind("keydown", function (event) {
-        /*if ((event.which || event.keyCode) == 116) event.preventDefault();*/
     });
 });

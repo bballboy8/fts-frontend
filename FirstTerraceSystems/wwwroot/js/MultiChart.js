@@ -52,18 +52,51 @@ var groupingUnits = [
 ];
 
 
-function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = true) {
+function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDraggable = true, dotNetObject = undefined) {
 
-    Highcharts.stockChart(charContainerId, {
+    return Highcharts.stockChart(charContainerId, {
 
         chart: {
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
-            //events: {
-            //    load: function () {
-            //    }
-            //}
+            events: {
+                load: function () {
+                    //debugger
+
+                    //var button = createChartButton(this, {
+                    //    text: '<i class="bi bi-zoom-out"></i>',
+                    //    x: 355,
+                    //    y: 0,
+                    //    useHTML: true,
+                    //    callback: function () {
+                    //        alert('Button clicked!');
+                    //    }
+                    //});
+
+
+                    //$(this.renderTo).('g.highcharts-range-selector-buttons g').attr('tabindex', 0);
+                    //$(this.renderTo).find('g.highcharts-button').each(function (index) {
+                    //    $(this).attr('tabindex', 0);
+                    //    $(this).on('focus', function () {
+                    //        debugger
+                    //        $(this).addClass('focus-highlight');
+                    //    }).on('blur', function () {
+                    //        $(this).removeClass('focus-highlight');
+                    //    });
+                    //});
+
+                    //$(this.renderTo).find('g.highcharts-range-selector-group g.highcharts-button').each(function (index) {
+                    //    $(this).on('keydown', function (e) {
+                    //        if (e.which === 9) { 
+                    //            var customButton = $('g.btn-custom-exporting:eq(0)');
+                    //            customButton.focus();
+                    //            //customButton.addClass('focus-highlight');
+                    //        }
+                    //    });
+                    //});
+                }
+            }
         },
         plotOptions: {
             series: {
@@ -72,28 +105,29 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
         },
         rangeSelector: {
             height: 0,
-            buttons: [{ type: 'minute', count: 1, text: '1m' },
-            { type: 'minute', count: 3, text: '3m' },
-            { type: 'minute', count: 30, text: '30m' },
-            { type: 'hour', count: 1, text: '1h' },
-            { type: 'day', count: 1, text: '1D' },
-            { type: 'day', count: 3, text: '3D' },
+            buttons: [
+                { type: 'minute', count: 1, text: '1m' },
+                { type: 'minute', count: 3, text: '3m' },
+                { type: 'minute', count: 30, text: '30m' },
+                { type: 'hour', count: 1, text: '1h' },
+                { type: 'day', count: 1, text: '1D' },
+                { type: 'day', count: 3, text: '3D' },
             ],
             //selected: 0,
             inputEnabled: false,
             buttonTheme: {
                 //visibility: 'hidden',
-                fill: '#272C2F', 
+                fill: '#272C2F',
                 stroke: '#272C2F',
                 style: {
                     color: '#FFFFFF',
                 },
                 states: {
                     hover: {
-                        fill: '#5B6970', 
+                        fill: '#5B6970',
                     },
                     select: {
-                        fill: '#5b6970', 
+                        fill: '#5b6970',
                         style: {
                             color: '#FFFFFF',
                             fontWeight: 'normal'
@@ -103,7 +137,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         fill: '#272C2F',
                         stroke: '#272C2F',
                         style: {
-                            color: '#CCCCCC', 
+                            color: '#CCCCCC',
                         }
                     }
                 }
@@ -211,12 +245,11 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                 closeButton: {
                     enabled: true,
                     className: 'btn btn-sm',
-
                     theme: {
                         fill: '#272C2F',
                         stroke: '#5B6970',
                         style: {
-                            color: '#FFFFFF', 
+                            color: '#FFFFFF',
                         },
                         states: {
                             select: {
@@ -226,20 +259,21 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                                 }
                             },
                             hover: {
-                                fill: '#5B6970', 
+                                fill: '#5B6970',
                                 stroke: '#5B6970',
                             },
                         }
                     },
                     text: 'XNYS:AAPL &nbsp &nbsp ✖',
                     onclick: function (e) {
-                        if (isDragable) removeChart(this);
+                        if (isDraggable) removeChart(this);
                     },
                 },
                 zoomInButton: {
                     x: 355,
                     y: 0,
                     enabled: true,
+                    className: 'btn btn-sm btn-zoom-in btn-custom-exporting',
                     theme: {
                         fill: '#272C2F',
                         stroke: '#272C2F',
@@ -255,13 +289,14 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                     useHTML: true,
                     text: '<i class="bi bi-zoom-in"></i>',
                     onclick: function (e) {
-                        zoomChart(true, this);
+                        zoomChart(true, this, dotNetObject);
                     },
                 },
                 zoomOutButton: {
                     x: 389,
                     y: 0,
                     enabled: true,
+                    className: 'btn btn-sm btn-zoom-out btn-custom-exporting',
                     theme: {
                         fill: '#272C2F',
                         stroke: '#272C2F',
@@ -277,40 +312,15 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                     useHTML: true,
                     text: '<i class="bi bi-zoom-out"></i>',
                     onclick: function (e) {
-                        zoomChart(false, this);
+                        zoomChart(false, this, dotNetObject);
                     },
                 },
-                //minimizeButton: {
-                //    align: 'right',
-                //    verticalAlign: 'top',
-                //    x: -60,
-                //    enabled: isDragable,
-                //    className: 'btn btn-sm',
-                //    theme: {
-                //        fill: '#272C2F',
-                //        stroke: '#272C2F',
-                //        style: {
-                //            color: '#FFFFFF',
-                //        },
-                //        states: {
-                //            hover: {
-                //                fill: '#5B6970',
-                //            },
-                //        }
-                //    },
-                //    useHTML: true,
-                //    text: '<i class="bi bi-dash-lg" tabindex="0"></i>',
-                //    onclick: function (e) {
-                //        console.log(e); 
-                //        this.setSize(null, 100)
-                //    },
-                //},
-                dragButton: {
+                minimizeButton: {
                     align: 'right',
                     verticalAlign: 'top',
-                    x: -30,
-                    enabled: isDragable,
-                    className: 'btn btn-sm',
+                    x: -60,
+                    enabled: isDraggable,
+                    className: 'btn btn-sm btn-minimize btn-custom-exporting',
                     theme: {
                         fill: '#272C2F',
                         stroke: '#272C2F',
@@ -324,20 +334,49 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         }
                     },
                     useHTML: true,
-                    text: '<i class="bi bi-window" tabindex="0"></i> ',
+                    text: '<i class="bi bi-dash-lg"></i>',
                     onclick: async function (e) {
                         var jsObjectReference = DotNet.createJSObjectReference(window);
                         var chartId = $(this.renderTo).data("chart-id");
+                        var extremes = this.xAxis[0].getExtremes();
                         removeChart(this);
-                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits)
+                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max);
+                    },
+                },
+                maximizeButton: {
+                    align: 'right',
+                    verticalAlign: 'top',
+                    x: -30,
+                    enabled: isDraggable,
+                    className: 'btn btn-sm btn-maximize btn-custom-exporting',
+                    theme: {
+                        fill: '#272C2F',
+                        stroke: '#272C2F',
+                        style: {
+                            color: '#FFFFFF',
+                        },
+                        states: {
+                            hover: {
+                                fill: '#5B6970',
+                            },
+                        }
+                    },
+                    useHTML: true,
+                    text: '<i class="bi bi-window"></i> ',
+                    onclick: async function (e) {
+                        var jsObjectReference = DotNet.createJSObjectReference(window);
+                        var chartId = $(this.renderTo).data("chart-id");
+                        var extremes = this.xAxis[0].getExtremes();
+                        removeChart(this);
+                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max)
                     },
                 },
                 closeChartButton: {
                     align: 'right',
                     verticalAlign: 'top',
                     x: -2,
-                    enabled: isDragable,
-                    className: 'btn btn-sm',
+                    enabled: isDraggable,
+                    className: 'btn btn-sm btn-close-chart btn-custom-exporting',
                     theme: {
                         fill: '#272C2F',
                         stroke: '#272C2F',
@@ -352,10 +391,10 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         }
                     },
                     useHTML: true,
-                    text: '<i class="bi bi-x-lg" tabindex="0"></i>',
+                    text: '<i class="bi bi-x-lg"></i>',
 
                     onclick: function (e) {
-                        if (isDragable) removeChart(this);
+                        if (isDraggable) removeChart(this);
                     },
                 }
             },
@@ -372,15 +411,159 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
         },
         accessibility: {
             keyboardNavigation: {
+                enabled: true,
                 focusBorder: {
-                    enabled: false
+                    enabled: false,
+                    hideBrowserFocusOutline: false
                 }
-            }
+            },
         }
     });
 }
 
-function zoomChart(zoomIn, chart) {
+function removeWindowControlButtonsFromChart() {
+    var chart = Highcharts.charts.filter(c => c)[0];
+    if (chart.exportSVGElements) {
+        chart.exportSVGElements.filter(f => f).slice(-3).forEach(function (element) {
+            if (element && element.destroy) {
+                element.destroy();
+            }
+        });
+        chart.exportSVGElements = chart.exportSVGElements.slice(0, -3);
+        chart.exportSVGElements.length = 0;
+        chart.isDirtyBox = true;
+        chart.redraw();
+    }
+}
+
+function createChartButton(chart, options) {
+    const {
+        text = 'Button',
+        x = 0,
+        y = 0,
+        callback = () => { },
+        theme = {},
+        hoverState = {},
+        selectState = {},
+        disabledState = {},
+        shape = 'rect',
+        useHTML = false
+    } = options;
+
+    const button = chart.renderer.button(
+        text,
+        x,
+        y,
+        callback,
+        theme,
+        hoverState,
+        selectState,
+        disabledState,
+        shape,
+        useHTML
+    );
+
+    button.add();
+
+    return button;
+}
+
+function addWindowControlButtonsToChart() {
+    Highcharts.charts.forEach(function (chart) {
+        if (chart && chart.exportSVGElements && chart.exportSVGElements.length < 3) {
+            chart.update({
+                exporting: {
+                    buttons: {
+                        minimizeButton: {
+                            align: 'right',
+                            verticalAlign: 'top',
+                            x: -60,
+                            enabled: true,
+                            className: 'btn btn-sm btn-minimize btn-custom-exporting',
+                            theme: {
+                                fill: '#272C2F',
+                                stroke: '#272C2F',
+                                style: {
+                                    color: '#FFFFFF',
+                                },
+                                states: {
+                                    hover: {
+                                        fill: '#5B6970',
+                                    },
+                                }
+                            },
+                            useHTML: true,
+                            text: '<i class="bi bi-dash-lg"></i>',
+                            onclick: async function (e) {
+                                var jsObjectReference = DotNet.createJSObjectReference(window);
+                                var chartId = $(this.renderTo).data("chart-id");
+                                var extremes = this.xAxis[0].getExtremes();
+                                removeChart(this);
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max);
+                            },
+                        },
+                        maximizeButton: {
+                            align: 'right',
+                            verticalAlign: 'top',
+                            x: -30,
+                            enabled: true,
+                            className: 'btn btn-sm btn-maximize btn-custom-exporting',
+                            theme: {
+                                fill: '#272C2F',
+                                stroke: '#272C2F',
+                                style: {
+                                    color: '#FFFFFF',
+                                },
+                                states: {
+                                    hover: {
+                                        fill: '#5B6970',
+                                    },
+                                }
+                            },
+                            useHTML: true,
+                            text: '<i class="bi bi-window"></i> ',
+                            onclick: async function (e) {
+                                var jsObjectReference = DotNet.createJSObjectReference(window);
+                                var chartId = $(this.renderTo).data("chart-id");
+                                var extremes = this.xAxis[0].getExtremes();
+                                removeChart(this);
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max);
+                            },
+                        },
+                        closeChartButton: {
+                            align: 'right',
+                            verticalAlign: 'top',
+                            x: -2,
+                            enabled: true,
+                            className: 'btn btn-sm btn-close-chart btn-custom-exporting',
+                            theme: {
+                                fill: '#272C2F',
+                                stroke: '#272C2F',
+                                style: {
+                                    color: '#FFFFFF',
+                                },
+                                states: {
+                                    hover: {
+                                        fill: '#5B6970',
+                                        stroke: '#5B6970',
+                                    },
+                                }
+                            },
+                            useHTML: true,
+                            text: '<i class="bi bi-x-lg"></i>',
+
+                            onclick: function (e) {
+                                removeChart(this);
+                            },
+                        }
+                    }
+                }
+            });
+        };
+    });
+}
+
+function zoomChart(zoomIn, chart, dotNetObject = undefined) {
     //if (zoomIn)
     //    currentZoomLevel++;
     //else
@@ -410,27 +593,34 @@ function zoomChart(zoomIn, chart) {
     newMin = Math.max(xAxis.dataMin, newMin);
     newMax = Math.min(xAxis.dataMax, newMax);
     xAxis.setExtremes(newMin, newMax);
+
+    if (dotNetObject) {
+        dotNetObject.invokeMethodAsync('ZoomingChanged', newMin, newMax);
+    }
 }
 
 function removeChart(chart) {
 
-    if ($("#chartList .chart-box").length == 1)
+    if ($("#chartList .chart-box").length == 1) {
         return;
+    }
 
     var chartContaner = $(chart.renderTo);
     var chartId = chartContaner.data("chart-id");
     $(".chart-box.chart-box-" + chartId).remove();
-    $("#popup-chart-" + chartId).remove();
+    //$("#popup-chart-" + chartId).remove();
 
     chart.destroy();
     var totalCharts = $("#chartList .chart-box").length;
+
 
     var cssClass = "col-12";
     if (totalCharts == 1) {
         cssClass = "col-12";
         //$("#chartList").sortable({ disabled: true });
-        if (!$(".chart-container").hasClass("chart-popup"))
-            $(".chart-container").off("dblclick");
+        //if (!$(".chart-container").hasClass("chart-popup"))
+        /*$(".chart-container").off("dblclick");*/
+        removeWindowControlButtonsFromChart()
     }
     else if (totalCharts == 5) {
         cssClass = "col-12";
@@ -450,17 +640,26 @@ function removeChart(chart) {
     $("#chartList .chart-box").addClass(cssClass);
 
 
+    var chartBoxes = $('#chartList').find('.chart-box');
+
+    chartBoxes.sort(function (a, b) {
+        var counterA = $('.chart-container', a).data('chart-id');
+        var counterB = $('.chart-container', b).data('chart-id');
+        return counterA - counterB;
+    });
+
+
     if (totalCharts == 5) {
         var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
         var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
 
-        $("#chartList .chart-box").slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
-        $("#chartList .chart-box").appendTo(chartListCol1.find('#chartListCol1'));
+        chartBoxes.slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
+        chartBoxes.slice(3).appendTo(chartListCol1.find('#chartListCol1'));
 
         $("#chartList").append(chartListCol1).append(chartListCol2);
 
     } else {
-        $("#chartList .chart-box").appendTo('#chartList');
+        chartBoxes.appendTo('#chartList');
         $("#chartListCol1").parent().remove();
         $("#chartListCol2").parent().remove();
     }
@@ -477,8 +676,6 @@ function removeChart(chart) {
         $("#chartList .chart-box").removeClass('chart-height-50').removeClass('chart-height-33');
         $("#chartList .chart-box").addClass('chart-height-100');
     }
-
-
 }
 
 function addChartBox(totalCharts, chartIndx) {
@@ -525,29 +722,34 @@ function addChartBox(totalCharts, chartIndx) {
     }
 
     addChart(chartContainerId, ohlc, volume, groupingUnits);
-
-    if (totalCharts > 1) {
-        $(".chart-container", chartBox).on("dblclick", async function () {
-            var eleData = $(this).data();
-            var chartId = eleData.chartId;
-            var jsObjectReference = DotNet.createJSObjectReference(window);
-            if (eleData.highchartsChart >= 0) {
-                var chart = Highcharts.charts[eleData.highchartsChart]
-                if (chart) removeChart(chart);
-            }
-            await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
-        });
+    if (totalCharts == 1) {
+        removeWindowControlButtonsFromChart();
     }
+    //if (totalCharts > 1) {
+    //    $(".chart-container", chartBox).on("dblclick", async function () {
+    //        var eleData = $(this).data();
+    //        var chartId = eleData.chartId;
+    //        var jsObjectReference = DotNet.createJSObjectReference(window);
+    //        if (eleData.highchartsChart >= 0) {
+    //            var chart = Highcharts.charts[eleData.highchartsChart]
+    //            if (chart) removeChart(chart);
+    //        }
+    //        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
+    //    });
+    //}
+
 }
-function popoutChartWindow(element, chartIndx, ohlc, volume, groupingUnits) {
+
+function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint) {
     var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
-    calculateZoomLevels(ohlc);
-    addChart(chartContainerId, ohlc, volume, groupingUnits, false);
+    //calculateZoomLevels(ohlc);
+    var chart = addChart(chartContainerId, ohlc, volume, groupingUnits, false, dotNetObject);
+    chart.xAxis[0].setExtremes(minPoint, maxPoint);
 }
 
-function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
+function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint) {
 
     var totalCharts = $("#chartList .chart-box").length + 1;
 
@@ -577,17 +779,26 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
 
     $("#chartList").append(chartBox);
 
+    var chartBoxes = $('#chartList').find('.chart-box');
+
+    chartBoxes.sort(function (a, b) {
+        var counterA = $('.chart-container', a).data('chart-id');
+        var counterB = $('.chart-container', b).data('chart-id');
+        return counterA - counterB;
+    });
+
+
     if (totalCharts == 5) {
         var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
         var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
 
-        $("#chartList .chart-box").slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
-        $("#chartList .chart-box").appendTo(chartListCol1.find('#chartListCol1'));
+        chartBoxes.slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
+        chartBoxes.slice(3).appendTo(chartListCol1.find('#chartListCol1'));
 
         $("#chartList").append(chartListCol1).append(chartListCol2);
 
     } else {
-        $("#chartList .chart-box").appendTo('#chartList');
+        chartBoxes.appendTo('#chartList');
         $("#chartListCol1").parent().remove();
         $("#chartListCol2").parent().remove();
     }
@@ -604,18 +815,21 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    addChart(chartContainerId, ohlc, volume, groupingUnits);
-
-    $(".chart-container", chartBox).off("dblclick").on("dblclick", async function () {
-        var eleData = $(this).data();
-        var chartId = eleData.chartId;
-        var jsObjectReference = DotNet.createJSObjectReference(window);
-        if (eleData.highchartsChart >= 0) {
-            var chart = Highcharts.charts[eleData.highchartsChart]
-            if (chart) removeChart(chart);
-        }
-        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
-    });
+    var chart = addChart(chartContainerId, ohlc, volume, groupingUnits);
+    if (minPoint && maxPoint) {
+        chart.xAxis[0].setExtremes(minPoint, maxPoint);
+    }
+    addWindowControlButtonsToChart();
+    //$(".chart-container", chartBox).off("dblclick").on("dblclick", async function () {
+    //    var eleData = $(this).data();
+    //    var chartId = eleData.chartId;
+    //    var jsObjectReference = DotNet.createJSObjectReference(window);
+    //    if (eleData.highchartsChart >= 0) {
+    //        var chart = Highcharts.charts[eleData.highchartsChart]
+    //        if (chart) removeChart(chart);
+    //    }
+    //    await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
+    //});
 }
 
 function createDashboard(totalCharts) {
@@ -655,19 +869,19 @@ function loadDashboard() {
     }
 }
 
-function calculateZoomLevels(data) {
-    zoomLevels = [];
-    var minDate = data[0].x;
-    var maxDate = data[data.length - 1].x;
-    var range = maxDate - minDate;
-    zoomLevels = [
-        { min: minDate, max: minDate + range * 0.2 },  // Zoom Level 1 (20% of the range)
-        { min: minDate, max: minDate + range * 0.4 },  // Zoom Level 2 (40% of the range)
-        { min: minDate, max: minDate + range * 0.6 },  // Zoom Level 3 (60% of the range)
-        { min: minDate, max: minDate + range * 0.8 },  // Zoom Level 4 (80% of the range)
-        { min: minDate, max: maxDate }                 // Zoom Level 5 (100% of the range)
-    ];
-}
+//function calculateZoomLevels(data) {
+//    zoomLevels = [];
+//    var minDate = data[0].x;
+//    var maxDate = data[data.length - 1].x;
+//    var range = maxDate - minDate;
+//    zoomLevels = [
+//        { min: minDate, max: minDate + range * 0.2 },  // Zoom Level 1 (20% of the range)
+//        { min: minDate, max: minDate + range * 0.4 },  // Zoom Level 2 (40% of the range)
+//        { min: minDate, max: minDate + range * 0.6 },  // Zoom Level 3 (60% of the range)
+//        { min: minDate, max: minDate + range * 0.8 },  // Zoom Level 4 (80% of the range)
+//        { min: minDate, max: maxDate }                 // Zoom Level 5 (100% of the range)
+//    ];
+//}
 
 function LoadData(resultData) {
     ohlc = []; volume = [];
@@ -682,7 +896,7 @@ function LoadData(resultData) {
         volume.push(volumPoint);
     });
 
-    calculateZoomLevels(ohlc);
+    //calculateZoomLevels(ohlc);
 }
 
 function saveLayout() {

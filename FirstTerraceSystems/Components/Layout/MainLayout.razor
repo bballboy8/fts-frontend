@@ -24,7 +24,7 @@
                         DISPLAY OPTIONS
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a role="button" class="dropdown-item" data-item-type="savelayout" tabindex="8" @onclick="() => SaveLayout()">Save Layout</a>
+                        <a role="button" class="dropdown-item" data-item-type="savelayout" tabindex="1" @onclick="() => SaveLayout()">Save Layout</a>
                         @* <a role="button" class="dropdown-item">Load layout</a> *@
 
                         <div class="dropdown dropend">
@@ -88,7 +88,7 @@
             else
             {
 
-                WindowsSerivce.RevertWindowResize();
+                WindowsSerivce.UnlockWindowResize();
                 await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
                 NavigationManager.NavigateTo("/multiChats");
                 // NavigationManager.NavigateTo("/stockchart");
@@ -103,6 +103,8 @@
         // await JSRuntime.InvokeVoidAsync("showLoader");
         var model = new LoginDto();
         await AuthenticationService.Logout(model);
+        WindowsSerivce.CloseAllOpenedWindows();
+        WindowsSerivce.LockWindowResize();
         NavigationManager.NavigateTo("/login");
         StateHasChanged();
     }
@@ -119,26 +121,19 @@
         await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts);
 
         StateContainerService.IsAllowCloseAllWindows = true;
-
-        var parentWindow = Application.Current!.Windows[0];
-        var needToCloseWindows = Application.Current.Windows.OfType<Window>().Where(w => w != parentWindow).ToList();
-
-        foreach (var window in needToCloseWindows)
-        {
-            Application.Current?.CloseWindow(window);
-        }
+        WindowsSerivce.CloseAllOpenedWindows();
     }
 
 
     [JSInvokable]
-    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, object chartId, object ohlc, object volume, object groupingUnits)
+    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, bool isMaximizeClicked, object chartId, object ohlc, object volume, object groupingUnits, object minPoint, object maxPoint)
     {
         StateContainerService.IsAllowCloseAllWindows = false;
         StateContainerService.IsMainPage = false;
-        var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, groupingUnits);
+        StateContainerService.IsMaximizeClikedForChart = isMaximizeClicked;
+        var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, groupingUnits, minPoint, maxPoint);
         var window = new Window(chartWindow);
         Application.Current?.OpenWindow(window);
         return await Task.FromResult(chartId);
     }
-
 }

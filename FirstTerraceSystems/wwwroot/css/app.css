@@ -637,3 +637,11 @@ h1:focus {
 /*.highcharts-button-box:hover {
     fill: #5b6970;
 }*/
+
+g.highcharts-button:focus {
+    outline: -webkit-focus-ring-color auto 5px;
+}
+
+.focus-highlight {
+    outline: -webkit-focus-ring-color auto 5px; 
+}

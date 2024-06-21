@@ -13,7 +13,7 @@ namespace FirstTerraceSystems.Services
 {
     internal class WindowsSerivce
     {
-        public void RevertWindowResize()
+        public void UnlockWindowResize()
         {
 #if WINDOWS
             var window = App.Current?.MainPage?.Window.Handler.PlatformView as Microsoft.UI.Xaml.Window;
@@ -41,12 +41,24 @@ namespace FirstTerraceSystems.Services
             appWindow.TitleBar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
             if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
             {
+                presenter.Maximize();
                 presenter.IsResizable = false;
                 presenter.IsMaximizable = false;
                 presenter.IsMinimizable = false;
                 presenter.SetBorderAndTitleBar(false, false);
             }
 #endif
+        }
+
+        public void CloseAllOpenedWindows()
+        {
+            var parentWindow = Application.Current!.Windows[0];
+            var needToCloseWindows = Application.Current.Windows.OfType<Window>().Where(w => w != parentWindow).ToList();
+
+            foreach (var window in needToCloseWindows)
+            {
+                Application.Current?.CloseWindow(window);
+            }
         }
     }
 }

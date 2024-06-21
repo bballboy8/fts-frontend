@@ -62,7 +62,7 @@
         }
         else
         {
-            WindowsSerivce.RevertWindowResize();
+            WindowsSerivce.UnlockWindowResize();
             NavigationManager.NavigateTo("/multiChats");
         }
     }
@@ -85,6 +85,6 @@
     
     private void CloseApplication()
     {
-        Application.Current?.CloseWindow(Application.Current!.Windows.First());
+        Application.Current?.Quit();
     }
 }

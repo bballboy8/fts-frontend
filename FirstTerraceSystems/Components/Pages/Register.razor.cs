@@ -88,7 +88,7 @@ namespace FirstTerraceSystems.Components.Pages
 
         private void CloseApplication()
         {
-            Application.Current?.CloseWindow(Application.Current!.Windows.First());
+            Application.Current?.Quit();
         }
     }
 }

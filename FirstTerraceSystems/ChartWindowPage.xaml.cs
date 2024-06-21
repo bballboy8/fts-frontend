@@ -11,10 +11,12 @@ public partial class ChartWindowPage : ContentPage
     private readonly object _chartIndx;
     private readonly object _volumeData;
     private readonly object _groupingUnits;
+    private readonly object _min;
+    private readonly object _max;
     private readonly IJSObjectReference _jsObjectReference;
 
 
-    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object ohlc, object volume, object groupingUnits)
+    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object ohlc, object volume, object groupingUnits, object min, object max)
     {
         InitializeComponent();
         _ohlcData = ohlc;
@@ -22,9 +24,11 @@ public partial class ChartWindowPage : ContentPage
         _volumeData = volume;
         _groupingUnits = groupingUnits;
         _jsObjectReference = jsObjectReference;
+        _min = min;
+        _max = max;
     }
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
         ChartComponent.ComponentType = typeof(ChartWindow);
         ChartComponent.Parameters = new Dictionary<string, object?>
@@ -32,16 +36,10 @@ public partial class ChartWindowPage : ContentPage
             { "OhlcData", _ohlcData },
             { "GroupingUnits", _groupingUnits },
             { "VolumeData", _volumeData },
-            { "ChartIndx", _chartIndx }
+            { "ChartIndx", _chartIndx },
+            { "MinPoint", _min },
+            { "MaxPoint", _max }
         };
-
-        //var jsRuntime = BlazorWebView.Handler?.MauiContext?.Services.GetService<IJSRuntime>();
-        var wasDispatchCalled = await BlazorWebView.TryDispatchAsync(sp =>
-        {
-            var jsRuntime = sp.GetRequiredService<IJSRuntime>();
-            jsRuntime?.InvokeVoidAsync("changeBackgroundColor", false);
-        });
-
 
         base.OnAppearing();
     }
@@ -50,7 +48,8 @@ public partial class ChartWindowPage : ContentPage
     {
         if (!StateContainerService.IsAllowCloseAllWindows)
         {
-            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits);
+            var chartPage  = StateContainerService.ChartPages.FirstOrDefault(a => a.ChartId == _chartIndx?.ToString());
+            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme);
         }
 
         StateContainerService.RemoveChartPage(_chartIndx.ToString());
