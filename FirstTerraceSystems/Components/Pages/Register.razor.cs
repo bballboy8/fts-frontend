@@ -14,22 +14,31 @@ namespace FirstTerraceSystems.Components.Pages
 {
     public partial class Register
     {
-        private RegisterDto _registerDto = new RegisterDto();
-        private RegisterModel _registerModel = new RegisterModel();
+        private Entities.RegisterDto _registerDto = new Entities.RegisterDto();
+        private Models.RegisterModel _registerModel = new Models.RegisterModel();
         private FirstTerraceSystems.Entities.RegisterQuestion _registerQuestion = new FirstTerraceSystems.Entities.RegisterQuestion();
 
-        [Inject] public IAuthenticationService AuthenticationService { get; set; }
-        [Inject] public NavigationManager NavigationManager { get; set; }
-        [Parameter] public RegisterModel RegisterModal { get; set; } = new();
-       /* [CascadingParameter] private MudDialogInstance MudDialog { get; set; }*/
-
-        public bool ShowAuthError { get; set; }
-        public string Error { get; set; }
         private bool ShowRegister { get; set; } = true;
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+        }
 
         private void BackToRegistration()
         {
             ShowRegister = true;
+        }
+
+        private async Task ValidateUserAsync()
+        {
+            var isValidEmail = await AuthenticationService.ValidateUserEmail(_registerDto.email);
+            if (isValidEmail.GetValueOrDefault())
+            {
+                Toast.ShowWarningMessage("Email address already taken by another user.");
+                return;
+            }
+            ShowRegister = false;
         }
 
         private async Task SaveAsync()
@@ -38,8 +47,8 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 first_name = _registerDto.first_name,
                 last_name = _registerDto.last_name,
-                user_id = _registerDto.email ,
-                email = _registerDto.email.ToLower(),
+                user_id = _registerDto.email,
+                email = _registerDto.email?.ToLower(),
                 password = _registerDto.password,
                 confirm_password = _registerDto.confirm_password,
                 company_name = _registerDto.company_name,
@@ -58,28 +67,28 @@ namespace FirstTerraceSystems.Components.Pages
                     question_3 = _registerQuestion.Question_3,
                     question_4 = _registerQuestion.Question_4,
                     question_5 = _registerQuestion.Question_5,
-                    question_6 = _registerQuestion.Question_6 ,
+                    question_6 = _registerQuestion.Question_6,
                     question_7 = _registerQuestion.Question_7,
-                    question_8 = _registerQuestion.Question_8 ,
-                    question_9 = _registerQuestion.Question_9 ,
+                    question_8 = _registerQuestion.Question_8,
+                    question_9 = _registerQuestion.Question_9,
                 }
             };
-
             var registerResponse = await AuthenticationService.Registration(registerDto);
+
             if (registerResponse.Message == "User signed up successfully")
             {
-                ToastService.Notify(new(ToastType.Success, "Registration successful"));
-                //_snackBar.Add("Registration successful", Severity.Success);
+                Toast.ShowWarningMessage("Registration successful");
                 NavigationManager.NavigateTo("/login");
             }
             else
             {
-                Error = registerResponse?.Detail ?? "An error occurred during registration.";
-                ShowAuthError = true;
-                //_snackBar.Add(Error, Severity.Error);
-                ToastService.Notify(new(ToastType.Warning, Error));
+                Toast.ShowWarningMessage(registerResponse?.Detail ?? "An error occurred during registration.");
             }
         }
 
+        private void CloseApplication()
+        {
+            Application.Current?.Quit();
+        }
     }
 }

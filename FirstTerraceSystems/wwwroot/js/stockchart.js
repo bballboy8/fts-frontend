@@ -878,6 +878,51 @@ window.showLoader = () => {
     }, 1600);
 }
 
+
+
+
+window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
+
+    const dropdownItems = $(element).find('.dropdown-item');
+    const itemCount = dropdownItems.length;
+
+    if (dropdownItems.length === 0) return;
+    $(element).on('keydown', async function (event) {
+
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+
+            event.preventDefault();
+
+            if (itemCount === 0) return;
+
+            var currentIndex = dropdownItems.index(document.activeElement);
+            var isArrowDown = event.key === 'ArrowDown';
+
+            if (currentIndex === -1) {
+                dropdownItems.eq(isArrowDown ? 0 : itemCount - 1).focus();
+            } else {
+                dropdownItems.eq((currentIndex + (isArrowDown ? 1 : -1) + itemCount) % itemCount).focus();
+            }
+        }
+        else if (event.key === 'Enter' || event.key === ' ') {
+            var itemType = $(document.activeElement).data('item-type');
+
+            if (itemType == 'savelayout') {
+                await dotNetObject.invokeMethodAsync('SaveLayout');
+            } else if (itemType = 'template') {
+                var totalCharts = $(document.activeElement).data('load-template');
+                var num = parseInt(totalCharts, 10);
+
+                if (!isNaN(num) && num > 0) {
+                    createDashboard(totalCharts);
+                }
+            }
+        } else if (event.key === 'Escape') {
+            $('.dropdown-toggle', this).eq(0).dropdown('toggle');
+        }
+    });
+}
+
 $(document).ready(function () {
     $("body").on("click", ".password-toggle", function () {
         var inputType = $(".txt-password-input", $(this).closest(".password-input")).prop("type");
@@ -892,4 +937,16 @@ $(document).ready(function () {
             $(this).removeClass("bi-eye");
         }
     })
+
+    $('body').on('keydown', '.dropdown-toggle', function (event) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+
+            var isOpen = $(this).attr('aria-expanded') === 'true';
+
+            if (!isOpen && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+                $(this).dropdown('toggle');
+            }
+        }
+    });
 });

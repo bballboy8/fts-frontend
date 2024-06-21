@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
+
 namespace FirstTerraceSystems
 {
     public static class MauiProgram
@@ -26,7 +27,7 @@ namespace FirstTerraceSystems
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://52.0.33.126:8000/") });
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
             builder.Services.AddScoped<SqlLiteService>();
             builder.Services.AddBlazoredLocalStorage();
@@ -34,7 +35,10 @@ namespace FirstTerraceSystems
             builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
             builder.Services.AddScoped<NsdaqService>();
+            builder.Services.AddScoped<BsToastService>();
             builder.Services.AddSingleton<StateContainerService>();
+            builder.Services.AddSingleton<WindowsSerivce>();
+
             return builder.Build();
         }
     }

@@ -1,5 +1,6 @@
 ﻿@inject IJSRuntime JSRuntime
 @inject StateContainerService StateContainer
+@inject WindowsSerivce WindowsSerivce
 
 <div @ref="ER_ChartWindow"></div>
 
@@ -18,11 +19,21 @@
     [Parameter]
     public object? GroupingUnits { get; set; }
 
+    [Parameter]
+    public object? MinPoint { get; set; }
+
+    [Parameter]
+    public object? MaxPoint { get; set; }
+
     private ElementReference ER_ChartWindow { get; set; }
+
+    private Models.ChartPageModal ChartPageModal { get; set; } = new();
 
     protected override void OnInitialized()
     {
-        StateContainerService.AddChartPage(new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime });
+        ChartPageModal = new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime, UpdatedMinExtreme = MinPoint, UpdatedMaxExtreme = MaxPoint };
+        WindowsSerivce.UnlockWindowResize();
+        StateContainerService.AddChartPage(ChartPageModal);
         base.OnInitialized();
     }
 
@@ -31,7 +42,15 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
-            await JSRuntime.InvokeVoidAsync("popoutChartWindow", ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits);
+            await JSRuntime.InvokeVoidAsync("popoutChartWindow", DotNetObjectReference.Create(this), ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits, MinPoint, MaxPoint);
         }
+    }
+
+
+    [JSInvokable]
+    public void ZoomingChanged(object minPoint, object maxPoint)
+    {
+        ChartPageModal.UpdatedMinExtreme = minPoint;
+        ChartPageModal.UpdatedMaxExtreme = maxPoint;
     }
 }

@@ -11,6 +11,8 @@ namespace FirstTerraceSystems.Models
     {
         public string? ChartId { get; set; }
         public IJSRuntime? JSRuntime { get; set; }
-     
+
+        public object? UpdatedMinExtreme { get; set; }
+        public object? UpdatedMaxExtreme { get; set; }
     }
 }

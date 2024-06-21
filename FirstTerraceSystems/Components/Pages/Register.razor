@@ -1,35 +1,38 @@
 ﻿@page "/register"
+@inject BsToastService Toast
+@inject IAuthenticationService AuthenticationService
+@inject NavigationManager NavigationManager
+
+<Button Type="ButtonType.Button" Color="ButtonColor.Danger" Outline="true" Class="top-right-corner shadow-none text-white border-0 rounded-0" @onclick="() => CloseApplication()"> <Icon Name="IconName.XLg" /> </Button>
 
 @if (ShowRegister)
 {
     <div class="row justify-content-center w-100">
         <div class="col-sm-8 col-lg-4">
             <div Class="signIn signUp questions login-content">
-                <EditForm Model="@_registerDto" OnValidSubmit="(() => ShowRegister = false)" autocomplete="off" aria-autocomplete="none">
+                <EditForm Model="@_registerDto" OnValidSubmit="ValidateUserAsync" autocomplete="off" aria-autocomplete="none">
                     <DataAnnotationsValidator />
                     <img src="../images/logo.png" Alt="logo" class="logo" />
-                    <div>
-                        <div>
-                            <InputText @bind-Value="@_registerDto.first_name" DisplayName="First name" placeholder="First name" autocomplete="off" aria-autocomplete="none"></InputText>
-                            <ValidationMessage For="@(() => _registerDto.first_name)" />
-                            <InputText @bind-Value="@_registerDto.last_name" DisplayName="Last name" placeholder="Last name" autocomplete="off" aria-autocomplete="none"></InputText>
-                            <ValidationMessage For="@(() => _registerDto.last_name)" />
-                            <InputText type="email" @bind-Value="@_registerDto.email" DisplayName="Email" placeholder="Email" autocomplete="off" aria-autocomplete="none"></InputText>
-                            <ValidationMessage For="@(() => _registerDto.email)" />
-                            <div class="password-input">
-                                <InputText class="txt-password-input" type="password" @bind-Value="@_registerDto.password" DisplayName="Password" placeholder="Password" autocomplete="new-password" aria-autocomplete="none"></InputText>
-                                <i class="password-toggle bi bi-eye"></i>
-                                <ValidationMessage For="@(() => _registerDto.password)" />
-                            </div>
-                            <div class="password-input">
-                                <InputText class="txt-password-input" type="password" @bind-Value="@_registerDto.confirm_password" DisplayName="Confirm Password" placeholder="Confirm Password"></InputText>
-                                <i class="password-toggle bi bi-eye"></i>
-                                <ValidationMessage For="@(() => _registerDto.confirm_password)" />
-                            </div>
-                        </div>
-                        <Button Class="login-btn create-new" Type="ButtonType.Submit">Continue</Button>
-                        <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
+
+                    <InputText @bind-Value="_registerDto.first_name" DisplayName="First name" placeholder="First name" autocomplete="off" aria-autocomplete="none"></InputText>
+                    <ValidationMessage For="@(() => _registerDto.first_name)" />
+                    <InputText @bind-Value="@_registerDto.last_name" DisplayName="Last name" placeholder="Last name" autocomplete="off" aria-autocomplete="none"></InputText>
+                    <ValidationMessage For="@(() => _registerDto.last_name)" />
+                    <InputText type="email" @bind-Value="@_registerDto.email" DisplayName="Email" placeholder="Email" autocomplete="off" aria-autocomplete="none"></InputText>
+                    <ValidationMessage For="@(() => _registerDto.email)" />
+                    <div class="password-input">
+                        <InputText class="txt-password-input" type="password" @bind-Value="@_registerDto.password" DisplayName="Password" placeholder="Password" autocomplete="new-password" aria-autocomplete="none"></InputText>
+                        <i class="password-toggle bi bi-eye"></i>
+                        <ValidationMessage For="@(() => _registerDto.password)" />
                     </div>
+                    <div class="password-input">
+                        <InputText class="txt-password-input" type="password" @bind-Value="@_registerDto.confirm_password" DisplayName="Confirm Password" placeholder="Confirm Password"></InputText>
+                        <i class="password-toggle bi bi-eye"></i>
+                        <ValidationMessage For="@(() => _registerDto.confirm_password)" />
+                    </div>
+                    <Button Class="login-btn create-new" Type="ButtonType.Submit">Continue</Button>
+                    <Button Class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
+
                 </EditForm>
             </div>
         </div>
@@ -44,68 +47,67 @@ else
                 <EditForm Model="@_registerQuestion" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <p>Before we continue, we require a bit of information regarding your trading experience.</p>
-                    <div>
-                        <div>
-                            <div class="position-relative">
-                                <InputSelect @bind-Value="_registerQuestion.Question_1" Label="Question 1">
-                                    <option value="">Question 1</option>
-                                    <option value="Tyrannosaur">Tyrannosaur</option>
-                                    <option value="Triceratops">Triceratops</option>
-                                    <option value="Henon Rex">Henon Rex</option>
-                                </InputSelect>
-                                <img src="../images/vector.png" />
-                            </div>
-                            <ValidationMessage For="@(() => _registerQuestion.Question_1)" />
-                            <div class="position-relative">
-                                <InputSelect @bind-Value="_registerQuestion.Question_2" Label="Question 2">
-                                    <option value="">Question 2</option>
-                                    <option value="Tyrannosaur">Tyrannosaur</option>
-                                    <option value="Triceratops">Triceratops</option>
-                                    <option value="Henon Rex">Henon Rex</option>
-                                </InputSelect>
-                                <img src="../images/vector.png" />
-                            </div>
-                            <ValidationMessage For="@(() => _registerQuestion.Question_2)" />
-                            <div class="position-relative">
-                                <InputSelect @bind-Value="_registerQuestion.Question_3" Label="Question 3">
-                                    <option value="">Question 3</option>
-                                    <option value="Tyrannosaur">Tyrannosaur</option>
-                                    <option value="Triceratops">Triceratops</option>
-                                    <option value="Henon Rex">Henon Rex</option>
-                                </InputSelect>
-                                <img src="../images/vector.png" />
-                            </div>
-                            <ValidationMessage For="@(() => _registerQuestion.Question_3)" />
-                            <div class="position-relative">
-                                <InputSelect @bind-Value="_registerQuestion.Question_4" Label="Question 4">
-                                    <option value="">Question 4</option>
-                                    <option value="Tyrannosaur">Tyrannosaur</option>
-                                    <option value="Triceratops">Triceratops</option>
-                                    <option value="Henon Rex">Henon Rex</option>
-                                </InputSelect>
-                                <img src="../images/vector.png" />
-                            </div>
-                            <ValidationMessage For="@(() => _registerQuestion.Question_4)" />
-                            <div class="position-relative">
-                                <InputSelect @bind-Value="_registerQuestion.Question_5" Label="Question 5">
-                                    <option value="">Question 5</option>
-                                    <option value="Tyrannosaur">Tyrannosaur</option>
-                                    <option value="Triceratops">Triceratops</option>
-                                    <option value="Henon Rex">Henon Rex</option>
-                                </InputSelect>
-                                <img src="../images/vector.png" />
-                            </div>
-                            <ValidationMessage For="@(() => _registerQuestion.Question_5)" />
-                        </div>
 
-                        <Button Class="login-btn create-new" Type="ButtonType.Submit">Create account</Button>
-                        <Button class="login-btn create-new" @onclick="BackToRegistration">Back</Button>
-                        <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back to Sign In</Button>
-
+                    <div class="position-relative">
+                        <InputSelect @bind-Value="_registerQuestion.Question_1" Label="Question 1">
+                            <option value="">Question 1</option>
+                            <option value="Tyrannosaur">Tyrannosaur</option>
+                            <option value="Triceratops">Triceratops</option>
+                            <option value="Henon Rex">Henon Rex</option>
+                        </InputSelect>
+                        <img src="../images/vector.png" />
                     </div>
+                    <ValidationMessage For="@(() => _registerQuestion.Question_1)" />
+                    <div class="position-relative">
+                        <InputSelect @bind-Value="_registerQuestion.Question_2" Label="Question 2">
+                            <option value="">Question 2</option>
+                            <option value="Tyrannosaur">Tyrannosaur</option>
+                            <option value="Triceratops">Triceratops</option>
+                            <option value="Henon Rex">Henon Rex</option>
+                        </InputSelect>
+                        <img src="../images/vector.png" />
+                    </div>
+                    <ValidationMessage For="@(() => _registerQuestion.Question_2)" />
+                    <div class="position-relative">
+                        <InputSelect @bind-Value="_registerQuestion.Question_3" Label="Question 3">
+                            <option value="">Question 3</option>
+                            <option value="Tyrannosaur">Tyrannosaur</option>
+                            <option value="Triceratops">Triceratops</option>
+                            <option value="Henon Rex">Henon Rex</option>
+                        </InputSelect>
+                        <img src="../images/vector.png" />
+                    </div>
+                    <ValidationMessage For="@(() => _registerQuestion.Question_3)" />
+                    <div class="position-relative">
+                        <InputSelect @bind-Value="_registerQuestion.Question_4" Label="Question 4">
+                            <option value="">Question 4</option>
+                            <option value="Tyrannosaur">Tyrannosaur</option>
+                            <option value="Triceratops">Triceratops</option>
+                            <option value="Henon Rex">Henon Rex</option>
+                        </InputSelect>
+                        <img src="../images/vector.png" />
+                    </div>
+                    <ValidationMessage For="@(() => _registerQuestion.Question_4)" />
+                    <div class="position-relative">
+                        <InputSelect @bind-Value="_registerQuestion.Question_5" Label="Question 5">
+                            <option value="">Question 5</option>
+                            <option value="Tyrannosaur">Tyrannosaur</option>
+                            <option value="Triceratops">Triceratops</option>
+                            <option value="Henon Rex">Henon Rex</option>
+                        </InputSelect>
+                        <img src="../images/vector.png" />
+                    </div>
+                    <ValidationMessage For="@(() => _registerQuestion.Question_5)" />
+
+
+                    <Button Class="login-btn create-new" Type="ButtonType.Submit">Create account</Button>
+                    <Button class="login-btn create-new" @onclick="BackToRegistration">Back</Button>
+                    <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back to Sign In</Button>
+
                 </EditForm>
             </div>
         </div>
     </div>
 
 }
+

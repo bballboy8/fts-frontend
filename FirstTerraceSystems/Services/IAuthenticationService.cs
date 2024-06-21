@@ -13,5 +13,6 @@ namespace FirstTerraceSystems.Services
         Task<RegisterResponseDto> Registration(RegisterModel model);
         Task<AuthResponseDto> Login(LoginDto userForAuthentication);
         Task Logout(LoginDto model);
+        Task<bool?> ValidateUserEmail(string? email);
     }
 }

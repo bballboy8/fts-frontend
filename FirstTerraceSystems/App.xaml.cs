@@ -14,6 +14,11 @@
             base.OnResume();
         }
 
+        protected override void OnSleep()
+        {
+            base.OnSleep();
+        }
+
         protected override Window CreateWindow(IActivationState? activationState)
         {
             Window window = base.CreateWindow(activationState);

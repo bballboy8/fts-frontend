@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,14 +13,25 @@ namespace FirstTerraceSystems.Services
     internal class StateContainerService
     {
         public static bool IsAllowCloseAllWindows { get; set; } = false;
+        public static bool IsMainPage { get; set; } = true;
         public static bool IsDarkMode { get; set; } = true;
-
-        public static List<ChartPageModal> ChartPages { get; set; } = [];
+        public static bool IsMaximizeClikedForChart { get; set; } = true;
+        public static ObservableCollection<ChartPageModal> ChartPages { get; set; } = [];
 
         public static void AddChartPage(ChartPageModal chartPage)
         {
-            RemoveChartPage(chartPage.ChartId);
-            ChartPages.Add(chartPage);
+            var existingPage = ChartPages.FirstOrDefault(cp => cp.ChartId == chartPage.ChartId);
+
+            if (existingPage != null)
+            {
+                existingPage.JSRuntime = chartPage.JSRuntime;
+                existingPage.UpdatedMaxExtreme = chartPage.UpdatedMaxExtreme;
+                existingPage.UpdatedMinExtreme = chartPage.UpdatedMinExtreme;
+            }
+            else
+            {
+                ChartPages.Add(chartPage);
+            }
         }
 
         public static void RemoveChartPage(string? chartId)

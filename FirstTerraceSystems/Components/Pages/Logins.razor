@@ -1,5 +1,8 @@
-﻿@page "/"
+﻿
+
+@page "/"
 @page "/login"
+
 @using System.ComponentModel.DataAnnotations
 @using FirstTerraceSystems.Entities
 @using FirstTerraceSystems.Features
@@ -7,6 +10,14 @@
 
 @inject NsdaqService NsdaqService
 @inject SqlLiteService SqlliteService
+@inject IAuthenticationService AuthenticationService
+@inject NavigationManager NavigationManager
+@inject WindowsSerivce WindowsSerivce
+@inject BsToastService Toast
+<Button Type="ButtonType.Button" Color="ButtonColor.Danger" Outline="true" Class="top-right-corner shadow-none text-white border-0 rounded-0" @onclick="() => CloseApplication()"> <Icon Name="IconName.XLg" /> </Button>
+
+
+
 
 <div class="signIn">
     <div class="row g-0 justify-content-center">
@@ -25,10 +36,6 @@
                         <i class="password-toggle bi bi-eye"></i>
                         <ValidationMessage For="@(() => _loginDto.Password)" />
                     </div>
-                    @if (ShowAuthError)
-                    {
-                        <span class="text-danger">@Error</span>
-                    }
 
                     <button class="login-btn create-new" type="Submit">Sign in</button>
                     <button type="button" class="login-btn create-new sign-in-down" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</button>
@@ -47,24 +54,25 @@
 </div>
 
 @code {
-    [Inject]
-    public IAuthenticationService AuthenticationService { get; set; }
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
     private LoginDto _loginDto = new LoginDto();
-    public bool ShowAuthError { get; set; }
-    public string Error { get; set; }
+    public string? Error { get; set; }
+
+    protected override void OnInitialized()
+    {
+        WindowsSerivce.LockWindowResize();
+        base.OnInitialized();
+    }
+
     private async Task HandleValidSubmit()
     {
-        ShowAuthError = false;
         var result = await AuthenticationService.Login(_loginDto);
         if (!string.IsNullOrEmpty(result.Detail))
         {
-            Error = result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail;
-            ShowAuthError = true;
+            Toast.ShowDangerMessage(result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail);
         }
         else
-        {               
+        {
+            WindowsSerivce.UnlockWindowResize();
             WebSocketClientConnection.NavigationManager = NavigationManager;            
             NavigationManager.NavigateTo("/multiChats");
         }
@@ -84,5 +92,10 @@
     private void LoginWithGoogle()
     {
         // Handle Google login
+    }
+    
+    private void CloseApplication()
+    {
+        Application.Current?.Quit();
     }
 }
