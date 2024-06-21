@@ -103,9 +103,9 @@ namespace FirstTerraceSystems.Services
             }
         }
 
+        //Get & Update Stock data api
         public async Task GetSymbolicData()
         {
-            //await EnsureTokenIsValidAsync();
             SqlLiteService sqlLiteService = new();
             string dtStartDate = DateTime.Now.AddDays(-2).ToString("yyyy-MM-d HH:mm:ss");
             var lastSymbol = sqlLiteService.GetLastSample();
@@ -115,21 +115,14 @@ namespace FirstTerraceSystems.Services
             string jsonData = JsonSerializer.Serialize(new { start_datetime = dtStartDate, symbol = string.Empty });
             HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
             {
-                //request.Headers.Add("Authorization", $"Bearer {_token}");
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
             };
             try
             {
-                 HttpResponseMessage response = await _client.SendAsync(request);
+                HttpResponseMessage response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
                 var data = await response.Content.ReadFromJsonAsync<List<SymbolicData>>();
-                //var data1 = await response.Content.ReadFromJsonAsync<List<object>>();
                 sqlLiteService.UpdateSymbolicDataToDB(data);
-
-                //var data1Str = System.IO.File.ReadAllText(@"C:\Users\teamo\Desktop\test.json");
-                //var data1 = JsonSerializer.Deserialize<List<SymbolicData>>(data1Str);
-                ////Updaye the data to the sqllite                
-                //sqlLiteService.UpdateSymbolicDataToDB(data1);
             }
             catch (Exception ex)
             {
