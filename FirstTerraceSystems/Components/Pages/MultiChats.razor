@@ -31,38 +31,26 @@
 
     private ClientWebSocket webSocket = new ClientWebSocket();
 
+    int SocketConnectionTrial = 0;
+
     protected override async Task OnInitializedAsync()
     {
-        // var To = DateTime.Now;
-        // var from = To.AddDays(-3);
-        // from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
-
-
-
+        //Create reference in Multichart.js file to call current page methods from js file
         var lDotNetReference = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("T5.SetDotNetReference", lDotNetReference);
-        //EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        //Call api and update data to the sqllite
         if (firstRender)
         {
-            //WebSocketClientConnection.SendStringAsync("start");
-            await NsdaqService.GetSymbolicData();
-            await ConnectWebSocket();
-            Listen();
-            //await NsdaqService.GetSymbolicData();            
+            await ConnectWebSocket(); // Connect to Websocket
+            Listen(); // Initialize Websocket listner
+            await NsdaqService.GetSymbolicData(); //Call api and update data to the sqllite
         }
-
-        // var symbolicdata = SqlliteService.GetSymbolicData("AAPL");
-        //await JSRuntime.InvokeVoidAsync("LoadData", symbolicdata);
-
-
         await JSRuntime.InvokeVoidAsync("loadDashboard", 1);
     }
-    int SocketConnectionTrial = 0;
+
     private async Task ConnectWebSocket()
     {
         if (SocketConnectionTrial < 3)
@@ -77,19 +65,15 @@
             catch (Exception)
             {
                 SocketConnectionTrial++;
+                await ConnectWebSocket();
             }
         }
 
     }
 
+    //Websocket listner to Stock data, It update data in SqlLite db and refreshes the charts
     private async Task Listen()
     {
-        // WebSocketClientConnection.AddListener(x =>
-        //{
-        //    Console.WriteLine(x);
-        //    JSRuntime.InvokeVoidAsync("console.log", x);
-        //});
-
         var buffer = new byte[1024 * 4];
         while (webSocket.State == WebSocketState.Open)
         {
@@ -115,6 +99,7 @@
         }
     }
 
+    //To update chart data with symbol
     [JSInvokable("GetStockBySymbol")]
     public async Task<dynamic> GetStockBySymbol(string symbol)
     {

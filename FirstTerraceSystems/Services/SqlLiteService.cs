@@ -31,14 +31,16 @@ namespace FirstTerraceSystems.Services
             return result;
         }
 
+        //Update database from api
         public void UpdateSymbolicDataToDB(List<SymbolicData> data)
         {
             List<SymbolicData> batch = [];
             foreach (var item in data)
             {
-                var dt = item.Date;// DateTime.ParseExact(item.Date.ToShortDateString(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                var dt = item.Date;
                 dt = dt.AddMilliseconds(long.Parse(item.TrackingID) / 1000000);
 
+                // Convert to Eastern Time
                 TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
                 DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(dt, easternZone);
 
@@ -57,6 +59,7 @@ namespace FirstTerraceSystems.Services
                 _connection.InsertAll(batch);
         }
 
+        //Update database from Socket
         public void UpdateSymbolicsocketDataToDB(NasdaqData data)
         {
             List<SymbolicData> batch = new();

@@ -321,6 +321,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
     });
 }
 
+//Refresh charts
 function RefreshChartData() {
     let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
     if (symbolList == null) {
