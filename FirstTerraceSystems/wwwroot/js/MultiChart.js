@@ -1,6 +1,4 @@
-﻿
-
-var ohlc = [], volume = [], dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
+﻿var ohlc = [], volume = [], dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
 var groupingUnits = [['millisecond', [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]],
 ['second', [1, 2, 5, 10, 15, 30]],
 ['minute', [1, 2, 5, 10, 15,]],
@@ -10,6 +8,7 @@ var groupingUnits = [['millisecond', [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]],
 ['month', [1, 3, 6]],
 ['year', null]
 ];
+
 const initialChartSymbols = [
     { id: 'chart-1', symbol: 'AAPL' },
     { id: 'chart-2', symbol: 'GOOGL' },
@@ -20,7 +19,6 @@ const initialChartSymbols = [
     { id: 'chart-7', symbol: 'META' },
     { id: 'chart-8', symbol: 'GOOG' }
 ];
-
 
 function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDraggable = true, dotNetObject = undefined) {
 
@@ -412,7 +410,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
     });
 }
 
-//Refresh charts
 function RefreshChartData() {
     let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
     if (symbolList == null) {
@@ -581,7 +578,6 @@ function addWindowControlButtonsToChart() {
         };
     });
 }
-
 
 function zoomChart(zoomIn, chart, dotNetObject = undefined) {
     //if (zoomIn)
@@ -759,21 +755,21 @@ function addChartBox(totalCharts, chartIndx, symbol) {
     //}
 
     loadSymbolData(symbol, function (seriesData, currSymbol) {
-        addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol);        
+        addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol);
     });
 
-/*    if (totalCharts > 1) {
-        $(".chart-container", chartBox).on("dblclick", async function () {
-            var eleData = $(this).data();
-            var chartId = eleData.chartId;
-            var jsObjectReference = DotNet.createJSObjectReference(window);
-            if (eleData.highchartsChart >= 0) {
-                var chart = Highcharts.charts[eleData.highchartsChart]
-                if (chart) removeChart(chart);
-            }
-            await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
-        });
-    }*/
+    /*    if (totalCharts > 1) {
+            $(".chart-container", chartBox).on("dblclick", async function () {
+                var eleData = $(this).data();
+                var chartId = eleData.chartId;
+                var jsObjectReference = DotNet.createJSObjectReference(window);
+                if (eleData.highchartsChart >= 0) {
+                    var chart = Highcharts.charts[eleData.highchartsChart]
+                    if (chart) removeChart(chart);
+                }
+                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
+            });
+        }*/
 }
 
 function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint) {
@@ -891,7 +887,7 @@ function loadDashboard() {
         localStorage.setItem('ChartSymbols', JSON.stringify(initialChartSymbols));
         symbolList = initialChartSymbols;
     }
-    
+
     var chartList = $("#chartList");
 
     chartList.html('');
@@ -903,9 +899,34 @@ function loadDashboard() {
     }
 
     for (var indx = 1; indx <= Number(totalCharts); indx++) {
-        var rec = symbolList[indx-1]; //symbolList.find(item => item.id === "chart+" + indx);
+        var rec = symbolList[indx - 1]; //symbolList.find(item => item.id === "chart+" + indx);
         addChartBox(totalCharts, indx, rec.symbol);
     }
+}
+
+function loadSymbolData(symbol, onLoaded) {
+    T5.dotReference.invokeMethodAsync("GetStockBySymbol", symbol).then(resultData => {
+        var seriesData = [];
+        for (var i = 1; i < resultData.length; i++) {
+            var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
+            seriesData.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
+        }
+        onLoaded(seriesData, symbol);
+    });
+}
+
+function saveLayout() {
+    localStorage.setItem('SavedLayout', $("#chartList .chart-box").length);
+    for (var i = 0; i < $("#chartList .chart-box").length; i++) {
+        localStorage.setItem('SaveSymbol', null);
+    }
+    console.log(localStorage.getItem('SavedLayout'));
+}
+
+var T5 = window.T5 || {};
+T5.dotReference = null;
+T5.SetDotNetReference = function (ldotreference) {
+    T5.dotReference = ldotreference;
 }
 
 //function calculateZoomLevels(data) {
@@ -934,26 +955,3 @@ function loadDashboard() {
 //    }
 //    calculateZoomLevels(ohlc);
 //}
-function loadSymbolData(symbol, onLoaded) {
-    T5.dotReference.invokeMethodAsync("GetStockBySymbol", symbol).then(resultData => {
-        var seriesData = [];
-        for (var i = 1; i < resultData.length; i++) {
-            var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
-            seriesData.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
-        }
-        onLoaded(seriesData, symbol);
-    });
-}
-function saveLayout() {
-    localStorage.setItem('SavedLayout', $("#chartList .chart-box").length);
-    for (var i = 0; i < $("#chartList .chart-box").length; i++) {
-        localStorage.setItem('SaveSymbol', null);
-    }
-    console.log(localStorage.getItem('SavedLayout'));
-}
-
-var T5 = window.T5 || {};
-T5.dotReference = null;
-T5.SetDotNetReference = function (ldotreference) {
-    T5.dotReference = ldotreference;
-}
