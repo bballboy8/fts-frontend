@@ -3,6 +3,7 @@
 @using FirstTerraceSystems.Features
 @using System.Net.WebSockets
 @using System.Text
+@using System.Text.Json
 @inject NsdaqService NsdaqService
 @inject SqlLiteService SqlliteService
 @inject IJSRuntime JS
@@ -35,11 +36,7 @@
         // var To = DateTime.Now;
         // var from = To.AddDays(-3);
         // from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
-        WebSocketClientConnection.AddListener(x =>
-        {
-            Console.WriteLine(x);
-            JSRuntime.InvokeVoidAsync("console.log", x);
-        });
+
 
 
         var lDotNetReference = DotNetObjectReference.Create(this);
@@ -52,8 +49,13 @@
         //Call api and update data to the sqllite
         if (firstRender)
         {
-            WebSocketClientConnection.SendStringAsync("start");
-            await NsdaqService.GetSymbolicData();            
+            //WebSocketClientConnection.SendStringAsync("start");
+            await NsdaqService.GetSymbolicData();
+            await webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+            var buffer = Encoding.UTF8.GetBytes("start");
+            await webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+            Listen();
+            //await NsdaqService.GetSymbolicData();            
         }
 
         // var symbolicdata = SqlliteService.GetSymbolicData("AAPL");
@@ -63,10 +65,46 @@
         await JSRuntime.InvokeVoidAsync("loadDashboard", 1);
     }
 
+    private async void Listen()
+    {
+        // WebSocketClientConnection.AddListener(x =>
+        //{
+        //    Console.WriteLine(x);
+        //    JSRuntime.InvokeVoidAsync("console.log", x);
+        //});
+
+        var buffer = new byte[1024 * 4];
+        while (webSocket.State == WebSocketState.Open)
+        {
+            try
+            {
+                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                if (result.MessageType == WebSocketMessageType.Text)
+                {
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    if (!message.Contains("start"))
+                    {
+                        Console.WriteLine(message);
+                        var data = JsonSerializer.Deserialize<NasdaqData>(message);
+                        SqlliteService.UpdateSymbolicsocketDataToDB(data);
+                        await JSRuntime.InvokeVoidAsync("RefreshChartData");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+        }
+    }
+
     [JSInvokable("GetStockBySymbol")]
     public async Task<dynamic> GetStockBySymbol(string symbol)
     {
         var symbolicdata = SqlliteService.GetSymbolicData(symbol);
         return symbolicdata;
     }
+
+
 }

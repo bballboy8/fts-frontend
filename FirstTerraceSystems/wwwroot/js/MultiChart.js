@@ -321,6 +321,35 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
     });
 }
 
+function RefreshChartData() {
+    Highcharts.charts.forEach(chart => {
+        if (chart) {
+            loadSymbolData(symbol, function (seriesData) {
+                chart.series[0].update({
+                    name: symbol,
+                    data: seriesData,
+                    color: '#C01620', // Color for the fall
+                    upColor: '#16C05A', // Color for the rise
+                    lineWidth: 0,
+                    marker: { enabled: true, radius: 4 },
+                    tooltip: { valueDecimals: 2 },
+                    states: { hover: { lineWidthPlus: 0 } }
+                });
+            });
+            let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
+            if (symbolList == null) {
+                symbolList = initialChartSymbols;
+            }
+            var indx = Number(chartId.split("-")[1]);
+            symbolList[indx - 1].symbol = symbol;
+            // Save the updated list back to localStorage
+            localStorage.setItem('ChartSymbols', JSON.stringify(symbolList));
+            console.log("Refreshed data");
+        }
+
+    });
+}
+
 function zoomChart(zoomIn, chart) {
     if (zoomIn)
         currentZoomLevel++;

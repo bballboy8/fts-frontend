@@ -12,8 +12,9 @@ namespace FirstTerraceSystems.Services
 
         public SqlLiteService()
         {
-            var dbpath = Path.Combine(Environment.ProcessPath.Replace("FirstTerraceSystems.exe",""), "FTS.db");
-            //var dbpath = Path.Combine(@"D:\", "FTS.db");
+            //var dbpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
+            //var dbpath = Path.Combine(Environment.ProcessPath.Replace("FirstTerraceSystems.exe",""), "FTS.db");
+            var dbpath = Path.Combine(@"D:\", "FTS.db");
             _connection = new SQLiteConnection(dbpath);
             _connection.CreateTable<SymbolicData>();
         }
@@ -37,8 +38,28 @@ namespace FirstTerraceSystems.Services
             {
                 var dt = item.Date;// DateTime.ParseExact(item.Date.ToShortDateString(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
                 dt = dt.AddMilliseconds(long.Parse(item.TrackingID) / 1000000);
-                item.TimeStamp = dt.ToString("yyyy-MM-ddTHH:mm:ss.fff");
+
+                TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+                DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(dt, easternZone);
+
+                item.TimeStamp = easternTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
                 batch.Add(item);
+                if (batch.Count > 10000)
+                {
+                    _connection.InsertAll(batch);
+                    batch.Clear();
+                }
+            }
+            if (batch.Count > 0)
+                _connection.InsertAll(batch);
+        }
+
+        public void UpdateSymbolicsocketDataToDB(NasdaqData data)
+        {
+            List<SymbolicData> batch = new();
+            foreach (var item in data.Data)
+            {
+                batch.Add(new SymbolicData(data.Headers, item));
                 if (batch.Count > 10000)
                 {
                     _connection.InsertAll(batch);

@@ -122,6 +122,7 @@ namespace FirstTerraceSystems.Services
             {
                 HttpResponseMessage response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
+                var data1 = await response.Content.ReadFromJsonAsync<List<object>>();
                 var data = await response.Content.ReadFromJsonAsync<List<SymbolicData>>();
                 sqlLiteService.UpdateSymbolicDataToDB(data);
 
