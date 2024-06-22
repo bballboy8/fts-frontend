@@ -30,9 +30,11 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
             borderColor: "#5B6970",
             events: {
                 load: function () {
-                    //debugger
 
-                    //var button = createChartButton(this, {
+                    //const chart = this;
+                    //const chartContainer = chart.renderTo;
+                    //const customButtons = $('g.btn-custom-exporting', chartContainer).toArray();
+                    //var button = addChartButton(this, {
                     //    text: '<i class="bi bi-zoom-out"></i>',
                     //    x: 355,
                     //    y: 0,
@@ -42,27 +44,68 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     //    }
                     //});
 
-
-                    //$(this.renderTo).('g.highcharts-range-selector-buttons g').attr('tabindex', 0);
-                    //$(this.renderTo).find('g.highcharts-button').each(function (index) {
+                    //$('g.highcharts-range-selector-buttons g', $(this.renderTo)).attr('tabindex', 0);
+                    //$('g.highcharts-button', $(this.renderTo)).each(function (index) {
                     //    $(this).attr('tabindex', 0);
-                    //    $(this).on('focus', function () {
-                    //        debugger
+                    //    $(this).on('focus', function (event) {
                     //        $(this).addClass('focus-highlight');
-                    //    }).on('blur', function () {
+                    //        event.stopPropagation();
+                    //    }).on('blur', function (event) {
                     //        $(this).removeClass('focus-highlight');
+                    //        event.stopPropagation();
                     //    });
                     //});
 
-                    //$(this.renderTo).find('g.highcharts-range-selector-group g.highcharts-button').each(function (index) {
+                    //customButtons.forEach((btn, index) => {
+                    //    $(btn)
+                    //        .attr('tabindex', '0')
+                    //        .attr('role', 'button')
+                    //        .css('cursor', 'pointer')
+                    //        .on('focus', function (event) {
+                    //            $(this).addClass('focus-highlight');
+                    //            event.stopPropagation();
+                    //        })
+                    //        .on('blur', function (event) {
+                    //            $(this).removeClass('focus-highlight');
+                    //            event.stopPropagation();
+                    //        })
+                    //        .on('keydown', function (event) {
+                    //            if (event.key === 'Enter' || event.key === ' ') {
+                    //                event.preventDefault();
+                    //                $(this).trigger('click');
+                    //            } else if (event.key === 'Tab') {
+                    //                event.preventDefault();
+                    //                const nextIndex = (index + 1) % customButtons.length;
+                    //                $(customButtons[nextIndex]).focus();
+                    //            }
+                    //        });
+                    //});
+
+                    //$('g.highcharts-range-selector-group g.highcharts-button', chartContainer).each(function () {
                     //    $(this).on('keydown', function (e) {
-                    //        if (e.which === 9) { 
-                    //            var customButton = $('g.btn-custom-exporting:eq(0)');
-                    //            customButton.focus();
-                    //            //customButton.addClass('focus-highlight');
+                    //        if (e.key === 'Tab' && !e.shiftKey) {
+                    //            e.preventDefault();
+                    //            $(customButtons[0]).focus();
                     //        }
                     //    });
                     //});
+
+                    //if (customButtons.length > 0) {
+                    //    $(customButtons[customButtons.length - 1]).on('keydown', function (e) {
+                    //        if (e.key === 'Tab' && !e.shiftKey) {
+                    //            e.preventDefault();
+                    //            $('g.highcharts-range-selector-group g.highcharts-button:first', chartContainer).focus();
+                    //        }
+                    //    });
+
+                    //    $(customButtons[0]).on('keydown', function (e) {
+                    //        if (e.key === 'Tab' && e.shiftKey) {
+                    //            e.preventDefault();
+                    //            $('g.highcharts-range-selector-group g.highcharts-button:last', chartContainer).focus();
+                    //        }
+                    //    });
+                    //}
+
                 }
             }
         },
@@ -371,8 +414,19 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                 focusBorder: {
                     enabled: false,
                     hideBrowserFocusOutline: false
-                }
+                },
+                //order: ['series', 'zoom', 'rangeSelector', 'legend', 'chartMenu'],
+                //wrapAround: true,
+                //seriesNavigation: {
+                //    skipNullPoints: true,
+                //    pointNavigationEnabledThreshold: false
+                //}
             },
+            //pointDescriptionEnabledThreshold: false,
+            //series: {
+            //    describeSingleSeries: true,
+            //    pointDescriptionEnabledThreshold: false
+            //}
         }
     });
 
@@ -452,7 +506,7 @@ function removeWindowControlButtonsFromChart() {
     }
 }
 
-function createChartButton(chart, options) {
+function addChartButton(chart, options) {
     const {
         text = 'Button',
         x = 0,
@@ -480,6 +534,17 @@ function createChartButton(chart, options) {
     );
 
     button.add();
+
+    button.element.setAttribute('tabindex', '0');
+    button.element.setAttribute('role', 'button');
+    button.element.style.cursor = 'pointer';
+
+    button.element.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            callback.call(this);
+        }
+    });
 
     return button;
 }
