@@ -931,6 +931,13 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxP
 
 function createDashboard(totalCharts) {
 
+    var totalCharts = localStorage.getItem('SavedLayout') ?? 5;
+    let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
+    if (symbolList == null) {
+        localStorage.setItem('ChartSymbols', JSON.stringify(initialChartSymbols));
+        symbolList = initialChartSymbols;
+    }
+
     var chartList = $("#chartList");
     chartList.html('');
     if (Highcharts.charts) Highcharts.charts.forEach(c => { if (c) c.destroy() });
@@ -940,7 +947,8 @@ function createDashboard(totalCharts) {
     }
 
     for (var indx = 1; indx <= Number(totalCharts); indx++) {
-        addChartBox(totalCharts, indx);
+        var rec = symbolList[indx - 1]; //symbolList.find(item => item.id === "chart+" + indx);
+        addChartBox(totalCharts, indx, rec.symbol);
     }
 }
 
