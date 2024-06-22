@@ -12,9 +12,9 @@ namespace FirstTerraceSystems.Services
 
         public SqlLiteService()
         {
-            //var dbpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
+            var dbpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
             //var dbpath = Path.Combine(Environment.ProcessPath.Replace("FirstTerraceSystems.exe",""), "FTS.db");
-            var dbpath = Path.Combine(@"D:\", "var", "FTS.db");
+            //var dbpath = Path.Combine(@"D:\", "var", "FTS.db");
             _connection = new SQLiteConnection(dbpath);
             _connection.CreateTable<SymbolicData>();
         }
