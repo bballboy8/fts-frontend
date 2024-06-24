@@ -9,7 +9,6 @@
 @inject NasdaqService NasdaqService
 @inject Repositories.SymbolicRepository SymbolicRepository
 @inject IJSRuntime JS
-@implements IDisposable
 
 <style>
     #popup {
@@ -30,7 +29,7 @@
 
 @code {
 
-    private ClientWebSocket webSocket = new ClientWebSocket();
+    
 
     int SocketConnectionTrial = 0;
 
@@ -75,10 +74,10 @@
             try
             {
                 //ws://localhost:6969/ws test socket url
-                // await webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
-                await webSocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
+                await StateContainerService.webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+                //await StateContainerService.webSocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
                 var buffer = Encoding.UTF8.GetBytes("start");
-                await webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                await StateContainerService.webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
                 SocketConnectionTrial = 0;
             }
             catch (Exception ex)
@@ -99,12 +98,12 @@
         {
             try
             {
-                while (webSocket.State == WebSocketState.Open)
+                while (StateContainerService.webSocket.State == WebSocketState.Open)
                 {
                     WebSocketReceiveResult result;
                     do
                     {
-                        result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                        result = await StateContainerService.webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                         await memoryStream.WriteAsync(buffer, 0, result.Count);
                     } while (!result.EndOfMessage);
 
@@ -152,13 +151,5 @@
     {
         var symbolicdata = SymbolicRepository.GetSymbolicDataBySymbol(symbol);
         return await Task.FromResult(symbolicdata);
-    }
-
-    void IDisposable.Dispose()
-    {
-        if (webSocket.State != WebSocketState.Closed)
-        {
-            webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-        }
     }
 }

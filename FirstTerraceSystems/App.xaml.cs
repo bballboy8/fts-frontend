@@ -1,4 +1,7 @@
-﻿namespace FirstTerraceSystems
+﻿using FirstTerraceSystems.Services;
+using System.Net.WebSockets;
+
+namespace FirstTerraceSystems
 {
     public partial class App : Application
     {
@@ -32,7 +35,7 @@
             {
 
                 var windowsToClose = Application.Current!.Windows.Where(w => w != window).ToList();
-
+                StateContainerService.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
                 foreach (var window in windowsToClose)
                 {
                     Application.Current?.CloseWindow(window);

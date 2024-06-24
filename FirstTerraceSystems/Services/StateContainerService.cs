@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using BlazorBootstrap;
@@ -12,6 +13,7 @@ namespace FirstTerraceSystems.Services
 {
     internal class StateContainerService
     {
+        public static ClientWebSocket webSocket = new ClientWebSocket();
         public static bool IsAllowCloseAllWindows { get; set; } = false;
         public static bool IsMainPage { get; set; } = true;
         public static bool IsDarkMode { get; set; } = true;
