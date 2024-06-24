@@ -47,6 +47,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
         },
         rangeSelector: {
             //height: 0,
+            allButtonsEnabled: true,
             buttons: [
                 { type: 'minute', count: 1, text: '1m' },
                 { type: 'minute', count: 3, text: '3m' },
