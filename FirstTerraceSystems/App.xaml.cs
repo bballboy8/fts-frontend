@@ -35,7 +35,12 @@ namespace FirstTerraceSystems
             {
 
                 var windowsToClose = Application.Current!.Windows.Where(w => w != window).ToList();
-                StateContainerService.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+
+                if (StateContainerService.webSocket.State == WebSocketState.Open)
+                {
+                    StateContainerService.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+                }
+
                 foreach (var window in windowsToClose)
                 {
                     Application.Current?.CloseWindow(window);

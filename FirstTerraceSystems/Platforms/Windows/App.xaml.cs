@@ -45,11 +45,11 @@ namespace FirstTerraceSystems.WinUI
 
             nativeWindow.Activate();
             nativeWindow.ExtendsContentIntoTitleBar = false;
-            
+
             IntPtr windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
             WindowId windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
             AppWindow appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-            
+
             appWindow.TitleBar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
             appWindow.Hide();
             if (appWindow.Presenter is OverlappedPresenter presenter)
@@ -69,7 +69,10 @@ namespace FirstTerraceSystems.WinUI
                 else
                 {
                     presenter.Minimize();
-                    nativeWindow.MinimizeWindow();
+                    nativeWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        nativeWindow.MinimizeWindow();
+                    });
                 }
             }
         }

@@ -22,6 +22,12 @@ const initialChartSymbols = [
 
 function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDraggable = true, dotNetObject = undefined) {
 
+    //Highcharts.setOptions({
+    //    lang: {
+    //        rangeSelectorZoom: ""
+    //    }
+    //});
+
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
@@ -30,82 +36,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
             borderColor: "#5B6970",
             events: {
                 load: function () {
-
-                    //const chart = this;
-                    //const chartContainer = chart.renderTo;
-                    //const customButtons = $('g.btn-custom-exporting', chartContainer).toArray();
-                    //var button = addChartButton(this, {
-                    //    text: '<i class="bi bi-zoom-out"></i>',
-                    //    x: 355,
-                    //    y: 0,
-                    //    useHTML: true,
-                    //    callback: function () {
-                    //        alert('Button clicked!');
-                    //    }
-                    //});
-
-                    //$('g.highcharts-range-selector-buttons g', $(this.renderTo)).attr('tabindex', 0);
-                    //$('g.highcharts-button', $(this.renderTo)).each(function (index) {
-                    //    $(this).attr('tabindex', 0);
-                    //    $(this).on('focus', function (event) {
-                    //        $(this).addClass('focus-highlight');
-                    //        event.stopPropagation();
-                    //    }).on('blur', function (event) {
-                    //        $(this).removeClass('focus-highlight');
-                    //        event.stopPropagation();
-                    //    });
-                    //});
-
-                    //customButtons.forEach((btn, index) => {
-                    //    $(btn)
-                    //        .attr('tabindex', '0')
-                    //        .attr('role', 'button')
-                    //        .css('cursor', 'pointer')
-                    //        .on('focus', function (event) {
-                    //            $(this).addClass('focus-highlight');
-                    //            event.stopPropagation();
-                    //        })
-                    //        .on('blur', function (event) {
-                    //            $(this).removeClass('focus-highlight');
-                    //            event.stopPropagation();
-                    //        })
-                    //        .on('keydown', function (event) {
-                    //            if (event.key === 'Enter' || event.key === ' ') {
-                    //                event.preventDefault();
-                    //                $(this).trigger('click');
-                    //            } else if (event.key === 'Tab') {
-                    //                event.preventDefault();
-                    //                const nextIndex = (index + 1) % customButtons.length;
-                    //                $(customButtons[nextIndex]).focus();
-                    //            }
-                    //        });
-                    //});
-
-                    //$('g.highcharts-range-selector-group g.highcharts-button', chartContainer).each(function () {
-                    //    $(this).on('keydown', function (e) {
-                    //        if (e.key === 'Tab' && !e.shiftKey) {
-                    //            e.preventDefault();
-                    //            $(customButtons[0]).focus();
-                    //        }
-                    //    });
-                    //});
-
-                    //if (customButtons.length > 0) {
-                    //    $(customButtons[customButtons.length - 1]).on('keydown', function (e) {
-                    //        if (e.key === 'Tab' && !e.shiftKey) {
-                    //            e.preventDefault();
-                    //            $('g.highcharts-range-selector-group g.highcharts-button:first', chartContainer).focus();
-                    //        }
-                    //    });
-
-                    //    $(customButtons[0]).on('keydown', function (e) {
-                    //        if (e.key === 'Tab' && e.shiftKey) {
-                    //            e.preventDefault();
-                    //            $('g.highcharts-range-selector-group g.highcharts-button:last', chartContainer).focus();
-                    //        }
-                    //    });
-                    //}
-
+                    var chart = this
                 }
             }
         },
@@ -229,6 +160,10 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
             }*/
         ],
         exporting: {
+            enabled: true,
+            accessibility: {
+                enabled: false
+            },
             buttons: {
                 contextButton: {
                     enabled: false,
@@ -339,7 +274,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                         var chartId = $(this.renderTo).data("chart-id");
                         var extremes = this.xAxis[0].getExtremes();
                         removeChart(this);
-                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max);
+                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max, symbol);
                     },
                 },
                 maximizeButton: {
@@ -367,7 +302,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                         var chartId = $(this.renderTo).data("chart-id");
                         var extremes = this.xAxis[0].getExtremes();
                         removeChart(this);
-                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max)
+                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max, symbol)
                     },
                 },
                 closeChartButton: {
@@ -415,18 +350,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     enabled: false,
                     hideBrowserFocusOutline: false
                 },
-                //order: ['series', 'zoom', 'rangeSelector', 'legend', 'chartMenu'],
-                //wrapAround: true,
-                //seriesNavigation: {
-                //    skipNullPoints: true,
-                //    pointNavigationEnabledThreshold: false
-                //}
             },
-            //pointDescriptionEnabledThreshold: false,
-            //series: {
-            //    describeSingleSeries: true,
-            //    pointDescriptionEnabledThreshold: false
-            //}
         }
     });
 
@@ -504,49 +428,6 @@ function removeWindowControlButtonsFromChart() {
         chart.isDirtyBox = true;
         chart.redraw();
     }
-}
-
-function addChartButton(chart, options) {
-    const {
-        text = 'Button',
-        x = 0,
-        y = 0,
-        callback = () => { },
-        theme = {},
-        hoverState = {},
-        selectState = {},
-        disabledState = {},
-        shape = 'rect',
-        useHTML = false
-    } = options;
-
-    const button = chart.renderer.button(
-        text,
-        x,
-        y,
-        callback,
-        theme,
-        hoverState,
-        selectState,
-        disabledState,
-        shape,
-        useHTML
-    );
-
-    button.add();
-
-    button.element.setAttribute('tabindex', '0');
-    button.element.setAttribute('role', 'button');
-    button.element.style.cursor = 'pointer';
-
-    button.element.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            callback.call(this);
-        }
-    });
-
-    return button;
 }
 
 function addWindowControlButtonsToChart() {
@@ -804,23 +685,27 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 
     loadSymbolData(symbol, function (seriesData, currSymbol) {
         addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol);
+        if (totalCharts == 1) {
+            removeWindowControlButtonsFromChart();
+        }
     });
-
-    if (totalCharts == 1) {
-        removeWindowControlButtonsFromChart();
-    }
 }
 
-function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint) {
+function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint, symbol) {
     var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
-    //calculateZoomLevels(ohlc);
-    var chart = addChart(chartContainerId, ohlc, volume, groupingUnits, "AAPL", false, dotNetObject);
-    chart.xAxis[0].setExtremes(minPoint, maxPoint);
+
+    loadSymbolData(symbol, function (seriesData, currSymbol) {
+        var chart = addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol, false, dotNetObject);
+        if (minPoint && maxPoint) {
+            chart.xAxis[0].setExtremes(minPoint, maxPoint);
+        }
+    });
+
 }
 
-function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint) {
+function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint, symbol) {
 
     var totalCharts = $("#chartList .chart-box").length + 1;
 
@@ -886,21 +771,14 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxP
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    var chart = addChart(chartContainerId, ohlc, volume, groupingUnits);
-    if (minPoint && maxPoint) {
-        chart.xAxis[0].setExtremes(minPoint, maxPoint);
-    }
-    addWindowControlButtonsToChart();
-    //$(".chart-container", chartBox).off("dblclick").on("dblclick", async function () {
-    //    var eleData = $(this).data();
-    //    var chartId = eleData.chartId;
-    //    var jsObjectReference = DotNet.createJSObjectReference(window);
-    //    if (eleData.highchartsChart >= 0) {
-    //        var chart = Highcharts.charts[eleData.highchartsChart]
-    //        if (chart) removeChart(chart);
-    //    }
-    //    await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
-    //});
+
+    loadSymbolData(symbol, function (seriesData, currSymbol) {
+        var chart = addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol);
+        if (minPoint && maxPoint) {
+            chart.xAxis[0].setExtremes(minPoint, maxPoint);
+        }
+        addWindowControlButtonsToChart();
+    });
 }
 
 function createDashboard(totalCharts) {
@@ -944,7 +822,6 @@ function loadDashboard() {
         chartList.append($('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>')).append($('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'));
     }
 
-    debugger
     for (var indx = 1; indx <= Number(totalCharts); indx++) {
         var rec = symbolList[indx - 1]; //symbolList.find(item => item.id === "chart+" + indx);
         addChartBox(totalCharts, indx, rec.symbol);

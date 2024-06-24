@@ -44,12 +44,7 @@ namespace FirstTerraceSystems
 
             builder.Services.AddSingleton<StateContainerService>();
             builder.Services.AddSingleton<WindowsSerivce>();
-            //builder.Services.AddSingleton<DatabaseService>(serviceProvider =>
-            //{
-            //    string dbpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
-            //    return new(dbpath);
-            //});
-
+            
             builder.Services.AddSingleton<DatabaseService>(serviceProvider =>
             {
                 string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
@@ -61,7 +56,6 @@ namespace FirstTerraceSystems
                 return serviceProvider.GetRequiredService<DatabaseService>().SymbolicRepository;
             });
 
-            //builder.Services.AddScoped<SqlLiteService>();
             builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
             builder.Services.AddScoped<NasdaqService>();

@@ -1,6 +1,7 @@
 ﻿@inject IJSRuntime JSRuntime
 @inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
+@inject Repositories.SymbolicRepository SymbolicRepository
 
 <div @ref="ER_ChartWindow"></div>
 
@@ -25,16 +26,24 @@
     [Parameter]
     public object? MaxPoint { get; set; }
 
+    [Parameter]
+    public object? Symbol { get; set; }
+
     private ElementReference ER_ChartWindow { get; set; }
 
     private Models.ChartPageModal ChartPageModal { get; set; } = new();
 
     protected override void OnInitialized()
     {
-        ChartPageModal = new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime, UpdatedMinExtreme = MinPoint, UpdatedMaxExtreme = MaxPoint };
+        base.OnInitialized();
+        ChartPageModal = new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime, UpdatedMinExtreme = MinPoint, UpdatedMaxExtreme = MaxPoint, Symbol = Symbol };
         WindowsSerivce.UnlockWindowResize();
         StateContainerService.AddChartPage(ChartPageModal);
-        base.OnInitialized();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("T5.SetDotNetReference", DotNetObjectReference.Create(this));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -42,15 +51,21 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
-            await JSRuntime.InvokeVoidAsync("popoutChartWindow", DotNetObjectReference.Create(this), ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits, MinPoint, MaxPoint);
+            await JSRuntime.InvokeVoidAsync("popoutChartWindow", DotNetObjectReference.Create(this), ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits, MinPoint, MaxPoint, Symbol);
         }
     }
-
 
     [JSInvokable]
     public void ZoomingChanged(object minPoint, object maxPoint)
     {
         ChartPageModal.UpdatedMinExtreme = minPoint;
         ChartPageModal.UpdatedMaxExtreme = maxPoint;
+    }
+
+    [JSInvokable("GetStockBySymbol")]
+    public async Task<dynamic> GetStockBySymbol(string symbol)
+    {
+        var symbolicdata = SymbolicRepository.GetSymbolicDataBySymbol(symbol);
+        return await Task.FromResult(symbolicdata);
     }
 }

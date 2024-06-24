@@ -14,5 +14,6 @@ namespace FirstTerraceSystems.Models
 
         public object? UpdatedMinExtreme { get; set; }
         public object? UpdatedMaxExtreme { get; set; }
+        public object? Symbol { get; set; }
     }
 }

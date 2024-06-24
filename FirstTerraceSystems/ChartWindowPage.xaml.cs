@@ -13,10 +13,11 @@ public partial class ChartWindowPage : ContentPage
     private readonly object _groupingUnits;
     private readonly object _min;
     private readonly object _max;
+    private readonly object _symbol;
     private readonly IJSObjectReference _jsObjectReference;
 
 
-    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object ohlc, object volume, object groupingUnits, object min, object max)
+    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object ohlc, object volume, object groupingUnits, object min, object max, object symbol)
     {
         InitializeComponent();
         _ohlcData = ohlc;
@@ -26,6 +27,7 @@ public partial class ChartWindowPage : ContentPage
         _jsObjectReference = jsObjectReference;
         _min = min;
         _max = max;
+        _symbol = symbol;
     }
 
     protected override void OnAppearing()
@@ -38,7 +40,8 @@ public partial class ChartWindowPage : ContentPage
             { "VolumeData", _volumeData },
             { "ChartIndx", _chartIndx },
             { "MinPoint", _min },
-            { "MaxPoint", _max }
+            { "MaxPoint", _max },
+            { "Symbol", _symbol }
         };
 
         base.OnAppearing();
@@ -49,7 +52,7 @@ public partial class ChartWindowPage : ContentPage
         if (!StateContainerService.IsAllowCloseAllWindows)
         {
             var chartPage  = StateContainerService.ChartPages.FirstOrDefault(a => a.ChartId == _chartIndx?.ToString());
-            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme);
+            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme, _symbol);
         }
 
         StateContainerService.RemoveChartPage(_chartIndx.ToString());
