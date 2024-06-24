@@ -9,6 +9,7 @@
 @inject NasdaqService NasdaqService
 @inject Repositories.SymbolicRepository SymbolicRepository
 @inject IJSRuntime JS
+@implements IDisposable
 
 <style>
     #popup {
@@ -151,5 +152,13 @@
     {
         var symbolicdata = SymbolicRepository.GetSymbolicDataBySymbol(symbol);
         return await Task.FromResult(symbolicdata);
+    }
+
+    void IDisposable.Dispose()
+    {
+        if (StateContainerService.webSocket.State != WebSocketState.Closed)
+        {
+            StateContainerService.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+        }
     }
 }
