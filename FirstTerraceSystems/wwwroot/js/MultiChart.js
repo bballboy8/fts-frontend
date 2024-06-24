@@ -115,7 +115,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
             }
         },
         rangeSelector: {
-            height: 0,
+            //height: 0,
             buttons: [
                 { type: 'minute', count: 1, text: '1m' },
                 { type: 'minute', count: 3, text: '3m' },
@@ -493,7 +493,7 @@ function RefreshChartData() {
 
 function removeWindowControlButtonsFromChart() {
     var chart = Highcharts.charts.filter(c => c)[0];
-    if (chart.exportSVGElements) {
+    if (chart && chart.exportSVGElements) {
         chart.exportSVGElements.filter(f => f).slice(-3).forEach(function (element) {
             if (element && element.destroy) {
                 element.destroy();
@@ -802,39 +802,13 @@ function addChartBox(totalCharts, chartIndx, symbol) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    //addChart(chartContainerId, ohlc, volume, groupingUnits);
-    if (totalCharts == 1) {
-        removeWindowControlButtonsFromChart();
-    }
-    //if (totalCharts > 1) {
-    //    $(".chart-container", chartBox).on("dblclick", async function () {
-    //        var eleData = $(this).data();
-    //        var chartId = eleData.chartId;
-    //        var jsObjectReference = DotNet.createJSObjectReference(window);
-    //        if (eleData.highchartsChart >= 0) {
-    //            var chart = Highcharts.charts[eleData.highchartsChart]
-    //            if (chart) removeChart(chart);
-    //        }
-    //        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
-    //    });
-    //}
-
     loadSymbolData(symbol, function (seriesData, currSymbol) {
         addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol);
     });
 
-    /*    if (totalCharts > 1) {
-            $(".chart-container", chartBox).on("dblclick", async function () {
-                var eleData = $(this).data();
-                var chartId = eleData.chartId;
-                var jsObjectReference = DotNet.createJSObjectReference(window);
-                if (eleData.highchartsChart >= 0) {
-                    var chart = Highcharts.charts[eleData.highchartsChart]
-                    if (chart) removeChart(chart);
-                }
-                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
-            });
-        }*/
+    if (totalCharts == 1) {
+        removeWindowControlButtonsFromChart();
+    }
 }
 
 function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint) {
@@ -931,7 +905,6 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxP
 
 function createDashboard(totalCharts) {
 
-    var totalCharts = localStorage.getItem('SavedLayout') ?? 5;
     let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
     if (symbolList == null) {
         localStorage.setItem('ChartSymbols', JSON.stringify(initialChartSymbols));
@@ -971,6 +944,7 @@ function loadDashboard() {
         chartList.append($('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>')).append($('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'));
     }
 
+    debugger
     for (var indx = 1; indx <= Number(totalCharts); indx++) {
         var rec = symbolList[indx - 1]; //symbolList.find(item => item.id === "chart+" + indx);
         addChartBox(totalCharts, indx, rec.symbol);

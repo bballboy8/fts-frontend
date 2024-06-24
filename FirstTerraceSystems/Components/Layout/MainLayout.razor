@@ -2,14 +2,16 @@
 @using FirstTerraceSystems.Entities
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Timers
+
 @inherits LayoutComponentBase
+
 @inject NavigationManager NavigationManager
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject StateContainerService StateContainer
-@using FirstTerraceSystems.Entities.Nasdaq
-@inject NsdaqService NsdaqService
-@inject SqlLiteService SqlLiteService
+@inject NasdaqService NsdaqService
+@* @inject SqlLiteService SqlLiteService *@
+@* @inject Repositories.SymbolicRepository SqlLiteService *@
 @inject BsToastService Toast
 @inject WindowsSerivce WindowsSerivce
 

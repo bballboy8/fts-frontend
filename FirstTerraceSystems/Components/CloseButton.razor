@@ -1,0 +1,9 @@
+﻿<Button Type="ButtonType.Button" Color="ButtonColor.Danger" Outline="true" Class="top-right-corner shadow-none text-white border-0 rounded-0" @onclick="() => CloseApplication()"> <Icon Name="IconName.XLg" /> </Button>
+
+@code {
+
+    private void CloseApplication()
+    {
+        Application.Current?.Quit();
+    }
+}

@@ -29,7 +29,7 @@ namespace FirstTerraceSystems.Services
         }
 
 
-        public async Task<AuthResponseDto> Login(LoginDto model)
+        public async Task<AuthResponse> Login(LoginDto model)
         {
             var content = JsonSerializer.Serialize(new { email = model.Email?.ToLower(), password = model.Password }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -37,7 +37,7 @@ namespace FirstTerraceSystems.Services
 
             var authResult = await _client.PostAsync("user/login", bodyContent);
             var authContent = await authResult.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<AuthResponseDto>(authContent, _options);
+            var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
 
             if (!authResult.IsSuccessStatusCode)
                 return result!;
@@ -48,7 +48,7 @@ namespace FirstTerraceSystems.Services
             ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email ?? "");
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result?.Access_Token);
 
-            return new AuthResponseDto();
+            return new AuthResponse();
         }
 
         public async Task<RegisterResponseDto> Registration(RegisterModel model)
@@ -86,7 +86,7 @@ namespace FirstTerraceSystems.Services
 
             var authContent = await authResult.Content.ReadAsStringAsync();
 
-            var result = JsonSerializer.Deserialize<AuthResponseDto>(authContent, _options);
+            var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
 
             await _localStorage.RemoveItemAsync("authToken");
             ((AuthStateProvider)_authStateProvider).NotifyUserLogout();

@@ -1,23 +1,20 @@
-﻿
-
-@page "/"
+﻿@page "/"
 @page "/login"
 
 @using System.ComponentModel.DataAnnotations
 @using FirstTerraceSystems.Entities
 @using FirstTerraceSystems.Features
 @using FirstTerraceSystems.Models
+@using FirstTerraceSystems.Components
 
-@inject NsdaqService NsdaqService
-@inject SqlLiteService SqlliteService
+@* @inject SqlLiteService SqlliteService *@
+@* @inject Repositories.SymbolicRepository SqlliteService *@
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager NavigationManager
 @inject WindowsSerivce WindowsSerivce
 @inject BsToastService Toast
-<Button Type="ButtonType.Button" Color="ButtonColor.Danger" Outline="true" Class="top-right-corner shadow-none text-white border-0 rounded-0" @onclick="() => CloseApplication()"> <Icon Name="IconName.XLg" /> </Button>
 
-
-
+<CloseButton />
 
 <div class="signIn">
     <div class="row g-0 justify-content-center">
@@ -73,7 +70,7 @@
         else
         {
             WindowsSerivce.UnlockWindowResize();
-            WebSocketClientConnection.NavigationManager = NavigationManager;            
+            // WebSocketClientConnection.NavigationManager = NavigationManager;            
             NavigationManager.NavigateTo("/multiChats");
         }
     }
@@ -94,8 +91,4 @@
         // Handle Google login
     }
     
-    private void CloseApplication()
-    {
-        Application.Current?.Quit();
-    }
 }

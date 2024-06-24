@@ -85,10 +85,5 @@ namespace FirstTerraceSystems.Components.Pages
                 Toast.ShowWarningMessage(registerResponse?.Detail ?? "An error occurred during registration.");
             }
         }
-
-        private void CloseApplication()
-        {
-            Application.Current?.Quit();
-        }
     }
 }

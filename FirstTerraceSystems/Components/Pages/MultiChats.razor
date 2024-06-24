@@ -1,12 +1,15 @@
 ﻿@page "/multiChats"
-@using FirstTerraceSystems.Entities.Nasdaq
-@using FirstTerraceSystems.Features
+
 @using System.Net.WebSockets
 @using System.Text
 @using System.Text.Json
-@inject NsdaqService NsdaqService
-@inject SqlLiteService SqlliteService
+@using FirstTerraceSystems.Features
+@using FirstTerraceSystems.Models
+
+@inject NasdaqService NasdaqService
+@inject Repositories.SymbolicRepository SymbolicRepository
 @inject IJSRuntime JS
+@implements IDisposable
 
 <style>
     #popup {
@@ -21,13 +24,11 @@
 
 
 <div class="container-fluid">
+    ```
     <div id="chartList" class="row"></div>
 </div>
 
-
-@code
-{
-    private IEnumerable<EquitiesBarModal>? EquitiesBars { get; set; }
+@code {
 
     private ClientWebSocket webSocket = new ClientWebSocket();
 
@@ -35,7 +36,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        //Create reference in Multichart.js file to call current page methods from js file
         var lDotNetReference = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("T5.SetDotNetReference", lDotNetReference);
     }
@@ -44,11 +44,28 @@
     {
         if (firstRender)
         {
-            await ConnectWebSocket(); // Connect to Websocket
-            await Listen(); // Initialize Websocket listner
-            await NsdaqService.GetSymbolicData(); //Call api and update data to the sqllite
+            await ConnectWebSocket(); 
+            await Listen(); 
+            await UpdateSymbolicDataToDB();
+
         }
-        await JSRuntime.InvokeVoidAsync("loadDashboard", 1);
+        await JSRuntime.InvokeVoidAsync("loadDashboard");
+    }
+
+    private async Task UpdateSymbolicDataToDB()
+    {
+        var lastSymbol = SymbolicRepository.GetLastRecord();
+
+        var dtStartDate = DateTime.Now.AddDays(-2);
+
+        if (lastSymbol != null) dtStartDate = DateTime.Parse(lastSymbol.TimeStamp);
+
+        var data = await NasdaqService.GetSymbolicData(dtStartDate, "");
+
+        if (data != null)
+        {
+            SymbolicRepository.UpdateSymbolicDataToDB(data);
+        }
     }
 
     private async Task ConnectWebSocket()
@@ -58,7 +75,8 @@
             try
             {
                 //ws://localhost:6969/ws test socket url
-                await webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+                // await webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+                await webSocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
                 var buffer = Encoding.UTF8.GetBytes("start");
                 await webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
                 SocketConnectionTrial = 0;
@@ -72,35 +90,6 @@
         }
 
     }
-
-    //Websocket listner to Stock data, It update data in SqlLite db and refreshes the charts
-    // private async Task Listen()
-    // {
-    //     var stringBuilder = new StringBuilder();
-    //     var buffer = new byte[1024];
-    //     while (webSocket.State == WebSocketState.Open)
-    //     {
-    //         try
-    //         {
-    //             var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-    //             if (result.MessageType == WebSocketMessageType.Text)
-    //             {
-    //                 var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-    //                 if (!message.Contains("start"))
-    //                 {
-    //                     await JSRuntime.InvokeVoidAsync("console.log", message);
-    //                     var data = JsonSerializer.Deserialize<NasdaqData>(message);
-    //                     SqlliteService.UpdateSymbolicsocketDataToDB(data);
-    //                     await JSRuntime.InvokeVoidAsync("RefreshChartData");
-    //                 }
-    //             }
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             await ConnectWebSocket();
-    //         }
-    //     }
-    // }
 
     private async Task Listen()
     {
@@ -148,8 +137,8 @@
 
         try
         {
-            var data = JsonSerializer.Deserialize<NasdaqData>(message);
-            SqlliteService.UpdateSymbolicsocketDataToDB(data);
+            var data = JsonSerializer.Deserialize<NasdaqResponse>(message);
+            SymbolicRepository.UpdateSymbolicsocketDataToDB(data);
             await JSRuntime.InvokeVoidAsync("RefreshChartData");
         }
         catch (JsonException ex)
@@ -161,9 +150,15 @@
     [JSInvokable("GetStockBySymbol")]
     public async Task<dynamic> GetStockBySymbol(string symbol)
     {
-        var symbolicdata = SqlliteService.GetSymbolicData(symbol);
+        var symbolicdata = SymbolicRepository.GetSymbolicDataBySymbol(symbol);
         return await Task.FromResult(symbolicdata);
     }
 
-
+    void IDisposable.Dispose()
+    {
+        if (webSocket.State != WebSocketState.Closed)
+        {
+            webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+        }
+    }
 }

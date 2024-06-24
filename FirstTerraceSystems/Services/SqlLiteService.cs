@@ -1,8 +1,9 @@
-﻿using FirstTerraceSystems.Entities.Nasdaq;
-using SQLite;
+﻿using SQLite;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Globalization;
 using System.Text.Json.Serialization;
+using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Models;
 
 namespace FirstTerraceSystems.Services
 {
@@ -60,7 +61,7 @@ namespace FirstTerraceSystems.Services
         }
 
         //Update database from Socket
-        public void UpdateSymbolicsocketDataToDB(NasdaqData data)
+        public void UpdateSymbolicsocketDataToDB(NasdaqResponse data)
         {
             List<SymbolicData> batch = new();
             foreach (var item in data.Data)

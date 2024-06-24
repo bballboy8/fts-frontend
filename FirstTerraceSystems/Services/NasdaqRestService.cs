@@ -1,27 +1,25 @@
-﻿using System.Net;
-using System.Net.Http.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
-using FirstTerraceSystems.Entities.Nasdaq;
+using System.Threading.Tasks;
+using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Models;
 
 namespace FirstTerraceSystems.Services
 {
-    public class NsdaqService
+    public class NasdaqRestService
     {
         private string? _token;
         private DateTime _tokenExpirationTime;
         private readonly HttpClient _client;
 
-        public NsdaqService()
+        public NasdaqRestService(HttpClient client)
         {
-            _client = new HttpClient(new HttpClientHandler
-            {
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-            });
-            _client.BaseAddress = new Uri("http://52.0.33.126:8000/");
-            _client.Timeout = TimeSpan.FromSeconds(3600); // 1 hour
+            _client = client;
         }
-
 
         private async Task InitializeTokensAsync()
         {
@@ -75,7 +73,7 @@ namespace FirstTerraceSystems.Services
             }
         }
 
-        public async Task<IEnumerable<EquitiesBarModal>?> GetEquitiesBars(DateTime startDate, DateTime endDate, string symbol)
+        public async Task<IEnumerable<EquitiesBar>?> GetEquitiesBars(DateTime startDate, DateTime endDate, string symbol)
         {
             await EnsureTokenIsValidAsync();
 
@@ -92,7 +90,7 @@ namespace FirstTerraceSystems.Services
                 var response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
                 var contentString = await response.Content.ReadAsStringAsync();
-                var equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBarModal>>(contentString);
+                var equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBar>>(contentString);
 
                 return equitiesBars;
             }
@@ -102,34 +100,5 @@ namespace FirstTerraceSystems.Services
                 return null;
             }
         }
-
-        //Get & Update Stock data api
-        public async Task GetSymbolicData()
-        {
-            SqlLiteService sqlLiteService = new();
-            string dtStartDate = DateTime.Now.AddDays(-2).ToString("yyyy-MM-d HH:mm:ss");
-            var lastSymbol = sqlLiteService.GetLastSample();
-            if (lastSymbol != null)
-                dtStartDate = DateTime.Parse(lastSymbol.TimeStamp).ToString("yyyy-MM-d HH:mm:ss");
-
-            string jsonData = JsonSerializer.Serialize(new { start_datetime = dtStartDate, symbol = string.Empty });
-            HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
-            {
-                Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
-            };
-            try
-            {
-                HttpResponseMessage response = await _client.SendAsync(request);
-                response.EnsureSuccessStatusCode();
-                var data = await response.Content.ReadFromJsonAsync<List<SymbolicData>>();
-                sqlLiteService.UpdateSymbolicDataToDB(data);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-        }
     }
-
-
 }
