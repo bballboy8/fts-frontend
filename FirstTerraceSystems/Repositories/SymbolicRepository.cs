@@ -36,13 +36,14 @@ namespace FirstTerraceSystems.Repositories
                     dateTime = dateTime.AddMilliseconds(value / 1000000);
                 }
 
+                item.TimeStamp = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
+
                 // Convert to Eastern Time
-                TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-                DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime, easternZone);
+                //TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+                //DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime, easternZone);
+                //item.TimeStamp = easternTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
 
-                item.TimeStamp = easternTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
-
-                item.Price = item.Price / 100;
+                item.Price = item.Price / 10000;
 
                 batch.Add(item);
                 if (batch.Count > 10000)

@@ -17,7 +17,7 @@ namespace FirstTerraceSystems.Entities
             TrackingID = row[headers.IndexOf("trackingID")].ToString();
             MsgType = row[headers.IndexOf("msgType")].ToString();
             Symbol = row[headers.IndexOf("symbol")].ToString();
-            Price = (double.TryParse(row[headers.IndexOf("price")].ToString(), out double price) ? price : 0.0) / 100;
+            Price = (double.TryParse(row[headers.IndexOf("price")].ToString(), out double price) ? price : 0.0) / 10000;
 
             string? dateString = row[headers.IndexOf("date")].ToString();
             
@@ -33,11 +33,11 @@ namespace FirstTerraceSystems.Entities
                 }
             }
 
-            TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            /*TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
             
-            DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(Date, easternZone);
+            DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(Date, easternZone);*/
 
-            TimeStamp = easternTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
+            TimeStamp = Date.ToString("yyyy-MM-ddTHH:mm:ss.fff");
         }
 
 
