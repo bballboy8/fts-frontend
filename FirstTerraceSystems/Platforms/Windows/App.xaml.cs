@@ -68,7 +68,7 @@ namespace FirstTerraceSystems.WinUI
                 }
                 else
                 {
-                    presenter.Minimize();
+                    //presenter.Minimize();
                     nativeWindow.DispatcherQueue.TryEnqueue(() =>
                     {
                         nativeWindow.MinimizeWindow();

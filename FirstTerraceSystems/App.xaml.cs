@@ -1,4 +1,5 @@
-﻿using FirstTerraceSystems.Services;
+﻿using FirstTerraceSystems.Features;
+using FirstTerraceSystems.Services;
 using System.Net.WebSockets;
 
 namespace FirstTerraceSystems
@@ -31,15 +32,11 @@ namespace FirstTerraceSystems
                 Console.WriteLine("Created");
             };
 
-            window.Destroying += (s, e) =>
+            window.Destroying += async (s, e) =>
             {
+                await WebSocketClient.CloseAsync();
 
                 var windowsToClose = Application.Current!.Windows.Where(w => w != window).ToList();
-
-                if (StateContainerService.webSocket.State == WebSocketState.Open)
-                {
-                    StateContainerService.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-                }
 
                 foreach (var window in windowsToClose)
                 {

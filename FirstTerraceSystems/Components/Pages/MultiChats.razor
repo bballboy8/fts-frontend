@@ -29,8 +29,6 @@
 
 @code {
 
-    
-
     int SocketConnectionTrial = 0;
 
     protected override async Task OnInitializedAsync()
@@ -43,10 +41,15 @@
     {
         if (firstRender)
         {
-            await ConnectWebSocket(); 
-            Listen(); 
-            await UpdateSymbolicDataToDB();
+            WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;
+            WebSocketClient.ActionReferenceChart -= ReferenceChart;
 
+            WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+            WebSocketClient.ActionReferenceChart += ReferenceChart;
+
+            await WebSocketClient.ConnectAsync();
+            WebSocketClient.ListenAsync();
+            await UpdateSymbolicDataToDB();
         }
         await JSRuntime.InvokeVoidAsync("loadDashboard");
     }
@@ -67,83 +70,17 @@
         }
     }
 
-    private async Task ConnectWebSocket()
+    private void OnRealDataReceived(NasdaqResponse? nasdaqData)
     {
-        if (SocketConnectionTrial < 3)
+        if (nasdaqData != null)
         {
-            try
-            {
-                //ws://localhost:6969/ws test socket url
-                await StateContainerService.webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
-                //await StateContainerService.webSocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
-                var buffer = Encoding.UTF8.GetBytes("start");
-                await StateContainerService.webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
-                SocketConnectionTrial = 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                SocketConnectionTrial++;
-                await ConnectWebSocket();
-            }
-        }
-
-    }
-
-    private async Task Listen()
-    {
-        var buffer = new byte[1024];
-
-        using (var memoryStream = new MemoryStream())
-        {
-            try
-            {
-                while (StateContainerService.webSocket.State == WebSocketState.Open)
-                {
-                    WebSocketReceiveResult result;
-                    do
-                    {
-                        result = await StateContainerService.webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                        await memoryStream.WriteAsync(buffer, 0, result.Count);
-                    } while (!result.EndOfMessage);
-
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    var message = Encoding.UTF8.GetString(memoryStream.ToArray());
-
-                    if (result.MessageType == WebSocketMessageType.Text && !message.Contains("start"))
-                    {
-                        await ProcessMessage(message);
-                    }
-
-                    memoryStream.SetLength(0);
-                }
-            }
-            catch (WebSocketException ex)
-            {
-                Console.WriteLine($"WebSocket error: {ex.Message}");
-                await ConnectWebSocket();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
-            }
+            SymbolicRepository.UpdateSymbolicsocketDataToDB(nasdaqData);
         }
     }
 
-    private async Task ProcessMessage(string message)
+    private async Task ReferenceChart()
     {
-        await JSRuntime.InvokeVoidAsync("console.log", message);
-
-        try
-        {
-            var data = JsonSerializer.Deserialize<NasdaqResponse>(message);
-            SymbolicRepository.UpdateSymbolicsocketDataToDB(data);
-            await JSRuntime.InvokeVoidAsync("RefreshChartData");
-        }
-        catch (JsonException ex)
-        {
-            Console.WriteLine($"JSON deserialization error: {ex.Message}");
-        }
+        await JSRuntime.InvokeVoidAsync("RefreshChartData");
     }
 
     [JSInvokable("GetStockBySymbol")]
@@ -153,11 +90,8 @@
         return await Task.FromResult(symbolicdata);
     }
 
-    void IDisposable.Dispose()
+    async void IDisposable.Dispose()
     {
-        if (StateContainerService.webSocket.State != WebSocketState.Closed)
-        {
-            StateContainerService.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-        }
+        await WebSocketClient.CloseAsync();
     }
 }

@@ -3,105 +3,114 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using FirstTerraceSystems.Models;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.IO;
+using FirstTerraceSystems.Repositories;
+using Microsoft.JSInterop;
+using System.Text.Json;
 
 namespace FirstTerraceSystems.Features
 {
-    public static class WebSocketClientConnection
+    public static class WebSocketClient
     {
-        static ClientWebSocket mWebsocket;
-        public delegate void OnMessageReceivedDelegate(string vMessage);
-        static ConcurrentBag<OnMessageReceivedDelegate> mListeners = new();
-        public static NavigationManager NavigationManager;
-        static CancellationToken mCancellationToken;
-        public static string Username;
+        static ClientWebSocket _websocket = new ClientWebSocket();
 
-        public static void AddListener(OnMessageReceivedDelegate vListener)
+        static int _connectionTrial = 0;
+
+        public delegate void OnRealDataReceived(NasdaqResponse? nasdaqData);
+
+        public delegate Task ReferenceChartAsync();
+
+        public static event OnRealDataReceived? ActionRealDataReceived;
+
+        public static event ReferenceChartAsync? ActionReferenceChart;
+
+        public async static Task ConnectAsync()
         {
-            if ((mWebsocket == null)
-                || (mWebsocket.State != WebSocketState.Open))
+            if (_connectionTrial < 3)
             {
-                mWebsocket = new();
-                _ = ConnectAsync();
+                try
+                {
+                    //ws://localhost:6969/ws test socket url
+                    //await _websocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+                    await _websocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
+                    var buffer = Encoding.UTF8.GetBytes("start");
+                    await _websocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                    _connectionTrial = 0;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    _connectionTrial++;
+                    await ConnectAsync();
+                }
             }
-            mListeners.Add(vListener);
+
         }
 
-        public static void ClearListeners()
+        public static async Task CloseAsync()
         {
-            mListeners.Clear();
-        }
-
-        static string GetUrl()
-        {
-            string pUrl;
-            var pUri = new Uri(NavigationManager.Uri);
-            if (pUri.Scheme == "https")
-                pUrl = "wss";
-            else
-                pUrl = "ws";
-            pUrl += Uri.SchemeDelimiter + pUri.Authority + "/api/WebSockets/Get?Username=" + Username;
-
-            return pUrl;
-        }
-
-        static async Task ConnectAsync()
-        {
-            var pUri = new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data");
-            mCancellationToken = new();
-            await mWebsocket.ConnectAsync(pUri, mCancellationToken);
-            var pBuffer = new ArraySegment<byte>(new byte[2048]);
-            while (!mCancellationToken.IsCancellationRequested)
+            if (_websocket.State == WebSocketState.Open)
             {
-                WebSocketReceiveResult pResult;
-                var pStream = new MemoryStream();
-                do
+                await _websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+                _websocket.Dispose();
+            }
+        }
+
+        public async static Task ListenAsync()
+        {
+            var buffer = new byte[1024 * 4];
+
+            using (var memoryStream = new MemoryStream())
+            {
+                try
                 {
-                    pResult = await mWebsocket.ReceiveAsync(pBuffer, mCancellationToken);
-                    pStream.Write(pBuffer.Array, pBuffer.Offset, pResult.Count);
-                } while (!pResult.EndOfMessage);
+                    while (_websocket.State == WebSocketState.Open)
+                    {
+                        WebSocketReceiveResult result;
+                        do
+                        {
+                            result = await _websocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                            await memoryStream.WriteAsync(buffer, 0, result.Count);
+                        } while (!result.EndOfMessage);
 
-                pStream.Seek(0, SeekOrigin.Begin);
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        var message = Encoding.UTF8.GetString(memoryStream.ToArray());
 
-                var pMessage = Encoding.UTF8.GetString(pStream.ToArray());
-                foreach (var pListener in mListeners)
-                    pListener.Invoke(pMessage);
+                        if (result.MessageType == WebSocketMessageType.Text && !message.Contains("start"))
+                        {
+                            ProcessMessage(message);
+                        }
 
-                if (pResult.MessageType == WebSocketMessageType.Close)
+                        memoryStream.SetLength(0);
+                    }
+                }
+                catch (WebSocketException ex)
                 {
-                    foreach (var pListener in mListeners)
-                        pListener.Invoke("Self is closing");
-                    break;
+                    Console.WriteLine($"WebSocket error: {ex.Message}");
+                    await ConnectAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error: {ex.Message}");
                 }
             }
         }
 
-        public static Task SendStringAsync(string vText)
+        static void ProcessMessage(string message)
         {
-            var pBytes = Encoding.UTF8.GetBytes(vText);
-            var pBuffer = new ArraySegment<byte>(pBytes, 0, pBytes.Length);
             try
             {
-                return mWebsocket.SendAsync(pBuffer, WebSocketMessageType.Text, endOfMessage: true, mCancellationToken);
+                var data = JsonSerializer.Deserialize<NasdaqResponse>(message);
+                ActionRealDataReceived?.Invoke(data);
+                ActionReferenceChart?.Invoke();
             }
-            catch (Exception ex)
+            catch (JsonException ex)
             {
-                var pText = Message.ToString(Message.eType.Error, ex.Message);
-                foreach (var pListener in mListeners)
-                    pListener.Invoke(pText);
-                return Task.CompletedTask;
+                Console.WriteLine($"JSON deserialization error: {ex.Message}");
             }
-        }
-
-        public static async Task Close()
-        {
-            if ((mWebsocket != null)
-                || (mWebsocket.State == WebSocketState.Open))
-            {
-                await mWebsocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
-                mWebsocket.Dispose();
-                mWebsocket = null;
-            }
-            mListeners.Clear();
         }
     }
 }

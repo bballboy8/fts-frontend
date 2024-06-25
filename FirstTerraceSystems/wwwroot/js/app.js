@@ -1,33 +1,3 @@
-//function addChartButton(chart, label, x, y, onClick) {
-//    return chart.renderer.button(
-//        label,
-//        x,
-//        y,
-//        function () {
-//            onClick(label);
-//        }
-//    ).add();
-//}
-
-function updateButtonPositions(chart) {
-    const buttons = chart.ButtonNamespace;
-
-    buttons.zoomInButton.style.left = '365px';
-    buttons.zoomInButton.style.top = '10.5px';
-
-    buttons.zoomOutButton.style.left = '401px';
-    buttons.zoomOutButton.style.top = '10.5px';
-
-    buttons.closeChartButton.style.left = (chart.chartWidth - 40) + 'px';
-    buttons.closeChartButton.style.top = '10px';
-
-    buttons.maximizeButton.style.left = (chart.chartWidth - buttons.closeChartButton.offsetWidth - (40 * 1.2)) + 'px';
-    buttons.maximizeButton.style.top = '10px';
-
-    buttons.minimizeButton.style.left = (chart.chartWidth - buttons.maximizeButton.offsetWidth - (40 * 2.1)) + 'px';
-    buttons.minimizeButton.style.top = '10px';
-}
-
 function addHtmlButtonToChart(chart, options) {
     const {
         text = 'Button',

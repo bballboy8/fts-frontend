@@ -68,7 +68,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="Features\WebSocketClientConnection.cs" />
       <Compile Remove="Services\SqlLiteService.cs" />
     </ItemGroup>
 

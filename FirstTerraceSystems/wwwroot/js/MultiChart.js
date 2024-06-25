@@ -36,7 +36,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
             borderColor: "#5B6970",
             events: {
                 load: function () {
-                    var chart = this
+                    var chart = this;
                 }
             }
         },

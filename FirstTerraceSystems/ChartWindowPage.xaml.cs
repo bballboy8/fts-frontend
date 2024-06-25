@@ -16,6 +16,8 @@ public partial class ChartWindowPage : ContentPage
     private readonly object _symbol;
     private readonly IJSObjectReference _jsObjectReference;
 
+    public delegate void RefreshChart();
+
 
     public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object ohlc, object volume, object groupingUnits, object min, object max, object symbol)
     {

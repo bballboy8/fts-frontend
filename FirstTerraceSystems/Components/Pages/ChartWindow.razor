@@ -1,4 +1,5 @@
-﻿@inject IJSRuntime JSRuntime
+﻿@using FirstTerraceSystems.Features
+@inject IJSRuntime JSRuntime
 @inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
 @inject Repositories.SymbolicRepository SymbolicRepository
@@ -43,6 +44,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        WebSocketClient.ActionReferenceChart -= ReferenceChart;
+
+        WebSocketClient.ActionReferenceChart += ReferenceChart;
+
         await JSRuntime.InvokeVoidAsync("T5.SetDotNetReference", DotNetObjectReference.Create(this));
     }
 
@@ -53,6 +58,11 @@
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
             await JSRuntime.InvokeVoidAsync("popoutChartWindow", DotNetObjectReference.Create(this), ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits, MinPoint, MaxPoint, Symbol);
         }
+    }
+
+    private async Task ReferenceChart()
+    {
+        await JSRuntime.InvokeVoidAsync("RefreshChartData");
     }
 
     [JSInvokable]
