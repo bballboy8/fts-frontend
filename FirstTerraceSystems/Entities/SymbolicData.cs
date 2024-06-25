@@ -44,7 +44,6 @@ namespace FirstTerraceSystems.Entities
             
             DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(Date, easternZone);*/
 
-            //TimeStamp = Date.ToString("yyyy-MM-ddTHH:mm:ss.fff");
         }
 
 
