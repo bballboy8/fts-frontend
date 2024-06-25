@@ -56,6 +56,9 @@ function addHtmlButtonToChart(chart, options) {
     return button;
 }
 
+function removeUnusedElement() {
+    $('#dvSymbolInput').remove();
+}
 function addButtonToChart(chart, options) {
     const {
         text = 'Button',

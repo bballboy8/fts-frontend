@@ -60,6 +60,11 @@
         base.OnInitialized();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeVoidAsync("removeUnusedElement");
+    }
+
     private async Task HandleValidSubmit()
     {
         var result = await AuthenticationService.Login(_loginDto);

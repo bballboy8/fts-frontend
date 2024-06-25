@@ -20,7 +20,30 @@ const initialChartSymbols = [
     { id: 'chart-8', symbol: 'GOOG' }
 ];
 
-function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDraggable = true, dotNetObject = undefined) {
+const defaultkeyboardNavigationOrder = [
+    'zoomInButton',
+    'zoomOutButton',
+    'minimizeButton',
+    'maximizeButton',
+    'closeChartButton',
+    'zoom',
+    'rangeSelector',
+    'series',
+    'chartMenu',
+    'legend'
+];
+
+const singleChartkeyboardNavigationOrder = [
+    'zoomInButton',
+    'zoomOutButton',
+    'zoom',
+    'rangeSelector',
+    'series',
+    'chartMenu',
+    'legend'
+];
+
+function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
 
     //Highcharts.setOptions({
     //    lang: {
@@ -33,12 +56,16 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
         chart: {
             backgroundColor: backgroundColor,
             borderWidth: 1,
-            borderColor: "#5B6970",
+            borderColor: "#5B6970",            
             events: {
                 load: function () {
                     var chart = this;
                 }
-            }
+            },            
+        },
+        time: {
+            //timezone: 'America/New_York',
+            useUTC: false
         },
         plotOptions: {
             series: {
@@ -91,30 +118,38 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
             x: 66,
             y: 0
         },
-        xAxis: [{
-            offset: 0,
-            labels: {
-                align: 'left',
-                x: 5,
-                style: {
-                    color: fontColor
-                }
-            },
-            lineWidth: 0,
-            opposite: false
-        },
-        {
-            offset: 0,
-            labels: {
-                align: 'left',
-                x: 5,
-                style: {
-                    color: fontColor
-                }
-            },
-            lineWidth: 0,
-            opposite: false
-        }],
+        xAxis: [
+            {             
+                type: 'datetime',                
+                offset: 0,
+                labels: {
+                    align: 'left',
+                    x: 5,
+                    style: { color: fontColor },
+
+                    //formatter: function () {
+                    //    //return Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.value);
+                    //    //return Highcharts.dateFormat('%H:%M:%S', this.value);
+                    //    debugger;
+                        
+                    //}
+                },
+                lineWidth: 0,
+                opposite: false,             
+            }
+            ,{
+                offset: 0,
+                labels: {
+                    align: 'left',
+                    x: 5,
+                    style: {
+                        color: fontColor
+                    }
+                },
+                lineWidth: 0,
+                opposite: false
+            }
+        ],
         yAxis: [{
             labels: {
                 align: 'left',
@@ -147,18 +182,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                         lineWidthPlus: 0
                     }
                 }
-            }
-            /*{
-                type: 'column',
-                name: 'Volume',
-                data: pVolume,
-                yAxis: 1,
-                dataGrouping: {
-                    units: pGroupingUnits
-                },
-                color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
-                upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
-            }*/
+            }            
         ],
         exporting: {
             enabled: true,
@@ -170,10 +194,10 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     enabled: false,
                 },
 
-                closeButton: {
+                symbolButton: {
                     useHTML: true,
                     enabled: true,
-                    className: 'btn btn-sm',
+                    className: 'btn btn-sm btn-symbol',
                     theme: {
                         fill: '#272C2F',
                         stroke: '#5B6970',
@@ -193,15 +217,66 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                             },
                         }
                     },
-                    text: `XNYS:${symbol} &nbsp &nbsp`,
+                    text: `XNYS: ${symbol}`,
                     onclick: function (e) {
+
+                        var chart = this;
                         let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
                         if (symbolList == null) {
                             symbolList = initialChartSymbols;
                         }
+
                         $("#dvSymbolInput").remove();
-                        var input = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="${symbolList[Number(charContainerId.split("-")[1]) - 1].symbol}"/><button id="btnUpdateChartSymbol" type="button" data-chart-id="${charContainerId}">Ok</button></div>`)
-                        $("body").append(input);
+
+                        var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="${symbolList[Number(charContainerId.split("-")[1]) - 1].symbol}"/><button id="btnUpdateChartSymbol" type="button" data-chart-id="${charContainerId}">Ok</button></div>`);
+
+                        var btn = divInput.find('#btnUpdateChartSymbol');
+
+                        btn.on("click", function () {
+                            var dvInput = $(this).closest("#dvSymbolInput")
+                            symbol = $("#txtSymboleName", dvInput).val();
+                            var chartId = $(chart.renderTo).data("chart-id");
+                            //var chartBoxData = $('#' + chartId).data();
+
+                            loadSymbolData(symbol, function (seriesData) {
+                                chart.series[0].update({
+                                    name: symbol,
+                                    data: seriesData,
+                                    color: '#C01620',
+                                    upColor: '#16C05A',
+                                    lineWidth: 0,
+                                    marker: { enabled: true, radius: 4 },
+                                    tooltip: { valueDecimals: 2 },
+                                    states: { hover: { lineWidthPlus: 0 } }
+                                });
+
+                                removeWindowControlButtonsFromChart();
+                            });
+
+                            let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
+
+                            if (symbolList == null) {
+                                symbolList = initialChartSymbols;
+                            }
+
+                            var indx = Number(chartId);
+                            symbolList[indx - 1].symbol = symbol;
+                            localStorage.setItem('ChartSymbols', JSON.stringify(symbolList));
+
+                            chart.update({
+                                exporting: {
+                                    buttons: {
+                                        symbolButton: {
+                                            text: `XNYS: ${symbol}`
+                                        }
+                                    }
+                                }
+                            });
+
+                            $("#dvSymbolInput").remove();
+                        });
+
+                        $("body").append(divInput);
                     },
                 },
                 zoomInButton: {
@@ -254,7 +329,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     align: 'right',
                     verticalAlign: 'top',
                     x: -60,
-                    enabled: isDraggable,
+                    enabled: !isPopoutChartWindow,
                     className: 'btn btn-sm btn-minimize btn-custom-exporting',
                     theme: {
                         fill: '#272C2F',
@@ -282,7 +357,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     align: 'right',
                     verticalAlign: 'top',
                     x: -30,
-                    enabled: isDraggable,
+                    enabled: !isPopoutChartWindow,
                     className: 'btn btn-sm btn-maximize btn-custom-exporting',
                     theme: {
                         fill: '#272C2F',
@@ -310,7 +385,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     align: 'right',
                     verticalAlign: 'top',
                     x: -2,
-                    enabled: isDraggable,
+                    enabled: !isPopoutChartWindow,
                     className: 'btn btn-sm btn-close-chart btn-custom-exporting',
                     theme: {
                         fill: '#272C2F',
@@ -329,7 +404,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                     text: '<i class="bi bi-x-lg"></i>',
 
                     onclick: function (e) {
-                        if (isDraggable) removeChart(this);
+                        if (!isPopoutChartWindow) removeChart(this);
                     },
                 }
             },
@@ -353,39 +428,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isDra
                 },
             },
         }
-    });
-
-    $("body").off("click", "#btnUpdateChartSymbol").on("click", "#btnUpdateChartSymbol", function () {
-        var dvInput = $(this).closest("#dvSymbolInput")
-        symbol = $("#txtSymboleName", dvInput).val();
-        var chartId = $(this).data("chartId");
-        var chartBoxData = $('#' + chartId).data();
-        if (chartBoxData.highchartsChart) {
-            var chart = Highcharts.charts[chartBoxData.highchartsChart];
-            if (chart) {
-                loadSymbolData(symbol, function (seriesData) {
-                    chart.series[0].update({
-                        name: symbol,
-                        data: seriesData,
-                        color: '#C01620', // Color for the fall
-                        upColor: '#16C05A', // Color for the rise
-                        lineWidth: 0,
-                        marker: { enabled: true, radius: 4 },
-                        tooltip: { valueDecimals: 2 },
-                        states: { hover: { lineWidthPlus: 0 } }
-                    });
-                });
-                let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
-                if (symbolList == null) {
-                    symbolList = initialChartSymbols;
-                }
-                var indx = Number(chartId.split("-")[1]);
-                symbolList[indx - 1].symbol = symbol;
-                // Save the updated list back to localStorage
-                localStorage.setItem('ChartSymbols', JSON.stringify(symbolList));
-            }
-        }
-        $("#dvSymbolInput").remove();
     });
 }
 
@@ -702,6 +744,7 @@ function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, group
         if (minPoint && maxPoint) {
             chart.xAxis[0].setExtremes(minPoint, maxPoint);
         }
+        removeWindowControlButtonsFromChart();
     });
 
 }
@@ -833,8 +876,10 @@ function loadSymbolData(symbol, onLoaded) {
     T5.dotReference.invokeMethodAsync("GetStockBySymbol", symbol).then(resultData => {
         var seriesData = [];
         for (var i = 1; i < resultData.length; i++) {
-            var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
+            var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';            
+            //seriesData.push({ x: new Date(resultData[i].t), y: resultData[i].p, color: color });
             seriesData.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
+            
         }
         onLoaded(seriesData, symbol);
     });

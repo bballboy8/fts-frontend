@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Globalization;
+using System.Net;
 using Blazored.LocalStorage;
 using FirstTerraceSystems.AuthProviders;
 using FirstTerraceSystems.Features;
@@ -60,6 +61,13 @@ namespace FirstTerraceSystems
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
             builder.Services.AddScoped<NasdaqService>();
             builder.Services.AddScoped<BsToastService>();
+
+
+            //var cultureInfo = new CultureInfo("en-US");
+            //cultureInfo.NumberFormat.CurrencySymbol = "$";            
+            //CultureInfo.CurrentCulture = cultureInfo;
+            //CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            //CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
             return builder.Build();
         }

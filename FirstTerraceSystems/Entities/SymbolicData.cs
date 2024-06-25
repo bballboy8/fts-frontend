@@ -19,31 +19,12 @@ namespace FirstTerraceSystems.Entities
             Symbol = row[headers.IndexOf("symbol")].ToString();
             Price = (double.TryParse(row[headers.IndexOf("price")].ToString(), out double price) ? price : 0.0) / 10000;
 
-            string? dateString = row[headers.IndexOf("date")].ToString();
-
-            DateTime date = DateTime.ParseExact(dateString, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-            TimeSpan timeSpan = TimeSpan.FromTicks(long.Parse(TrackingID) / 100);
-            // Add the TimeSpan to the date
-            DateTime dateTime = date.Add(timeSpan);
-            TimeStamp = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
-
-            if (DateTime.TryParseExact(dateString, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime1))
+            TimeStamp = row[headers.IndexOf("date")].ToString();            
+            if (DateTime.TryParseExact(TimeStamp, "yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
             {
-                if (long.TryParse(TrackingID, out long trackingIdValue))
-                {
-                    Date = dateTime1.AddMilliseconds(trackingIdValue / 1000000);
-                }
-                else
-                {
-                    Date = dateTime;
-                }
+                Date = dateTime;                
+                TimeStamp = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffff");
             }
-            var m = Date.ToString("yyyy-MM-ddTHH:mm:ss.fff");
-            /*TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-            
-            DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(Date, easternZone);*/
-
         }
 
 

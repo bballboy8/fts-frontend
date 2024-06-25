@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FirstTerraceSystems.Entities;
 
 namespace FirstTerraceSystems.Services
@@ -28,7 +29,8 @@ namespace FirstTerraceSystems.Services
             {
                 HttpResponseMessage response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadFromJsonAsync<List<SymbolicData>>();
+                var responseString = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<SymbolicData>>(responseString);
             }
             catch (Exception ex)
             {

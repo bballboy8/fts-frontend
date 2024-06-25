@@ -924,6 +924,7 @@ window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
 }
 
 $(document).ready(function () {
+
     $("body").on("click", ".password-toggle", function () {
         var inputType = $(".txt-password-input", $(this).closest(".password-input")).prop("type");
         if (inputType == 'text') {
@@ -949,4 +950,5 @@ $(document).ready(function () {
             }
         }
     });
+
 });

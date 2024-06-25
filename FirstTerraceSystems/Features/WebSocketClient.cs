@@ -1,23 +1,13 @@
-﻿using Microsoft.AspNetCore.Components;
-using System.Collections.Concurrent;
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
 using System.Text;
 using FirstTerraceSystems.Models;
-using System.Threading.Tasks;
-using System.Threading;
-using System;
-using System.IO;
-using FirstTerraceSystems.Repositories;
-using Microsoft.JSInterop;
 using System.Text.Json;
 
 namespace FirstTerraceSystems.Features
 {
     public static class WebSocketClient
     {
-        static ClientWebSocket _websocket = new ClientWebSocket();
-
-        static int _connectionTrial = 0;
+        static ClientWebSocket _webSocket = new ClientWebSocket();
 
         public delegate void OnRealDataReceived(NasdaqResponse? nasdaqData);
 
@@ -29,21 +19,32 @@ namespace FirstTerraceSystems.Features
 
         public async static Task ConnectAsync()
         {
-            if (_connectionTrial < 3)
+
+            int connectionTrial = 0;
+
+            if (connectionTrial < 3)
             {
                 try
                 {
-                    //ws://localhost:6969/ws test socket url
-                    //await _websocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
-                    await _websocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
-                    var buffer = Encoding.UTF8.GetBytes("start");
-                    await _websocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
-                    _connectionTrial = 0;
+                    if (_webSocket.State != WebSocketState.Open)
+                    {
+                        await _webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+                        //await _websocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
+
+                        var buffer = Encoding.UTF8.GetBytes("start");
+                        await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                        connectionTrial = 0;
+                    }
+
+                    while (_webSocket.State == WebSocketState.Connecting)
+                    {
+                        await Task.Delay(50); // Small delay to avoid busy waiting
+                    }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
-                    _connectionTrial++;
+                    connectionTrial++;
                     await ConnectAsync();
                 }
             }
@@ -52,10 +53,15 @@ namespace FirstTerraceSystems.Features
 
         public static async Task CloseAsync()
         {
-            if (_websocket.State == WebSocketState.Open)
+            if (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseSent || _webSocket.State == WebSocketState.CloseReceived)
             {
-                await _websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-                _websocket.Dispose();
+                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+                //_websocket.Dispose();
+            }
+            else if (_webSocket.State == WebSocketState.Connecting)
+            {
+                Console.WriteLine("WebSocket is still connecting. Aborting connection.");
+                _webSocket.Abort();
             }
         }
 
@@ -67,12 +73,12 @@ namespace FirstTerraceSystems.Features
             {
                 try
                 {
-                    while (_websocket.State == WebSocketState.Open)
+                    while (_webSocket.State == WebSocketState.Open)
                     {
                         WebSocketReceiveResult result;
                         do
                         {
-                            result = await _websocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                             await memoryStream.WriteAsync(buffer, 0, result.Count);
                         } while (!result.EndOfMessage);
 
