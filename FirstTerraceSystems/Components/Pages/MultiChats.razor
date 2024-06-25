@@ -6,19 +6,17 @@
     <div id="chartList" class="row"></div>
 </div>
 
-
 @code
 {
-
     private IEnumerable<EquitiesBarModal>? EquitiesBars { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var To = DateTime.Now;
-        var from = To.AddDays(-3);
-        from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
+        var currentDate = DateTime.Now;
+        var startDate = currentDate.AddDays(-3);
+        startDate = new DateTime(startDate.Year, startDate.Month, startDate.Day, 9, 0, 0);
 
-        EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
+        EquitiesBars = await NsdaqService.GetEquitiesBars(startDate, "AAPL");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
