@@ -13,15 +13,6 @@
     public object? ChartIndx { get; set; }
 
     [Parameter]
-    public object? OhlcData { get; set; }
-
-    [Parameter]
-    public object? VolumeData { get; set; }
-
-    [Parameter]
-    public object? GroupingUnits { get; set; }
-
-    [Parameter]
     public object? MinPoint { get; set; }
 
     [Parameter]
@@ -56,7 +47,7 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
-            await JSRuntime.InvokeVoidAsync("popoutChartWindow", DotNetObjectReference.Create(this), ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits, MinPoint, MaxPoint, Symbol);
+            await JSRuntime.InvokeVoidAsync("popoutChartWindow", DotNetObjectReference.Create(this), ER_ChartWindow, ChartIndx, MinPoint, MaxPoint, Symbol);
         }
     }
 
@@ -70,6 +61,13 @@
     {
         ChartPageModal.UpdatedMinExtreme = minPoint;
         ChartPageModal.UpdatedMaxExtreme = maxPoint;
+    }
+
+    [JSInvokable]
+    public void SymbolChanged(object symbol)
+    {
+        Symbol = symbol;
+        ChartPageModal.Symbol = symbol;
     }
 
     [JSInvokable("GetStockBySymbol")]

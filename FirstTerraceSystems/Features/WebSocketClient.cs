@@ -7,7 +7,7 @@ namespace FirstTerraceSystems.Features
 {
     public static class WebSocketClient
     {
-        static ClientWebSocket _webSocket = new ClientWebSocket();
+        static ClientWebSocket _webSocket = new();
 
         public delegate void OnRealDataReceived(NasdaqResponse? nasdaqData);
 
@@ -26,10 +26,11 @@ namespace FirstTerraceSystems.Features
             {
                 try
                 {
+                    _webSocket = new ClientWebSocket();
                     if (_webSocket.State != WebSocketState.Open)
                     {
                         await _webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
-                        //await _websocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
+                        //await _webSocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
 
                         var buffer = Encoding.UTF8.GetBytes("start");
                         await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
@@ -56,7 +57,7 @@ namespace FirstTerraceSystems.Features
             if (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseSent || _webSocket.State == WebSocketState.CloseReceived)
             {
                 await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-                //_websocket.Dispose();
+                _webSocket.Dispose();
             }
             else if (_webSocket.State == WebSocketState.Connecting)
             {

@@ -7,10 +7,7 @@ namespace FirstTerraceSystems;
 public partial class ChartWindowPage : ContentPage
 {
 
-    private readonly object _ohlcData;
     private readonly object _chartIndx;
-    private readonly object _volumeData;
-    private readonly object _groupingUnits;
     private readonly object _min;
     private readonly object _max;
     private readonly object _symbol;
@@ -19,13 +16,10 @@ public partial class ChartWindowPage : ContentPage
     public delegate void RefreshChart();
 
 
-    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object ohlc, object volume, object groupingUnits, object min, object max, object symbol)
+    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object min, object max, object symbol)
     {
         InitializeComponent();
-        _ohlcData = ohlc;
         _chartIndx = chartIndx;
-        _volumeData = volume;
-        _groupingUnits = groupingUnits;
         _jsObjectReference = jsObjectReference;
         _min = min;
         _max = max;
@@ -37,9 +31,6 @@ public partial class ChartWindowPage : ContentPage
         ChartComponent.ComponentType = typeof(ChartWindow);
         ChartComponent.Parameters = new Dictionary<string, object?>
         {
-            { "OhlcData", _ohlcData },
-            { "GroupingUnits", _groupingUnits },
-            { "VolumeData", _volumeData },
             { "ChartIndx", _chartIndx },
             { "MinPoint", _min },
             { "MaxPoint", _max },
@@ -54,7 +45,7 @@ public partial class ChartWindowPage : ContentPage
         if (!StateContainerService.IsAllowCloseAllWindows)
         {
             var chartPage  = StateContainerService.ChartPages.FirstOrDefault(a => a.ChartId == _chartIndx?.ToString());
-            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme, _symbol);
+            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme, chartPage?.Symbol);
         }
 
         StateContainerService.RemoveChartPage(_chartIndx.ToString());

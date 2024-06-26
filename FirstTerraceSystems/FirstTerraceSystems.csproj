@@ -72,6 +72,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Remove="Components\Pages\GridCharts.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Blazor.Bootstrap" Version="2.2.0" />
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.4" />

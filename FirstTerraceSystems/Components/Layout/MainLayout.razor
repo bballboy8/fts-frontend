@@ -144,12 +144,12 @@
 
 
     [JSInvokable]
-    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, bool isMaximizeClicked, object chartId, object ohlc, object volume, object groupingUnits, object minPoint, object maxPoint, object symbol)
+    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, bool isMaximizeClicked, object chartId, object minPoint, object maxPoint, object symbol)
     {
         StateContainerService.IsAllowCloseAllWindows = false;
         StateContainerService.IsMainPage = false;
         StateContainerService.IsMaximizeClikedForChart = isMaximizeClicked;
-        var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, groupingUnits, minPoint, maxPoint, symbol);
+        var chartWindow = new ChartWindowPage(jsObject, chartId, minPoint, maxPoint, symbol);
         var window = new Window(chartWindow);
         Application.Current?.OpenWindow(window);
         return await Task.FromResult(chartId);

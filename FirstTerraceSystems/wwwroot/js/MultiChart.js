@@ -1,5 +1,4 @@
-﻿var ohlc = [], volume = [], dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
-var groupingUnits = [['millisecond', [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]],
+﻿var groupingUnits = [['millisecond', [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]],
 ['second', [1, 2, 5, 10, 15, 30]],
 ['minute', [1, 2, 5, 10, 15,]],
 ['hour', [1, 2, 3, 4, 6, 8, 12]],
@@ -21,29 +20,31 @@ const initialChartSymbols = [
 ];
 
 const defaultkeyboardNavigationOrder = [
+    'symbolButton',
+    'rangeSelector',
     'zoomInButton',
     'zoomOutButton',
     'minimizeButton',
     'maximizeButton',
     'closeChartButton',
-    'zoom',
-    'rangeSelector',
     'series',
+    'zoom',
     'chartMenu',
     'legend'
 ];
 
 const singleChartkeyboardNavigationOrder = [
+    'symbolButton',
+    'rangeSelector',
     'zoomInButton',
     'zoomOutButton',
-    'zoom',
-    'rangeSelector',
     'series',
+    'zoom',
     'chartMenu',
     'legend'
 ];
 
-function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
+function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
 
     //Highcharts.setOptions({
     //    lang: {
@@ -56,21 +57,197 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPop
         chart: {
             backgroundColor: backgroundColor,
             borderWidth: 1,
-            borderColor: "#5B6970",            
+            borderColor: "#5B6970",
+            time: {
+                //timezone: 'America/New_York',
+                useUTC: false
+            },
+            plotOptions: {
+                series: {
+                    turboThreshold: 0
+                }
+            },
             events: {
                 load: function () {
                     var chart = this;
+                    chart.ButtonNamespace = {};
+
+                    chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
+                        text: truncateText(`XNYS: ${symbol}`, 11, ''),
+                        width: 85,
+                        height: 10,
+                        title: `XNYS: ${symbol}`,
+                        callback: function (e) {
+                            let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
+
+                            if (symbolList == null) {
+                                symbolList = initialChartSymbols;
+                            }
+
+                            $("#dvSymbolInput").remove();
+
+                            var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="${symbolList[Number(charContainerId.split("-")[1]) - 1].symbol}"/><button id="btnUpdateChartSymbol" type="button" data-chart-id="${charContainerId}">Ok</button></div>`);
+
+                            var btn = divInput.find('#btnUpdateChartSymbol');
+
+                            btn.on("click", function () {
+                                var dvInput = $(this).closest("#dvSymbolInput")
+                                symbol = $("#txtSymboleName", dvInput).val();
+                                var chartId = $(chart.renderTo).data("chart-id");
+                                //var chartBoxData = $('#' + chartId).data();
+
+                                loadSymbolData(symbol, function (seriesData) {
+                                    chart.series[0].update({
+                                        name: symbol,
+                                        data: seriesData,
+                                        color: '#C01620',
+                                        upColor: '#16C05A',
+                                        lineWidth: 0,
+                                        marker: { enabled: true, radius: 4 },
+                                        tooltip: { valueDecimals: 2 },
+                                        states: { hover: { lineWidthPlus: 0 } }
+                                    });
+
+                                    removeWindowControlButtonsFromChart();
+                                });
+
+                                let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
+
+                                if (symbolList == null) {
+                                    symbolList = initialChartSymbols;
+                                }
+
+                                var indx = Number(chartId);
+                                symbolList[indx - 1].symbol = symbol;
+                                localStorage.setItem('ChartSymbols', JSON.stringify(symbolList));
+
+                                chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
+                                chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
+
+                                $("#dvSymbolInput").remove();
+
+                                if (dotNetObject) {
+                                    dotNetObject.invokeMethodAsync('SymbolChanged', symbol);
+                                }
+                            });
+
+                            $("body").append(divInput);
+                        }
+                    });
+
+                    chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
+                        text: '<i class="bi bi-zoom-in"></i>',
+                        callback: function () {
+                            zoomChart(true, chart, dotNetObject);
+                        }
+                    });
+
+                    chart.ButtonNamespace.zoomOutButton = addHtmlButtonToChart(chart, {
+                        text: '<i class="bi bi-zoom-out"></i>',
+                        callback: function () {
+                            zoomChart(false, chart, dotNetObject);
+                        }
+                    });
+
+                    var customComponents = {
+                        symbolButton: new ButtonComponent(chart, chart.ButtonNamespace.symbolButton),
+                        zoomInButton: new ButtonComponent(chart, chart.ButtonNamespace.zoomInButton),
+                        zoomOutButton: new ButtonComponent(chart, chart.ButtonNamespace.zoomOutButton),
+                    };
+
+                    if (!isPopoutChartWindow) {
+
+                        chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(chart, {
+                            text: '<i class="bi bi-x-lg"></i>',
+                            hoverColor: '#FF0000',
+                            callback: function () {
+                                removeChart(chart);
+                            }
+                        });
+
+                        chart.ButtonNamespace.maximizeButton = addHtmlButtonToChart(chart, {
+                            text: '<i class="bi bi-window"></i>',
+                            callback: async function (e) {
+                                removeUnusedElement();
+                                var jsObjectReference = DotNet.createJSObjectReference(window);
+                                var chartId = $(chart.renderTo).data("chart-id");
+                                var extremes = chart.xAxis[0].getExtremes();
+                                removeChart(chart);
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, extremes.min, extremes.max, symbol)
+                            }
+                        });
+
+                        chart.ButtonNamespace.minimizeButton = addHtmlButtonToChart(chart, {
+                            text: '<i class="bi bi-dash-lg"></i>',
+                            callback: async function () {
+                                removeUnusedElement();
+                                var jsObjectReference = DotNet.createJSObjectReference(window);
+                                var chartId = $(chart.renderTo).data("chart-id");
+                                var extremes = chart.xAxis[0].getExtremes();
+                                removeChart(chart);
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, extremes.min, extremes.max, symbol)
+                            }
+                        });
+
+                        customComponents.minimizeButton = new ButtonComponent(chart, chart.ButtonNamespace.minimizeButton);
+                        customComponents.maximizeButton = new ButtonComponent(chart, chart.ButtonNamespace.maximizeButton);
+                        customComponents.closeChartButton = new ButtonComponent(chart, chart.ButtonNamespace.closeChartButton);
+                    }
+
+                    chart.update({
+                        accessibility: {
+                            customComponents: customComponents,
+                            keyboardNavigation: {
+                                order: !isPopoutChartWindow ? defaultkeyboardNavigationOrder : singleChartkeyboardNavigationOrder
+                            }
+                        }
+                    });
+                },
+                //redraw: function () {
+                //    var chart = this;
+                //},
+                render: function () {
+                    var chart = this;
+
+                    chart.ButtonNamespace.symbolButton.align({
+                        align: 'left',
+                        x: 0,
+                        y: -2
+                    }, true, 'spacingBox');
+
+                    chart.ButtonNamespace.zoomInButton.align({
+                        align: 'left',
+                        x: 360,
+                        y: 0
+                    }, false, 'spacingBox');
+
+                    chart.ButtonNamespace.zoomOutButton.align({
+                        align: 'left',
+                        x: 400,
+                        y: 0
+                    }, false, 'spacingBox');
+
+                    if (!isPopoutChartWindow) {
+                        chart.ButtonNamespace.closeChartButton.align({
+                            align: 'right',
+                            x: -30,
+                            y: 0
+                        }, false, 'spacingBox');
+
+                        chart.ButtonNamespace.maximizeButton.align({
+                            align: 'right',
+                            x: -70,
+                            y: 0
+                        }, false, 'spacingBox');
+
+                        chart.ButtonNamespace.minimizeButton.align({
+                            align: 'right',
+                            x: -110,
+                            y: 0
+                        }, false, 'spacingBox');
+                    }
                 }
-            },            
-        },
-        time: {
-            //timezone: 'America/New_York',
-            useUTC: false
-        },
-        plotOptions: {
-            series: {
-                turboThreshold: 0
-            }
+            },
         },
         rangeSelector: {
             //height: 0,
@@ -84,6 +261,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPop
                 { type: 'day', count: 3, text: '3D' },
             ],
             //selected: 0,
+            //dropdown: 'responsive', //'always', 'responsive', 'never'
             inputEnabled: false,
             buttonTheme: {
                 //visibility: 'hidden',
@@ -115,12 +293,15 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPop
             },
             verticalAlign: 'top',
             buttonSpacing: 10,
-            x: 66,
-            y: 0
+            buttonPosition: {
+                align: 'left', // Horizontal alignment (left, center, right)
+                x: 35, // Horizontal offset
+                y: 0 // Vertical offset
+            },
         },
         xAxis: [
-            {             
-                type: 'datetime',                
+            {
+                type: 'datetime',
                 offset: 0,
                 labels: {
                     align: 'left',
@@ -131,13 +312,13 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPop
                     //    //return Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.value);
                     //    //return Highcharts.dateFormat('%H:%M:%S', this.value);
                     //    debugger;
-                        
+
                     //}
                 },
                 lineWidth: 0,
-                opposite: false,             
-            }
-            ,{
+                opposite: false,
+            },
+            {
                 offset: 0,
                 labels: {
                     align: 'left',
@@ -150,23 +331,25 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPop
                 opposite: false
             }
         ],
-        yAxis: [{
-            labels: {
-                align: 'left',
-                x: 5,
-                style: {
-                    color: fontColor // Green color
-                }
-            },
-            //height: '65%',
-            lineWidth: 2,
-            resize: { enabled: true }
-        }],
+        yAxis: [
+            {
+                labels: {
+                    align: 'left',
+                    x: 5,
+                    style: {
+                        color: fontColor // Green color
+                    }
+                },
+                //height: '65%',
+                lineWidth: 2,
+                resize: { enabled: true }
+            }
+        ],
         tooltip: { split: true },
         series: [
             {
                 name: symbol,
-                data: pOHLC,
+                data: data,
                 color: '#C01620', // Color for the fall
                 upColor: '#16C05A', // Color for the rise
                 lineWidth: 0,
@@ -182,231 +365,12 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, symbol, isPop
                         lineWidthPlus: 0
                     }
                 }
-            }            
+            }
         ],
         exporting: {
-            enabled: true,
+            enabled: false,
             accessibility: {
                 enabled: false
-            },
-            buttons: {
-                contextButton: {
-                    enabled: false,
-                },
-
-                symbolButton: {
-                    useHTML: true,
-                    enabled: true,
-                    className: 'btn btn-sm btn-symbol',
-                    theme: {
-                        fill: '#272C2F',
-                        stroke: '#5B6970',
-                        style: {
-                            color: '#FFFFFF',
-                        },
-                        states: {
-                            select: {
-                                fill: '#5b6970',
-                                style: {
-                                    color: '#FFFFFF',
-                                }
-                            },
-                            hover: {
-                                fill: '#5B6970',
-                                stroke: '#5B6970',
-                            },
-                        }
-                    },
-                    text: `XNYS: ${symbol}`,
-                    onclick: function (e) {
-
-                        var chart = this;
-                        let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
-                        if (symbolList == null) {
-                            symbolList = initialChartSymbols;
-                        }
-
-                        $("#dvSymbolInput").remove();
-
-                        var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="${symbolList[Number(charContainerId.split("-")[1]) - 1].symbol}"/><button id="btnUpdateChartSymbol" type="button" data-chart-id="${charContainerId}">Ok</button></div>`);
-
-                        var btn = divInput.find('#btnUpdateChartSymbol');
-
-                        btn.on("click", function () {
-                            var dvInput = $(this).closest("#dvSymbolInput")
-                            symbol = $("#txtSymboleName", dvInput).val();
-                            var chartId = $(chart.renderTo).data("chart-id");
-                            //var chartBoxData = $('#' + chartId).data();
-
-                            loadSymbolData(symbol, function (seriesData) {
-                                chart.series[0].update({
-                                    name: symbol,
-                                    data: seriesData,
-                                    color: '#C01620',
-                                    upColor: '#16C05A',
-                                    lineWidth: 0,
-                                    marker: { enabled: true, radius: 4 },
-                                    tooltip: { valueDecimals: 2 },
-                                    states: { hover: { lineWidthPlus: 0 } }
-                                });
-
-                                removeWindowControlButtonsFromChart();
-                            });
-
-                            let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
-
-                            if (symbolList == null) {
-                                symbolList = initialChartSymbols;
-                            }
-
-                            var indx = Number(chartId);
-                            symbolList[indx - 1].symbol = symbol;
-                            localStorage.setItem('ChartSymbols', JSON.stringify(symbolList));
-
-                            chart.update({
-                                exporting: {
-                                    buttons: {
-                                        symbolButton: {
-                                            text: `XNYS: ${symbol}`
-                                        }
-                                    }
-                                }
-                            });
-
-                            $("#dvSymbolInput").remove();
-                        });
-
-                        $("body").append(divInput);
-                    },
-                },
-                zoomInButton: {
-                    x: 355,
-                    y: 0,
-                    enabled: true,
-                    className: 'btn btn-sm btn-zoom-in btn-custom-exporting',
-                    theme: {
-                        fill: '#272C2F',
-                        stroke: '#272C2F',
-                        style: {
-                            color: '#FFFFFF',
-                        },
-                        states: {
-                            hover: {
-                                fill: '#5B6970',
-                            },
-                        }
-                    },
-                    useHTML: true,
-                    text: '<i class="bi bi-zoom-in"></i>',
-                    onclick: function (e) {
-                        zoomChart(true, this, dotNetObject);
-                    },
-                },
-                zoomOutButton: {
-                    x: 389,
-                    y: 0,
-                    enabled: true,
-                    className: 'btn btn-sm btn-zoom-out btn-custom-exporting',
-                    theme: {
-                        fill: '#272C2F',
-                        stroke: '#272C2F',
-                        style: {
-                            color: '#FFFFFF',
-                        },
-                        states: {
-                            hover: {
-                                fill: '#5B6970',
-                            },
-                        }
-                    },
-                    useHTML: true,
-                    text: '<i class="bi bi-zoom-out"></i>',
-                    onclick: function (e) {
-                        zoomChart(false, this, dotNetObject);
-                    },
-                },
-                minimizeButton: {
-                    align: 'right',
-                    verticalAlign: 'top',
-                    x: -60,
-                    enabled: !isPopoutChartWindow,
-                    className: 'btn btn-sm btn-minimize btn-custom-exporting',
-                    theme: {
-                        fill: '#272C2F',
-                        stroke: '#272C2F',
-                        style: {
-                            color: '#FFFFFF',
-                        },
-                        states: {
-                            hover: {
-                                fill: '#5B6970',
-                            },
-                        }
-                    },
-                    useHTML: true,
-                    text: '<i class="bi bi-dash-lg"></i>',
-                    onclick: async function (e) {
-                        var jsObjectReference = DotNet.createJSObjectReference(window);
-                        var chartId = $(this.renderTo).data("chart-id");
-                        var extremes = this.xAxis[0].getExtremes();
-                        removeChart(this);
-                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max, symbol);
-                    },
-                },
-                maximizeButton: {
-                    align: 'right',
-                    verticalAlign: 'top',
-                    x: -30,
-                    enabled: !isPopoutChartWindow,
-                    className: 'btn btn-sm btn-maximize btn-custom-exporting',
-                    theme: {
-                        fill: '#272C2F',
-                        stroke: '#272C2F',
-                        style: {
-                            color: '#FFFFFF',
-                        },
-                        states: {
-                            hover: {
-                                fill: '#5B6970',
-                            },
-                        }
-                    },
-                    useHTML: true,
-                    text: '<i class="bi bi-window"></i> ',
-                    onclick: async function (e) {
-                        var jsObjectReference = DotNet.createJSObjectReference(window);
-                        var chartId = $(this.renderTo).data("chart-id");
-                        var extremes = this.xAxis[0].getExtremes();
-                        removeChart(this);
-                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max, symbol)
-                    },
-                },
-                closeChartButton: {
-                    align: 'right',
-                    verticalAlign: 'top',
-                    x: -2,
-                    enabled: !isPopoutChartWindow,
-                    className: 'btn btn-sm btn-close-chart btn-custom-exporting',
-                    theme: {
-                        fill: '#272C2F',
-                        stroke: '#272C2F',
-                        style: {
-                            color: '#FFFFFF',
-                        },
-                        states: {
-                            hover: {
-                                fill: '#5B6970',
-                                stroke: '#5B6970',
-                            },
-                        }
-                    },
-                    useHTML: true,
-                    text: '<i class="bi bi-x-lg"></i>',
-
-                    onclick: function (e) {
-                        if (!isPopoutChartWindow) removeChart(this);
-                    },
-                }
             },
         },
         navigation: {
@@ -460,107 +424,34 @@ function RefreshChartData() {
 
 function removeWindowControlButtonsFromChart() {
     var chart = Highcharts.charts.filter(c => c)[0];
-    if (chart && chart.exportSVGElements) {
-        chart.exportSVGElements.filter(f => f).slice(-3).forEach(function (element) {
-            if (element && element.destroy) {
-                element.destroy();
+    if (chart) {
+
+        chart.ButtonNamespace.closeChartButton.hide();
+        chart.ButtonNamespace.minimizeButton.hide();
+        chart.ButtonNamespace.maximizeButton.hide();
+
+        chart.update({
+            accessibility: {
+                keyboardNavigation: {
+                    order: singleChartkeyboardNavigationOrder
+                }
             }
         });
-        chart.exportSVGElements = chart.exportSVGElements.slice(0, -3);
-        chart.exportSVGElements.length = 0;
-        chart.isDirtyBox = true;
-        chart.redraw();
     }
 }
 
 function addWindowControlButtonsToChart() {
     Highcharts.charts.forEach(function (chart) {
-        if (chart && chart.exportSVGElements && chart.exportSVGElements.length < 3) {
-            chart.update({
-                exporting: {
-                    buttons: {
-                        minimizeButton: {
-                            align: 'right',
-                            verticalAlign: 'top',
-                            x: -60,
-                            enabled: true,
-                            className: 'btn btn-sm btn-minimize btn-custom-exporting',
-                            theme: {
-                                fill: '#272C2F',
-                                stroke: '#272C2F',
-                                style: {
-                                    color: '#FFFFFF',
-                                },
-                                states: {
-                                    hover: {
-                                        fill: '#5B6970',
-                                    },
-                                }
-                            },
-                            useHTML: true,
-                            text: '<i class="bi bi-dash-lg"></i>',
-                            onclick: async function (e) {
-                                var jsObjectReference = DotNet.createJSObjectReference(window);
-                                var chartId = $(this.renderTo).data("chart-id");
-                                var extremes = this.xAxis[0].getExtremes();
-                                removeChart(this);
-                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max);
-                            },
-                        },
-                        maximizeButton: {
-                            align: 'right',
-                            verticalAlign: 'top',
-                            x: -30,
-                            enabled: true,
-                            className: 'btn btn-sm btn-maximize btn-custom-exporting',
-                            theme: {
-                                fill: '#272C2F',
-                                stroke: '#272C2F',
-                                style: {
-                                    color: '#FFFFFF',
-                                },
-                                states: {
-                                    hover: {
-                                        fill: '#5B6970',
-                                    },
-                                }
-                            },
-                            useHTML: true,
-                            text: '<i class="bi bi-window"></i> ',
-                            onclick: async function (e) {
-                                var jsObjectReference = DotNet.createJSObjectReference(window);
-                                var chartId = $(this.renderTo).data("chart-id");
-                                var extremes = this.xAxis[0].getExtremes();
-                                removeChart(this);
-                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, ohlc, volume, groupingUnits, extremes.min, extremes.max);
-                            },
-                        },
-                        closeChartButton: {
-                            align: 'right',
-                            verticalAlign: 'top',
-                            x: -2,
-                            enabled: true,
-                            className: 'btn btn-sm btn-close-chart btn-custom-exporting',
-                            theme: {
-                                fill: '#272C2F',
-                                stroke: '#272C2F',
-                                style: {
-                                    color: '#FFFFFF',
-                                },
-                                states: {
-                                    hover: {
-                                        fill: '#5B6970',
-                                        stroke: '#5B6970',
-                                    },
-                                }
-                            },
-                            useHTML: true,
-                            text: '<i class="bi bi-x-lg"></i>',
+        if (chart) {
 
-                            onclick: function (e) {
-                                removeChart(this);
-                            },
-                        }
+            chart.ButtonNamespace.closeChartButton.show();
+            chart.ButtonNamespace.minimizeButton.show();
+            chart.ButtonNamespace.maximizeButton.show();
+
+            chart.update({
+                accessibility: {
+                    keyboardNavigation: {
+                        order: defaultkeyboardNavigationOrder
                     }
                 }
             });
@@ -569,18 +460,6 @@ function addWindowControlButtonsToChart() {
 }
 
 function zoomChart(zoomIn, chart, dotNetObject = undefined) {
-    //if (zoomIn)
-    //    currentZoomLevel++;
-    //else
-    //    currentZoomLevel--;
-    //if (currentZoomLevel > 5)
-    //    currentZoomLevel = 5
-    //if (currentZoomLevel < 1)
-    //    currentZoomLevel = 1
-
-    //if (currentZoomLevel >= 1 && currentZoomLevel <= 5) {
-    //    chart.xAxis.forEach(xAxes => xAxes.setExtremes(zoomLevels[currentZoomLevel - 1].min, zoomLevels[currentZoomLevel - 1].max));
-    //}
 
     var xAxis = chart.xAxis[0];
     var extremes = chart.xAxis[0].getExtremes();
@@ -727,20 +606,22 @@ function addChartBox(totalCharts, chartIndx, symbol) {
     }
 
     loadSymbolData(symbol, function (seriesData, currSymbol) {
-        addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol);
+        addChart(chartContainerId, seriesData, currSymbol);
         if (totalCharts == 1) {
             removeWindowControlButtonsFromChart();
         }
     });
 }
 
-function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint, symbol) {
+function popoutChartWindow(dotNetObject, element, chartIndx, minPoint, maxPoint, symbol) {
+    removeUnusedElement();
+
     var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
 
     loadSymbolData(symbol, function (seriesData, currSymbol) {
-        var chart = addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol, false, dotNetObject);
+        var chart = addChart(chartContainerId, seriesData, currSymbol, false, dotNetObject);
         if (minPoint && maxPoint) {
             chart.xAxis[0].setExtremes(minPoint, maxPoint);
         }
@@ -749,7 +630,7 @@ function popoutChartWindow(dotNetObject, element, chartIndx, ohlc, volume, group
 
 }
 
-function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxPoint, symbol) {
+function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
 
     var totalCharts = $("#chartList .chart-box").length + 1;
 
@@ -817,7 +698,7 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxP
 
 
     loadSymbolData(symbol, function (seriesData, currSymbol) {
-        var chart = addChart(chartContainerId, seriesData, volume, groupingUnits, currSymbol);
+        var chart = addChart(chartContainerId, seriesData, currSymbol);
         if (minPoint && maxPoint) {
             chart.xAxis[0].setExtremes(minPoint, maxPoint);
         }
@@ -826,6 +707,8 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits, minPoint, maxP
 }
 
 function createDashboard(totalCharts) {
+
+    removeUnusedElement();
 
     let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
     if (symbolList == null) {
@@ -876,10 +759,10 @@ function loadSymbolData(symbol, onLoaded) {
     T5.dotReference.invokeMethodAsync("GetStockBySymbol", symbol).then(resultData => {
         var seriesData = [];
         for (var i = 1; i < resultData.length; i++) {
-            var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';            
-            //seriesData.push({ x: new Date(resultData[i].t), y: resultData[i].p, color: color });
-            seriesData.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
-            
+            var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
+            seriesData.push({ x: new Date(resultData[i].t), y: resultData[i].p, color: color });
+            //seriesData.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
+
         }
         onLoaded(seriesData, symbol);
     });
@@ -899,29 +782,3 @@ T5.SetDotNetReference = function (ldotreference) {
     T5.dotReference = ldotreference;
 }
 
-//function calculateZoomLevels(data) {
-//    zoomLevels = [];
-//    var minDate = data[0].x;
-//    var maxDate = data[data.length - 1].x;
-//    var range = maxDate - minDate;
-//    zoomLevels = [
-//        { min: minDate, max: minDate + range * 0.2 },  // Zoom Level 1 (20% of the range)
-//        { min: minDate, max: minDate + range * 0.4 },  // Zoom Level 2 (40% of the range)
-//        { min: minDate, max: minDate + range * 0.6 },  // Zoom Level 3 (60% of the range)
-//        { min: minDate, max: minDate + range * 0.8 },  // Zoom Level 4 (80% of the range)
-//        { min: minDate, max: maxDate }                 // Zoom Level 5 (100% of the range)
-//    ];
-//}
-
-//function LoadData(resultData) {
-//    //for (let i = 0; i < dataLength; i += 1) {
-//    //    ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
-//    //    volume.push([data[i][0], data[i][5]]);
-//    //}
-//    ohlc = [];
-//    for (var i = 1; i < resultData.length; i++) {
-//        var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
-//        ohlc.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
-//    }
-//    calculateZoomLevels(ohlc);
-//}
