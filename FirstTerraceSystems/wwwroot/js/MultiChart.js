@@ -58,15 +58,6 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
-            time: {
-                //timezone: 'America/New_York',
-                useUTC: false
-            },
-            plotOptions: {
-                series: {
-                    turboThreshold: 0
-                }
-            },
             events: {
                 load: function () {
                     var chart = this;
@@ -346,6 +337,16 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             }
         ],
         tooltip: { split: true },
+        plotOptions: {
+            series: {
+                turboThreshold: 0
+            }
+        },
+        time: {
+            //timezone: 'America/New_York',
+            //timezone: 'US/Eastern',
+            useUTC: false
+        },
         series: [
             {
                 name: symbol,
@@ -759,9 +760,12 @@ function loadSymbolData(symbol, onLoaded) {
     T5.dotReference.invokeMethodAsync("GetStockBySymbol", symbol).then(resultData => {
         var seriesData = [];
         for (var i = 1; i < resultData.length; i++) {
-            var color = resultData[i].p > resultData[i - 1].p ? 'green' : 'red';
-            seriesData.push({ x: new Date(resultData[i].t), y: resultData[i].p, color: color });
-            //seriesData.push({ x: new Date(resultData[i].t).getTime(), y: resultData[i].p, color: color });
+            //seriesData.push({ x: new Date(resultData[i].t), y: resultData[i].p, color: color });
+            seriesData.push({
+                x: new Date(resultData[i].t).getTime(),
+                y: resultData[i].p,
+                color: resultData[i].p > resultData[i - 1].p ? 'green' : 'red'
+            });
 
         }
         onLoaded(seriesData, symbol);
