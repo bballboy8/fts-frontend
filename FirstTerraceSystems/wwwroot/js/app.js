@@ -167,7 +167,7 @@ function addButtonToChart(chart, options) {
     ).attr({
         width: width,
         height: height,
-        title: title 
+        title: title
     });
 
     //button.addClass('btn btn-sm')
@@ -198,7 +198,7 @@ function loadTemplates(e) {
         });
     }
     e.stopPropagation();
-} 
+}
 
 function truncateText(text, maxWidth, ellipsis = '...') {
     if (!text || typeof text !== 'string') {
@@ -360,144 +360,12 @@ $(document).ready(function () {
         }
     });
 
+
+    $('body').on('keydown', '.tab-to-close-app', function (event) {
+        if (event.key === 'Tab' || event.keyCode === 9) {
+            event.preventDefault();
+            $('#btn-close-app').focus();
+        }
+    }); 
+
 });
-
-//document.addEventListener('DOMContentLoaded', async function () {
-
-//    const data = await fetch(
-//        'https://demo-live-data.highcharts.com/aapl-ohlc.json'
-//    ).then(response => response.json());
-
-
-//    Highcharts.setOptions({
-//        lang: {
-//            rangeSelectorZoom: ""
-//        }
-//    });
-
-//    Highcharts.stockChart('container', {
-//        rangeSelector: {
-//            selected: 2,
-//            buttons: [
-//                {
-//                    type: 'month',
-//                    count: 1,
-//                    text: '1m',
-//                    title: '1 month'
-//                },
-//                {
-//                    type: 'month',
-//                    count: 3,
-//                    text: '3m',
-//                    title: '3 months'
-//                },
-//                {
-//                    type: 'month',
-//                    count: 6,
-//                    text: '6m',
-//                    title: '6 months'
-//                },
-//                {
-//                    type: 'ytd',
-//                    text: 'YTD',
-//                    title: 'View year to date'
-//                },
-//                {
-//                    type: 'year',
-//                    count: 1,
-//                    text: '1y',
-//                    title: '1 year'
-//                }, {
-//                    type: 'all',
-//                    text: 'All',
-//                    title: 'View all'
-//                }
-//            ]
-//        },
-
-//        title: {
-//            text: 'AAPL Stock Price'
-//        },
-
-//        series: [{
-//            type: 'ohlc',
-//            name: 'AAPL Stock Price',
-//            data: data,
-//            dataGrouping: {
-//                units: [[
-//                    'week', // unit name
-//                    [1] // allowed multiples
-//                ], [
-//                    'month',
-//                    [1, 2, 3, 4, 6]
-//                ]]
-//            }
-//        }],
-//        chart: {
-//            events: {
-//                load: function () {
-
-//                    var chart = this;
-
-//                    const minimizeButton = addChartButton(chart, "minimizeButton", 60, 10, function () {
-//                        alert('minimizeButton Pressed');
-//                    });
-
-//                    const maximizeButton = addChartButton(chart, "maximizeButton", 100, 10, function () {
-//                        alert('maximizeButton Pressed');
-//                    });
-
-//                    this.update({
-//                        accessibility: {
-//                            customComponents: {
-//                                minimizeButtonComponent: new ButtonComponent(chart, minimizeButton),
-//                                maximizeButtonComponent: new ButtonComponent(chart, maximizeButton)
-//                            },
-//                            keyboardNavigation: {
-//                                enabled: true,
-//                                focusBorder: {
-//                                    enabled: true,
-//                                    hideBrowserFocusOutline: false
-//                                },
-//                                order: ['minimizeButtonComponent', 'maximizeButtonComponent', 'zoom', 'rangeSelector', 'series', 'chartMenu', 'legend']
-//                            }
-//                        }
-//                    });
-
-//                    window.addEventListener('resize', function () {
-//                        chart.reflow();
-//                    });
-
-//                    var chart = this,
-//                        rangeSelector = chart.rangeSelector,
-//                        buttonGroup = rangeSelector && rangeSelector.buttonGroup;
-
-
-//                    if (buttonGroup) {
-//                        var buttons = buttonGroup.element.childNodes;
-
-//                        buttons.forEach(function (button) {
-//                            button.setAttribute('style', 'display: none'); // Hide all buttons initially
-//                        });
-
-//                        var visibleButtons = [];
-
-//                        // Determine which buttons to show based on the chart width
-//                        if (chart.chartWidth < 500) {
-//                            visibleButtons.push(0, 3); // Show the first and last buttons
-//                        } else if (chart.chartWidth < 800) {
-//                            visibleButtons.push(1, 3); // Show the second last button
-//                        } else {
-//                            visibleButtons.push(0, 1, 2, 3); // Show all buttons
-//                        }
-
-//                        // Show the selected buttons
-//                        visibleButtons.forEach(function (index) {
-//                            buttons[index].setAttribute('style', 'display: block');
-//                        });
-//                    }
-//                }
-//            }
-//        },
-//    });
-//});
