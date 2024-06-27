@@ -657,9 +657,9 @@ function loadDashboard() {
     }
 }
 
-function calculateZoomLevels(data, screenWidth) {
-    const zoomLevels = [];
-    const pointsCount = screenWidth / 2;
+function calculateZoomLevels(data) {
+    zoomLevels = [];
+    const pointsCount = window.innerWidth / 2;
     const minDate = data[0].x;
     const maxDate = data[data.length - 1].x;
     const range = maxDate - minDate;
@@ -672,11 +672,12 @@ function calculateZoomLevels(data, screenWidth) {
     if (data.length < pointsCount) {
         zoomLevels.push({ min: minDate, max: maxDate }); // Show all if less data than screen width can accommodate
     }
+
 }
 
 function LoadData(resultData) {
-    const ohlc = [];
-    const volume = [];
+    ohlc = [];
+    volume = [];
     let previousPrice = null;
 
     resultData.forEach(item => {
@@ -693,7 +694,7 @@ function LoadData(resultData) {
         volume.push(volumePoint);
     });
 
-    calculateZoomLevels(ohlc, window.innerWidth);
+    calculateZoomLevels(ohlc);
 }
 
 function saveLayout() {

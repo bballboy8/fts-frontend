@@ -34,6 +34,24 @@ namespace FirstTerraceSystems.Services
                 response.EnsureSuccessStatusCode();
                 var contentString = await response.Content.ReadAsStringAsync();
                 var equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBarModal>>(contentString);
+
+                if (equitiesBars?.Count() > 5000)
+                {
+                    var report = new List<EquitiesBarModal>();
+                    var maxElements = 5000;
+
+                    // Calculate the number of elements to take (adjusted for exact 5000)
+                    var elementsToTake = Math.Min(equitiesBars.Count(), maxElements);
+                    var step = equitiesBars?.Count() / elementsToTake; // Adjust step size
+
+                    for (int i = 0; i < elementsToTake; i++)
+                    {
+                        report.Add(equitiesBars?.ElementAt((int)(i * step))); // Access elements with step
+                    }
+
+                    return report;
+                }
+
                 return equitiesBars;
             }
             catch (Exception ex)
