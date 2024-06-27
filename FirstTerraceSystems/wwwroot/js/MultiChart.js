@@ -682,7 +682,7 @@ function LoadData(resultData) {
 
     resultData.forEach(item => {
         const date = new Date(item.date).getTime();
-        const price = item.price;
+        const price = item.price / 10000;
 
         const color = previousPrice === null || price >= previousPrice ? 'green' : 'red';
         previousPrice = price; // Update previousPrice for the next iteration
