@@ -9,22 +9,19 @@ namespace FirstTerraceSystems.Entities.Nasdaq
 {
     public class EquitiesBarModal
     {
-        [JsonPropertyName("t")]
-        public DateTime Timestamp { get; set; }
+        [JsonPropertyName("trackingid")]
+        public string? TrackingId { get; set; }
 
-        [JsonPropertyName("o")]
-        public float Open { get; set; }
+        [JsonPropertyName("date")]
+        public DateTime DateT { get; set; }
 
-        [JsonPropertyName("h")]
-        public float High { get; set; }
+        [JsonPropertyName("msgtype")]
+        public string? MsgType { get; set; }
 
-        [JsonPropertyName("l")]
-        public float Low { get; set; }
+        [JsonPropertyName("symbol")]
+        public string? Symbol { get; set; }
 
-        [JsonPropertyName("c")]
-        public float Close { get; set; }
-
-        [JsonPropertyName("v")]
-        public int Volume { get; set; }
+        [JsonPropertyName("price")]
+        public float Price { get; set; }
     }
 }
