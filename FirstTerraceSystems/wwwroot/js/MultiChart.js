@@ -93,7 +93,6 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                 symbol = $("#txtSymboleName", dvInput).val();
                                 var chartId = $(chart.renderTo).data("chart-id");
                                 //var chartBoxData = $('#' + chartId).data();
-                                
 
                                 chart.series[0].update({
                                     name: symbol,
@@ -101,24 +100,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
 
                                 var seriesData = await getChartDataBySymbol(symbol);
 
-                                setDataToChart(chart, seriesData); 
-
-
-                                //loadSymbolData(symbol, function (seriesData) {
-                                //    chart.series[0].update({
-                                //        name: symbol,
-                                //        data: seriesData,
-                                //        color: '#C01620',
-                                //        upColor: '#16C05A',
-                                //        lineWidth: 0,
-                                //        marker: { enabled: true, radius: 4 },
-                                //        tooltip: { valueDecimals: 2 },
-                                //        states: { hover: { lineWidthPlus: 0 } }
-                                //    });
-
-                                //    chart.series[0].setData(seriesData, true, true);
-                                //    removeWindowControlButtonsFromChart();
-                                //});
+                                setDataToChart(chart, seriesData);
 
                                 let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
 
@@ -133,11 +115,10 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                 chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
                                 chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
 
-                                $("#dvSymbolInput").remove();
-
                                 if (dotNetObject) {
                                     dotNetObject.invokeMethodAsync('SymbolChanged', symbol);
                                 }
+                                $("#dvSymbolInput").remove();
                             });
 
                             $("body").append(divInput);
@@ -269,7 +250,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 { type: 'day', count: 1, text: '1D' },
                 { type: 'day', count: 3, text: '3D' },
             ],
-            //selected: 0,
+            selected: 0,
             //dropdown: 'responsive', //'always', 'responsive', 'never'
             inputEnabled: false,
             buttonTheme: {
@@ -303,9 +284,9 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             verticalAlign: 'top',
             buttonSpacing: 10,
             buttonPosition: {
-                align: 'left', // Horizontal alignment (left, center, right)
-                x: 35, // Horizontal offset
-                y: 0 // Vertical offset
+                align: 'left', 
+                x: 35, 
+                y: 0 
             },
         },
         xAxis: [
@@ -355,6 +336,13 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             }
         ],
         tooltip: { split: true },
+        //tooltip: {
+        //    formatter: function () {
+        //        return '<b>' + this.series.name + '</b><br/>' +
+        //            Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
+        //            Highcharts.numberFormat(this.y, 2);
+        //    }
+        //},
         plotOptions: {
             series: {
                 turboThreshold: 0
@@ -518,32 +506,6 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined) {
     }
 }
 
-function RefreshChartData() {
-    let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || null;
-    if (symbolList == null) {
-        symbolList = initialChartSymbols;
-    }
-    Highcharts.charts.forEach(chart => {
-        if (chart) {
-            let chartId = chart.renderTo.id;
-            var symbol = symbolList[Number(chartId.split("-")[1]) - 1].symbol;
-            loadSymbolData(symbol, function (seriesData) {
-                chart.series[0].update({
-                    name: symbol,
-                    data: seriesData,
-                    color: '#C01620', // Color for the fall
-                    upColor: '#16C05A', // Color for the rise
-                    lineWidth: 0,
-                    marker: { enabled: true, radius: 4 },
-                    tooltip: { valueDecimals: 2 },
-                    states: { hover: { lineWidthPlus: 0 } }
-                });
-            });
-
-            console.log("Refreshed data");
-        }
-    });
-}
 
 function removeWindowControlButtonsFromChart() {
     var chart = Highcharts.charts.filter(c => c)[0];
@@ -583,15 +545,15 @@ function addWindowControlButtonsToChart() {
 }
 
 async function getChartDataBySymbol(symbol, lastPoint = undefined) {
-    let resultData = await T5.dotReference.invokeMethodAsync("GetChartDataBySymbol", symbol, lastPoint);
+    var resultData = await T5.dotReference.invokeMethodAsync("GetChartDataBySymbol", symbol, lastPoint);
     return resultData;
 }
 
 function setDataToChart(chart, seriesData) {
     var dataPoints = seriesData.slice(1).map((data, index) => ({
         primaryKey: data['id'],
-        //x: new Date(data['date']).getTime(),
-        x: new Date(data['date']),
+        x: new Date(data['date']).getTime(),
+        //x: new Date(data['date']),
         y: data['price'],
         color: data['price'] > seriesData[index]['price'] ? 'green' : 'red'
     }));
@@ -603,8 +565,8 @@ function addPointToChart(chart, seriesData) {
     seriesData.slice(1).forEach((data, index) => {
         var dataPoint = {
             primaryKey: data['id'],
-            x: new Date(data['date']),
-            //x: new Date(data['date']).getTime(),
+            //x: new Date(data['date']),
+            x: new Date(data['date']).getTime(),
             y: data['price'],
             color: data['price'] > seriesData[index]['price'] ? 'green' : 'red'
             //color: data['price'] > seriesData[index - 1]['price'] ? 'green' : 'red'
@@ -628,6 +590,7 @@ function removeOldPoints(chart, daysToKeep) {
         }
     }
 }
+
 async function refreshCharts() {
 
     let symbolList = JSON.parse(localStorage.getItem('ChartSymbols')) || initialChartSymbols;
@@ -721,14 +684,6 @@ function addChartBox(totalCharts, chartIndx, symbol) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    //loadSymbolData(symbol, function (seriesData, currSymbol) {
-    //    addChart(chartContainerId, seriesData, currSymbol);
-    //    if (totalCharts == 1) {
-    //        removeWindowControlButtonsFromChart();
-    //    }
-    //});
-
-
     var chart = addChart(chartContainerId, [], symbol);
 
     if (totalCharts == 1) {
@@ -761,7 +716,7 @@ async function createDashboard(totalCharts) {
             .append($('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'));
     }
 
-    let symbolDataPromises = {};
+    //let symbolDataPromises = {};
 
     for (let indx = 1; indx <= Number(totalCharts); indx++) {
 
@@ -770,12 +725,12 @@ async function createDashboard(totalCharts) {
         let chart = addChartBox(totalCharts, indx, symbolInfo.symbol);
 
 
-        if (!symbolDataPromises[symbolInfo.symbol]) {
-            symbolDataPromises[symbolInfo.symbol] = getChartDataBySymbol(symbolInfo.symbol);
-        }
+        //if (!symbolDataPromises[symbolInfo.symbol]) {
+        //    symbolDataPromises[symbolInfo.symbol] = getChartDataBySymbol(symbolInfo.symbol);
+        //}
 
         try {
-            let seriesData = await symbolDataPromises[symbolInfo.symbol];
+            let seriesData = await getChartDataBySymbol(symbolInfo.symbol);
             setDataToChart(chart, seriesData);
         } catch (error) {
             console.error(`Error fetching data for symbol ${symbolInfo.symbol}:`, error);
@@ -823,14 +778,15 @@ function popoutChartWindow(dotNetObject, element, chartIndx, minPoint, maxPoint,
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
 
-    loadSymbolData(symbol, function (seriesData, currSymbol) {
-        var chart = addChart(chartContainerId, seriesData, currSymbol, false, dotNetObject);
-        if (minPoint && maxPoint) {
-            chart.xAxis[0].setExtremes(minPoint, maxPoint);
-        }
-        removeWindowControlButtonsFromChart();
-    });
+    var chart = addChart(chartContainerId, [], currSymbol, false, dotNetObject);
 
+    removeWindowControlButtonsFromChart();
+    var seriesData = await getChartDataBySymbol(symbol);
+    setDataToChart(chart, seriesData);
+
+    if (minPoint && maxPoint) {
+        chart.xAxis[0].setExtremes(minPoint, maxPoint);
+    }
 }
 
 function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
@@ -900,13 +856,14 @@ function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
     }
 
 
-    loadSymbolData(symbol, function (seriesData, currSymbol) {
-        var chart = addChart(chartContainerId, seriesData, currSymbol);
-        if (minPoint && maxPoint) {
-            chart.xAxis[0].setExtremes(minPoint, maxPoint);
-        }
-        addWindowControlButtonsToChart();
-    });
+    var chart = addChart(chartContainerId, [], currSymbol);
+    addWindowControlButtonsToChart();
+    var seriesData = await getChartDataBySymbol(symbol);
+    setDataToChart(chart, seriesData);
+
+    if (minPoint && maxPoint) {
+        chart.xAxis[0].setExtremes(minPoint, maxPoint);
+    }
 }
 
 function saveLayout() {
@@ -915,21 +872,4 @@ function saveLayout() {
         localStorage.setItem('SaveSymbol', null);
     }
     console.log(localStorage.getItem('SavedLayout'));
-}
-
-
-function loadSymbolData(symbol, onLoaded) {
-    T5.dotReference.invokeMethodAsync("GetStockBySymbol", symbol).then(resultData => {
-        var seriesData = [];
-        for (var i = 1; i < resultData.length; i++) {
-            //seriesData.push({ x: new Date(resultData[i].t), y: resultData[i].p, color: color });
-            seriesData.push({
-                x: new Date(resultData[i].t).getTime(),
-                y: resultData[i].p,
-                color: resultData[i].p > resultData[i - 1].p ? 'green' : 'red'
-            });
-
-        }
-        onLoaded(seriesData, symbol);
-    });
 }

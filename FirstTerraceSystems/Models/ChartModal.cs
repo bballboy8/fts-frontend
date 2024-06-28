@@ -17,6 +17,7 @@ namespace FirstTerraceSystems.Models
         public object? UpdatedMinExtreme { get; set; }
         public object? UpdatedMaxExtreme { get; set; }
         public int ChartOrderIndx { get; set; }
+        public bool IsVisible { get; set; }
 
         [JsonIgnore]
         public IJSRuntime? JSRuntime { get; set; }
@@ -25,8 +26,8 @@ namespace FirstTerraceSystems.Models
     public class LastDataPoint
     {
         public long PrimaryKey { get; set; }
-        //public long X { get; set; } 
-        public DateTime X { get; set; } 
+        public long X { get; set; } 
+        //public DateTime X { get; set; } 
         public double Y { get; set; }
         public string? Color { get; set; }
     }

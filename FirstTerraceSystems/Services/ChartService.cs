@@ -15,14 +15,14 @@ namespace FirstTerraceSystems.Services
 
         public List<ChartModal> InitialChartSymbols { get; private set; } = new List<ChartModal>
         {
-            new ChartModal { ChartId = "chart-1", Symbol = "AAPL" },
-            new ChartModal { ChartId = "chart-2", Symbol = "GOOGL" },
-            new ChartModal { ChartId = "chart-3", Symbol = "MSFT" },
-            new ChartModal { ChartId = "chart-4", Symbol = "TSLA" },
-            new ChartModal { ChartId = "chart-5", Symbol = "AMD" },
-            new ChartModal { ChartId = "chart-6", Symbol = "AMZN" },
-            new ChartModal { ChartId = "chart-7", Symbol = "META" },
-            new ChartModal { ChartId = "chart-8", Symbol = "GOOG" }
+            new ChartModal { ChartOrderIndx = 1, ChartId = "chart-1", Symbol = "AAPL" , IsVisible = true},
+            new ChartModal { ChartOrderIndx = 2, ChartId = "chart-2", Symbol = "GOOGL" , IsVisible = true},
+            new ChartModal { ChartOrderIndx = 3, ChartId = "chart-3", Symbol = "MSFT" , IsVisible = true},
+            new ChartModal { ChartOrderIndx = 4, ChartId = "chart-4", Symbol = "TSLA" , IsVisible = true},
+            new ChartModal { ChartOrderIndx = 5, ChartId = "chart-5", Symbol = "AMD" , IsVisible = true},
+            new ChartModal { ChartOrderIndx = 6, ChartId = "chart-6", Symbol = "AMZN" , IsVisible = false},
+            new ChartModal { ChartOrderIndx = 7, ChartId = "chart-7", Symbol = "META" , IsVisible = false},
+            new ChartModal { ChartOrderIndx = 8, ChartId = "chart-8", Symbol = "GOOG" , IsVisible = false}
         };
 
         public void Load()

@@ -325,7 +325,7 @@ window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
                 var num = parseInt(totalCharts, 10);
 
                 if (!isNaN(num) && num > 0) {
-                    createDashboard(totalCharts);
+                   await createDashboard(totalCharts);
                 }
             }
         } else if (event.key === 'Escape') {

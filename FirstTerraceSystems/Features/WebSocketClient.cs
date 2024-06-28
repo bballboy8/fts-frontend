@@ -29,12 +29,7 @@ namespace FirstTerraceSystems.Features
                     _webSocket = new ClientWebSocket();
                     if (_webSocket.State != WebSocketState.Open)
                     {
-#if DEBUG
-                        await _webSocket.ConnectAsync(new Uri("ws://localhost:6969/ws"), CancellationToken.None);
-                        //await _webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
-#else
                         await _webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
-#endif
                         var buffer = Encoding.UTF8.GetBytes("start");
                         await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
                         connectionTrial = 0;
@@ -71,7 +66,7 @@ namespace FirstTerraceSystems.Features
 
         public async static Task ListenAsync()
         {
-            var buffer = new byte[1024];
+            var buffer = new byte[1024 * 4];
 
             using (var memoryStream = new MemoryStream())
             {
@@ -106,7 +101,7 @@ namespace FirstTerraceSystems.Features
                 {
                     Console.WriteLine($"Unexpected error: {ex.Message}");
                 }
-            }
+            }   
         }
 
         static void ProcessMessage(string message)

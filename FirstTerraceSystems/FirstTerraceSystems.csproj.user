@@ -9,6 +9,7 @@
     <_LastSelectedProfileId>MSIX-win10-x86.pubxml</_LastSelectedProfileId>
     <PackageOptionalProjectsInIdeBuilds>False</PackageOptionalProjectsInIdeBuilds>
     <SelectedPlatformGroup>LocalDevice</SelectedPlatformGroup>
+    <AppxBuildConfigurationSelection>neutral</AppxBuildConfigurationSelection>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetPlatformIdentifier)'=='iOS'">
     <RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
@@ -17,6 +18,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <ItemGroup>
+    <AppxManifest Update="Platforms\Windows\Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+  </ItemGroup>
   <ItemGroup>
     <MauiXaml Update="ChartWindowPage.xaml">
       <SubType>Designer</SubType>

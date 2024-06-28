@@ -1,5 +1,7 @@
 ﻿@using Blazored.LocalStorage
+@using FirstTerraceSystems.Entities
 @using FirstTerraceSystems.Features
+@using FirstTerraceSystems.Models
 @inject IJSRuntime JSRuntime
 @inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
@@ -7,9 +9,7 @@
 
 <div @ref="ER_ChartWindow"></div>
 
-@code {
-
-
+@code { 
     [Parameter]
     public object? ChartIndx { get; set; }
 
@@ -36,9 +36,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        WebSocketClient.ActionReferenceChart -= ReferenceChart;
+        WebSocketClient.ActionReferenceChart -= RefreshCharts;
 
-        WebSocketClient.ActionReferenceChart += ReferenceChart;
+        WebSocketClient.ActionReferenceChart += RefreshCharts;
 
         await JSRuntime.InvokeVoidAsync("T5.SetDotNetReference", DotNetObjectReference.Create(this));
     }
@@ -52,9 +52,9 @@
         }
     }
 
-    private async Task ReferenceChart()
+    private async Task RefreshCharts()
     {
-        await JSRuntime.InvokeVoidAsync("RefreshChartData");
+        await JSRuntime.InvokeVoidAsync("refreshCharts");
     }
 
     [JSInvokable]
@@ -71,10 +71,22 @@
         ChartPageModal.Symbol = symbol;
     }
 
-    [JSInvokable("GetStockBySymbol")]
-    public async Task<dynamic> GetStockBySymbol(string symbol)
+    [JSInvokable]
+    public async Task<IEnumerable<SymbolicData>> GetChartDataBySymbol(string symbol, LastDataPoint? lastPoint)
     {
-        var symbolicdata = SymbolicRepository.GetSymbolicDataBySymbol(symbol);
-        return await Task.FromResult(symbolicdata);
+        var symbolic = SymbolicRepository.GetExistsSymbol(symbol);
+
+        if (symbolic == null || string.IsNullOrEmpty(symbolic.Symbol)) return new List<SymbolicData>();
+
+        if (lastPoint == null)
+        {
+            var symbolics = SymbolicRepository.GetChartDataBySymbol(symbol);
+            return await Task.FromResult(symbolics);
+        }
+        else
+        {
+            var symbolics = SymbolicRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
+            return await Task.FromResult(symbolics);
+        }
     }
 }

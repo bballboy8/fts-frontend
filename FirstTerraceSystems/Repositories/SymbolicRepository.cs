@@ -25,6 +25,22 @@ namespace FirstTerraceSystems.Repositories
             return _connection.Table<SymbolicData>().LastOrDefault(s => s.Symbol == symbol);
         }
 
+        public SymbolicData? GetExistsSymbol(string? symbol)
+        {
+            if (symbol == null) return null;
+            return _connection.Table<SymbolicData>().FirstOrDefault(s => !string.IsNullOrEmpty(s.Symbol) && (s.Symbol.ToUpper() == symbol.ToUpper()));
+        }
+
+        public List<SymbolicData?> GetLastValidSymbols(List<string> symbols)
+        {
+            var lastRecords = _connection.Table<SymbolicData>()
+                .Where(e => symbols.Contains(e.Symbol))
+                .GroupBy(e => e.Symbol)
+                .Select(g => g.OrderByDescending(e => e.Date)
+                .FirstOrDefault()).ToList();
+            return lastRecords ?? [];
+        }
+
         public IEnumerable<string?>? GetAllSymbols()
         {
             var symbols = _connection.Table<SymbolicData>().Select(s => s.Symbol).Distinct();
