@@ -42,16 +42,13 @@ namespace FirstTerraceSystems.Services
                     var report = new List<EquitiesBarModal>();
                     var maxElements = 5000;
 
-                    // Calculate the step size
-                    var step = Math.Max(1, equitiesBars.Count() / maxElements);
+                    // Calculate the number of elements to take (adjusted for exact 5000)
+                    var elementsToTake = Math.Min(equitiesBars.Count(), maxElements);
+                    var step = equitiesBars?.Count() / elementsToTake; // Adjust step size
 
-                    for (int i = 0; i < maxElements; i++)
+                    for (int i = 0; i < elementsToTake; i++)
                     {
-                        var index = i * step;
-                        if (index < equitiesBars.Count())
-                        {
-                            report.Add(equitiesBars.ElementAt(index));
-                        }
+                        report.Add(equitiesBars?.ElementAt((int)(i * step))); // Access elements with step
                     }
 
                     return report;
