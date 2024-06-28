@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -17,6 +18,7 @@ namespace FirstTerraceSystems.Services
             _client = new HttpClient();
         }
 
+        // Method to fetch data for a specific symbol
         public async Task<IEnumerable<EquitiesBarModal>?> GetEquitiesBars(DateTime startDate, string symbol)
         {
             var requestUrl = "http://52.0.33.126:8000/nasdaq/get_data";
@@ -35,18 +37,21 @@ namespace FirstTerraceSystems.Services
                 var contentString = await response.Content.ReadAsStringAsync();
                 var equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBarModal>>(contentString);
 
-                if (equitiesBars?.Count() > 5000)
+                if (equitiesBars != null && equitiesBars.Count() > 5000)
                 {
                     var report = new List<EquitiesBarModal>();
                     var maxElements = 5000;
 
-                    // Calculate the number of elements to take (adjusted for exact 5000)
-                    var elementsToTake = Math.Min(equitiesBars.Count(), maxElements);
-                    var step = equitiesBars?.Count() / elementsToTake; // Adjust step size
+                    // Calculate the step size
+                    var step = Math.Max(1, equitiesBars.Count() / maxElements);
 
-                    for (int i = 0; i < elementsToTake; i++)
+                    for (int i = 0; i < maxElements; i++)
                     {
-                        report.Add(equitiesBars?.ElementAt((int)(i * step))); // Access elements with step
+                        var index = i * step;
+                        if (index < equitiesBars.Count())
+                        {
+                            report.Add(equitiesBars.ElementAt(index));
+                        }
                     }
 
                     return report;
@@ -56,13 +61,14 @@ namespace FirstTerraceSystems.Services
             }
             catch (Exception ex)
             {
+                // Log the exception
                 Console.WriteLine($"Error fetching equities bars: {ex.Message}");
                 return null;
             }
         }
 
         // New method to fetch the list of symbols
-        public async Task<IEnumerable<string>?> GetSymbols()
+        public async Task<IEnumerable<SymbolModel>?> GetSymbols()
         {
             var requestUrl = "http://52.0.33.126:8000/nasdaq/get_tickers";
 
@@ -71,14 +77,35 @@ namespace FirstTerraceSystems.Services
                 var response = await _client.GetAsync(requestUrl);
                 response.EnsureSuccessStatusCode();
                 var contentString = await response.Content.ReadAsStringAsync();
-                var symbols = JsonSerializer.Deserialize<IEnumerable<string>>(contentString);
+
+                // Log the raw API response
+                Console.WriteLine("Raw API Response: " + contentString);
+
+                // Deserialize the response
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var symbols = JsonSerializer.Deserialize<IEnumerable<SymbolModel>>(contentString, options);
                 return symbols;
+            }
+            catch (JsonException jsonEx)
+            {
+                // Log JSON deserialization exception
+                Console.WriteLine($"JSON Error: {jsonEx.Message}");
+                return null;
             }
             catch (Exception ex)
             {
+                // Log the exception
                 Console.WriteLine($"Error fetching symbols: {ex.Message}");
                 return null;
             }
         }
+    }
+
+    public class SymbolModel
+    {
+        public string? Symbol { get; set; }
     }
 }

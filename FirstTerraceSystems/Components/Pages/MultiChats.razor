@@ -1,51 +1,56 @@
 ﻿@page "/multiChats"
 @using FirstTerraceSystems.Entities.Nasdaq
 @inject NsdaqService NsdaqService
+@inject IJSRuntime JSRuntime
 
 <div class="container-fluid">
     <div id="chartList" class="row"></div>
 </div>
 
 @code {
-    private IEnumerable<string>? Symbols { get; set; }
-    private Dictionary<string, IEnumerable<EquitiesBarModal>> SymbolData { get; set; } = new();
+    private string? FirstSymbol { get; set; }
+    private IEnumerable<EquitiesBarModal>? FirstSymbolData { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Symbols = await NsdaqService.GetSymbols();
-        if (Symbols == null)
+        // Fetch the symbols from the API
+        var symbolsResponse = await NsdaqService.GetSymbols();
+        if (symbolsResponse == null)
         {
             Console.WriteLine("Failed to fetch symbols.");
             return;
         }
 
+        // Get the first symbol
+        FirstSymbol = symbolsResponse.FirstOrDefault()?.Symbol;
+        if (string.IsNullOrEmpty(FirstSymbol))
+        {
+            Console.WriteLine("No symbols available.");
+            return;
+        }
+
+        Console.WriteLine($"FirstSymbol: {FirstSymbol}");
+
         var currentDate = DateTime.Now;
         var startDate = currentDate.AddDays(-3);
         startDate = new DateTime(startDate.Year, startDate.Month, startDate.Day, 9, 0, 0);
 
-        foreach (var symbol in Symbols)
+        // Fetch data for the first symbol
+        FirstSymbolData = await NsdaqService.GetEquitiesBars(startDate, FirstSymbol);
+        if (FirstSymbolData == null)
         {
-            var equitiesBars = await NsdaqService.GetEquitiesBars(startDate, symbol);
-            if (equitiesBars != null)
-            {
-                SymbolData[symbol] = equitiesBars;
-            }
-            else
-            {
-                Console.WriteLine($"Failed to fetch data for symbol: {symbol}");
-            }
+            Console.WriteLine($"Failed to fetch data for symbol: {FirstSymbol}");
         }
+
+        Console.WriteLine($"FirstSymbolData: {FirstSymbolData}");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && SymbolData != null)
+        if (firstRender && FirstSymbolData != null)
         {
-            foreach (var symbol in SymbolData.Keys)
-            {
-                await JSRuntime.InvokeVoidAsync("LoadData", SymbolData[symbol]);
-                await JSRuntime.InvokeVoidAsync("addChartBoxForSymbol", SymbolData[symbol], symbol);
-            }
+            await JSRuntime.InvokeVoidAsync("LoadData", FirstSymbolData);
+            await JSRuntime.InvokeVoidAsync("addChartBoxForSymbol", FirstSymbolData, FirstSymbol);
         }
     }
 }
