@@ -11,6 +11,7 @@ namespace FirstTerraceSystems.Services
 {
     internal class DatabaseService : IDisposable
     {
+
         private readonly SQLiteConnection _connection;
 
         public SymbolicRepository SymbolicRepository { get; }
@@ -32,6 +33,7 @@ namespace FirstTerraceSystems.Services
         public void Dispose()
         {
             _connection?.Close();
+            _connection?.Dispose();
         }
     }
 }

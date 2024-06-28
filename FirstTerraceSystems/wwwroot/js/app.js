@@ -121,7 +121,6 @@ function addHtmlButtonToChart(chart, options) {
 
 function addButtonToChart(chart, options) {
 
-    debugger
     const {
         text = 'Button',
         x = 0,
@@ -212,6 +211,9 @@ function truncateText(text, maxWidth, ellipsis = '...') {
 }
 
 // Global Functions
+
+//Disable context menu
+window.addEventListener('contextmenu', (event) => event.preventDefault())
 
 window.changeBackgroundColor = (mode) => {
     isDarkMode = mode;

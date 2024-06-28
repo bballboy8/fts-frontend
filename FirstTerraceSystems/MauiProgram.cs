@@ -45,7 +45,8 @@ namespace FirstTerraceSystems
 
             builder.Services.AddSingleton<StateContainerService>();
             builder.Services.AddSingleton<WindowsSerivce>();
-            
+            builder.Services.AddSingleton<ChartService>();
+
             builder.Services.AddSingleton<DatabaseService>(serviceProvider =>
             {
                 string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
@@ -62,14 +63,22 @@ namespace FirstTerraceSystems
             builder.Services.AddScoped<NasdaqService>();
             builder.Services.AddScoped<BsToastService>();
 
-
             //var cultureInfo = new CultureInfo("en-US");
             //cultureInfo.NumberFormat.CurrencySymbol = "$";            
             //CultureInfo.CurrentCulture = cultureInfo;
             //CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             //CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
-            return builder.Build();
+            var app = builder.Build();
+
+            Initialize(app);
+
+            return app;
+        }
+
+        private static void Initialize(MauiApp app)
+        {
+            app.Services.GetRequiredService<ChartService>().Load();
         }
     }
 }

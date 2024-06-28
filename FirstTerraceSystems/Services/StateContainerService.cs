@@ -13,14 +13,13 @@ namespace FirstTerraceSystems.Services
 {
     internal class StateContainerService
     {
-        public static ClientWebSocket webSocket = new ClientWebSocket();
         public static bool IsAllowCloseAllWindows { get; set; } = false;
         public static bool IsMainPage { get; set; } = true;
         public static bool IsDarkMode { get; set; } = true;
         public static bool IsMaximizeClikedForChart { get; set; } = true;
-        public static ObservableCollection<ChartPageModal> ChartPages { get; set; } = [];
+        public static ObservableCollection<ChartModal> ChartPages { get; set; } = [];
 
-        public static void AddChartPage(ChartPageModal chartPage)
+        public static void AddChartPage(ChartModal chartPage)
         {
             var existingPage = ChartPages.FirstOrDefault(cp => cp.ChartId == chartPage.ChartId);
 

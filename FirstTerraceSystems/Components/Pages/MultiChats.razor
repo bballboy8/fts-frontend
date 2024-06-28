@@ -3,13 +3,17 @@
 @using System.Net.WebSockets
 @using System.Text
 @using System.Text.Json
+@using FirstTerraceSystems.Entities
 @using FirstTerraceSystems.Features
 @using FirstTerraceSystems.Models
+@using Blazored.LocalStorage;
 
 @inject NasdaqService NasdaqService
 @inject Repositories.SymbolicRepository SymbolicRepository
 @inject IJSRuntime JS
-@implements IDisposable
+@inject ILocalStorageService LocalStorage
+
+@implements IAsyncDisposable
 
 <style>
     #popup {
@@ -22,76 +26,7 @@
     }
 </style>
 
-
 <div class="container-fluid">
     <div id="chartList" class="row"></div>
 </div>
-
-@code {
-
-    int SocketConnectionTrial = 0;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var lDotNetReference = DotNetObjectReference.Create(this);
-        await JS.InvokeVoidAsync("T5.SetDotNetReference", lDotNetReference);
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;
-            WebSocketClient.ActionReferenceChart -= ReferenceChart;
-
-            WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
-            WebSocketClient.ActionReferenceChart += ReferenceChart;
-
-            await WebSocketClient.ConnectAsync();
-            WebSocketClient.ListenAsync();
-            // await UpdateSymbolicDataToDB();
-        }
-        await JSRuntime.InvokeVoidAsync("loadDashboard");
-    }
-
-    private async Task UpdateSymbolicDataToDB()
-    {
-        var lastSymbol = SymbolicRepository.GetLastRecord();
-
-        var dtStartDate = DateTime.Now.AddDays(-2);
-
-        if (lastSymbol != null) dtStartDate = DateTime.Parse(lastSymbol.TimeStamp);
-
-        var data = await NasdaqService.GetSymbolicData(dtStartDate, "");
-
-        if (data != null)
-        {
-            SymbolicRepository.UpdateSymbolicDataToDBFromApi(data);
-        }
-    }
-
-    private void OnRealDataReceived(NasdaqResponse? nasdaqData)
-    {
-        if (nasdaqData != null)
-        {
-            SymbolicRepository.UpdateSymbolicDataToDBFromSocket(nasdaqData);
-        }
-    }
-
-    private async Task ReferenceChart()
-    {
-        await JSRuntime.InvokeVoidAsync("RefreshChartData");
-    }
-
-    [JSInvokable("GetStockBySymbol")]
-    public async Task<dynamic> GetStockBySymbol(string symbol)
-    {
-        var symbolicdata = SymbolicRepository.GetSymbolicDataBySymbol(symbol);
-        return await Task.FromResult(symbolicdata);
-    }
-
-    public async void Dispose()
-    {
-        await WebSocketClient.CloseAsync();
-    }
-}
+    

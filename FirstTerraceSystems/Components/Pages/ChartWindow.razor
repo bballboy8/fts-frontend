@@ -1,4 +1,5 @@
-﻿@using FirstTerraceSystems.Features
+﻿@using Blazored.LocalStorage
+@using FirstTerraceSystems.Features
 @inject IJSRuntime JSRuntime
 @inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
@@ -19,16 +20,16 @@
     public object? MaxPoint { get; set; }
 
     [Parameter]
-    public object? Symbol { get; set; }
+    public string? Symbol { get; set; }
 
     private ElementReference ER_ChartWindow { get; set; }
 
-    private Models.ChartPageModal ChartPageModal { get; set; } = new();
+    private Models.ChartModal ChartPageModal { get; set; } = new();
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        ChartPageModal = new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime, UpdatedMinExtreme = MinPoint, UpdatedMaxExtreme = MaxPoint, Symbol = Symbol };
+        ChartPageModal = new Models.ChartModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime, UpdatedMinExtreme = MinPoint, UpdatedMaxExtreme = MaxPoint, Symbol = Symbol };
         WindowsSerivce.UnlockWindowResize();
         StateContainerService.AddChartPage(ChartPageModal);
     }
@@ -64,7 +65,7 @@
     }
 
     [JSInvokable]
-    public void SymbolChanged(object symbol)
+    public void SymbolChanged(string symbol)
     {
         Symbol = symbol;
         ChartPageModal.Symbol = symbol;
