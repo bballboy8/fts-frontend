@@ -655,29 +655,41 @@ function loadDashboard() {
 
 function calculateZoomLevels(data) {
     zoomLevels = [];
-    var minDate = data[0].x;
-    var maxDate = data[data.length - 1].x;
-    var range = maxDate - minDate;
-    zoomLevels = [
-        { min: minDate, max: minDate + range * 0.2 },  // Zoom Level 1 (20% of the range)
-        { min: minDate, max: minDate + range * 0.4 },  // Zoom Level 2 (40% of the range)
-        { min: minDate, max: minDate + range * 0.6 },  // Zoom Level 3 (60% of the range)
-        { min: minDate, max: minDate + range * 0.8 },  // Zoom Level 4 (80% of the range)
-        { min: minDate, max: maxDate }                 // Zoom Level 5 (100% of the range)
-    ];
+    const pointsCount = window.innerWidth / 2;
+    const minDate = data[0].x;
+    const maxDate = data[data.length - 1].x;
+    const range = maxDate - minDate;
+    const step = range / pointsCount;
+
+    for (let i = 0; i < pointsCount && i < data.length; i++) {
+        zoomLevels.push({ min: minDate, max: minDate + step * (i + 1) });
+    }
+
+    if (data.length < pointsCount) {
+        zoomLevels.push({ min: minDate, max: maxDate }); // Show all if less data than screen width can accommodate
+    }
+
 }
 
 function LoadData(resultData) {
-    ohlc = []; volume = [];
+    ohlc = [];
+    volume = [];
+    let previousPrice = null;
+
+    console.log("------ resultData -----", resultData)
+
     resultData.forEach(item => {
-        var ohlcPoint = { x: new Date(item.t).getTime(), y: item.o, color: 'green' };
-        var volumPoint = { x: new Date(item.t).getTime(), y: item.v, color: 'green' };
-        if (item.o < item.c) {
-            ohlcPoint.color = 'red';
-            volumPoint.color = 'red';
-        }
+        const date = new Date(item.date).getTime();
+        const price = item.price / 10000;
+
+        const color = previousPrice === null || price >= previousPrice ? 'green' : 'red';
+        previousPrice = price; // Update previousPrice for the next iteration
+
+        const ohlcPoint = { x: date, y: price, color: color };
+        const volumePoint = { x: date, y: 0, color: color }; // Volume is 0 for all
+
         ohlc.push(ohlcPoint);
-        volume.push(volumPoint);
+        volume.push(volumePoint);
     });
 
     calculateZoomLevels(ohlc);
