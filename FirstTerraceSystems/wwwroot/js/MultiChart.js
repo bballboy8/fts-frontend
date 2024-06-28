@@ -34,59 +34,6 @@ var groupingUnits = [
     ]
 ];
 
-// Function to add a chart box for a specific symbol
-function addChartBoxForSymbol(pOHLC, pSymbol) {
-    $("#chartList").empty(); // Clear existing charts
-
-    var totalCharts = $("#chartList .chart-box").length + 1;
-    var cssClass = "col-12";
-    if (totalCharts == 2 || totalCharts == 4) {
-        cssClass = "col-6";
-    }
-    else if (totalCharts == 5) {
-        cssClass = "col-12";
-    }
-    else if (totalCharts == 6) {
-        cssClass = "col-4";
-    }
-    else if (totalCharts == 8) {
-        cssClass = "col-3";
-    }
-
-    var chartContainerId = "chart-" + totalCharts,
-        chartBoxClass = "chart-box-" + totalCharts;
-    var chartBox = $(`<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${totalCharts}" ></div></div>`);
-
-    $("#chartList").append(chartBox);
-
-    if (totalCharts == 5) {
-        var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
-        var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
-
-        $("#chartList .chart-box").slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
-        $("#chartList .chart-box").appendTo(chartListCol1.find('#chartListCol1'));
-
-        $("#chartList").append(chartListCol1).append(chartListCol2);
-    } else {
-        $("#chartList .chart-box").appendTo('#chartList');
-        $("#chartListCol1").parent().remove();
-        $("#chartListCol2").parent().remove();
-    }
-
-    if (totalCharts == 5) {
-        $('#chartListCol1 .chart-box').removeClass('chart-height-100').removeClass('chart-height-33').addClass('chart-height-50');
-        $('#chartListCol2 .chart-box').removeClass('chart-height-100').removeClass('chart-height-50').addClass('chart-height-33');
-    } else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100').removeClass('chart-height-33');
-        $("#chartList .chart-box").addClass('chart-height-50');
-    } else {
-        $("#chartList .chart-box").removeClass('chart-height-50').removeClass('chart-height-33');
-        $("#chartList .chart-box").addClass('chart-height-100');
-    }
-
-    addChart(chartContainerId, pOHLC, volume, pSymbol, groupingUnits);
-}
-
 // Function to add a chart
 function addChart(charContainerId, pOHLC, pVolume, pSymbol, pGroupingUnits, isDragable = true) {
     Highcharts.stockChart(charContainerId, {
@@ -671,12 +618,11 @@ function calculateZoomLevels(data) {
 
 }
 
-function LoadData(resultData) {
+function LoadData(resultData, FirstSymbol) {
     ohlc = [];
     volume = [];
+    symbol = FirstSymbol
     let previousPrice = null;
-
-    console.log("------ resultData -----", resultData)
 
     resultData.forEach(item => {
         const date = new Date(item.date).getTime();

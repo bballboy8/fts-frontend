@@ -49,8 +49,8 @@
     {
         if (FirstSymbolData != null)
         {
-            await JSRuntime.InvokeVoidAsync("LoadData", FirstSymbolData);
-            await JSRuntime.InvokeVoidAsync("addChartBoxForSymbol", FirstSymbolData, FirstSymbol);
+            await JSRuntime.InvokeVoidAsync("LoadData", FirstSymbolData, FirstSymbol);
+            await JSRuntime.InvokeVoidAsync("loadDashboard");
         }
     }
 }

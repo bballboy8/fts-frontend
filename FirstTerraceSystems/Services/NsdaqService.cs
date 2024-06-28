@@ -21,7 +21,7 @@ namespace FirstTerraceSystems.Services
         // Method to fetch data for a specific symbol
         public async Task<IEnumerable<EquitiesBarModal>?> GetEquitiesBars(DateTime startDate, string symbol)
         {
-            var requestUrl = "http://52.0.33.126:8000/nasdaq/get_data";
+            var requestUrl = "http://52.72.116.51:8000/nasdaq/get_data";
             var requestData = new
             {
                 start_datetime = startDate.ToString("yyyy-MM-ddTHH:mm"),
@@ -67,7 +67,7 @@ namespace FirstTerraceSystems.Services
         // New method to fetch the list of symbols
         public async Task<IEnumerable<SymbolModel>?> GetSymbols()
         {
-            var requestUrl = "http://52.0.33.126:8000/nasdaq/get_tickers";
+            var requestUrl = "http://52.72.116.51:8000/nasdaq/get_tickers";
 
             try
             {
