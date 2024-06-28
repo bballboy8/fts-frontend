@@ -17,7 +17,6 @@ namespace FirstTerraceSystems.Services
             _client = new HttpClient();
         }
 
-        // Method to fetch data for a specific symbol
         public async Task<IEnumerable<EquitiesBarModal>?> GetEquitiesBars(DateTime startDate, string symbol)
         {
             var requestUrl = "http://52.0.33.126:8000/nasdaq/get_data";
@@ -57,13 +56,13 @@ namespace FirstTerraceSystems.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"Error fetching equities bars: {ex.Message}");
                 return null;
             }
         }
 
         // New method to fetch the list of symbols
-        public async Task<IEnumerable<SymbolModel>?> GetSymbols()
+        public async Task<IEnumerable<string>?> GetSymbols()
         {
             var requestUrl = "http://52.0.33.126:8000/nasdaq/get_tickers";
 
@@ -72,19 +71,14 @@ namespace FirstTerraceSystems.Services
                 var response = await _client.GetAsync(requestUrl);
                 response.EnsureSuccessStatusCode();
                 var contentString = await response.Content.ReadAsStringAsync();
-                var symbols = JsonSerializer.Deserialize<IEnumerable<SymbolModel>>(contentString);
+                var symbols = JsonSerializer.Deserialize<IEnumerable<string>>(contentString);
                 return symbols;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"Error fetching symbols: {ex.Message}");
                 return null;
             }
         }
-    }
-
-    public class SymbolModel
-    {
-        public string Symbol { get; set; }
     }
 }

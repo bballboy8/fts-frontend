@@ -5,8 +5,7 @@
 <div @ref="ER_ChartWindow"></div>
 
 @code {
-
-
+    
     [Parameter]
     public object? ChartIndx { get; set; }
 
@@ -17,10 +16,10 @@
     public object? VolumeData { get; set; }
 
     [Parameter]
-    public object? GroupingUnits { get; set; }
+    public string? Symbol { get; set; }
 
     [Parameter]
-    public string? Symbol { get; set; }
+    public object? GroupingUnits { get; set; }
 
     private ElementReference ER_ChartWindow { get; set; }
 
@@ -35,6 +34,7 @@
     {
         if (firstRender)
         {
+            Console.WriteLine($"popoutChartWindow called with ChartIndx: {ChartIndx}, OhlcData: {OhlcData}, VolumeData: {VolumeData}, GroupingUnits: {GroupingUnits}, Symbol: {Symbol}");
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
             await JSRuntime.InvokeVoidAsync("popoutChartWindow", ER_ChartWindow, ChartIndx, OhlcData, VolumeData, Symbol, GroupingUnits);
         }

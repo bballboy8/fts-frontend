@@ -1,21 +1,4 @@
-﻿
-//async function LoadData() {
-//    if (dataLength == 0) {
-//        const data = await fetch(
-//            'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
-//        ).then(response => response.json());
-
-//        dataLength = data.length;
-
-//        for (let i = 0; i < dataLength; i += 1) {
-//            ohlc.push([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4]]);
-//            volume.push([data[i][0], data[i][5]]);
-//        }
-//    }
-//}
-
-//var ohlc = [], volume = [], dataLength = 0, groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
-var ohlc = [], volume = [], symbol = "AAPL", dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
+﻿var ohlc = [], volume = [], symbol = "AAPL", dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
 var groupingUnits = [
     [
         'millisecond',
@@ -52,7 +35,7 @@ var groupingUnits = [
 ];
 
 // Function to add a chart box for a specific symbol
-function addChartBoxForSymbol(ohlc, symbol) {
+function addChartBoxForSymbol(pOHLC, pSymbol) {
     $("#chartList").empty(); // Clear existing charts
 
     var totalCharts = $("#chartList .chart-box").length + 1;
@@ -101,26 +84,11 @@ function addChartBoxForSymbol(ohlc, symbol) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    addChart(chartContainerId, ohlc, volume, symbol);
+    addChart(chartContainerId, pOHLC, volume, pSymbol, groupingUnits);
 }
 
 // Function to add a chart
-function addChart(charContainerId, data, symbol, isDragable = true) {
-    var ohlc = [], volume = [], previousPrice = null;
-    data.forEach(item => {
-        const date = new Date(item.date).getTime();
-        const price = item.price;
-
-        const color = previousPrice === null || price >= previousPrice ? 'green' : 'red';
-        previousPrice = price; // Update previousPrice for the next iteration
-
-        const ohlcPoint = { x: date, y: price / 10000, color: color };
-        const volumePoint = { x: date, y: 0, color: color }; // Volume is 0 for all
-
-        ohlc.push(ohlcPoint);
-        volume.push(volumePoint);
-    });
-
+function addChart(charContainerId, pOHLC, pVolume, pSymbol, pGroupingUnits, isDragable = true) {
     Highcharts.stockChart(charContainerId, {
         chart: {
             backgroundColor: backgroundColor,
@@ -232,8 +200,8 @@ function addChart(charContainerId, data, symbol, isDragable = true) {
         },
         series: [
             {
-                name: symbol,
-                data: ohlc,
+                name: pSymbol,
+                data: pOHLC,
                 color: '#C01620', // Color for the fall
                 upColor: '#16C05A', // Color for the rise
                 lineWidth: 0,
@@ -253,10 +221,10 @@ function addChart(charContainerId, data, symbol, isDragable = true) {
             {
                 type: 'column',
                 name: 'Volume',
-                data: volume,
+                data: pVolume,
                 yAxis: 1,
                 dataGrouping: {
-                    units: groupingUnits
+                    units: pGroupingUnits
                 },
                 color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
                 upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
@@ -290,7 +258,7 @@ function addChart(charContainerId, data, symbol, isDragable = true) {
                             },
                         }
                     },
-                    text: `XNYS:${symbol} &nbsp &nbsp ✖`,
+                    text: `XNYS:${pSymbol} &nbsp &nbsp ✖`,
                     onclick: function (e) {
                         if (isDragable) removeChart(this);
                     },
@@ -558,7 +526,7 @@ function addChartBox(totalCharts, chartIndx) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    addChart(chartContainerId, ohlc, volume, symbol);
+    addChart(chartContainerId, ohlc, volume, symbol, groupingUnits);
 
     if (totalCharts > 1) {
         $(".chart-container", chartBox).on("dblclick", async function () {c
@@ -574,15 +542,15 @@ function addChartBox(totalCharts, chartIndx) {
     }
 }
 
-function popoutChartWindow(element, chartIndx, ohlc, volume, symbol) {
+function popoutChartWindow(element, chartIndx, ohlc, volume, symbol, groupingUnits) {
     var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
     calculateZoomLevels(ohlc);
-    addChart(chartContainerId, ohlc, volume, symbol, false);
+    addChart(chartContainerId, ohlc, volume, symbol, groupingUnits, false);
 }
 
-function popinChartWindow(chartIndx, ohlc, volume, symbol) {
+function popinChartWindow(chartIndx, ohlc, volume, symbol, groupingUnits) {
     var totalCharts = $("#chartList .chart-box").length + 1;
 
     // Reset Chart Box
@@ -637,7 +605,7 @@ function popinChartWindow(chartIndx, ohlc, volume, symbol) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    addChart(chartContainerId, ohlc, volume, symbol);
+    addChart(chartContainerId, ohlc, volume, symbol, groupingUnits);
 
     $(".chart-container", chartBox).off("dblclick").on("dblclick", async function () {
         var eleData = $(this).data();
@@ -647,7 +615,7 @@ function popinChartWindow(chartIndx, ohlc, volume, symbol) {
             var chart = Highcharts.charts[eleData.highchartsChart]
             if (chart) removeChart(chart);
         }
-        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, symbol);
+        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, symbol, groupingUnits);
     });
 }
 

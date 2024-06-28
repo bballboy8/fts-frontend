@@ -1,62 +1,51 @@
-﻿@page "/multiCharts"
+﻿@page "/multiChats"
 @using FirstTerraceSystems.Entities.Nasdaq
 @inject NsdaqService NsdaqService
-@inject IJSRuntime JSRuntime
 
 <div class="container-fluid">
-    <div class="form-group">
-        <label for="symbolSelect">Select Symbol:</label>
-        <select id="symbolSelect" class="form-control" @bind-value="SelectedSymbol" @bind-value:event="onchange">
-            @foreach (var symbol in Symbols)
-            {
-                <option value="@symbol">@symbol</option>
-            }
-        </select>
-    </div>
     <div id="chartList" class="row"></div>
 </div>
 
 @code {
     private IEnumerable<string>? Symbols { get; set; }
-    private string? SelectedSymbol { get; set; }
     private Dictionary<string, IEnumerable<EquitiesBarModal>> SymbolData { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var symbolsResponse = await NsdaqService.GetSymbols();
-        if (symbolsResponse != null)
+        Symbols = await NsdaqService.GetSymbols();
+        if (Symbols == null)
         {
-            Symbols = symbolsResponse.Select(s => s.Symbol);
-            SelectedSymbol = Symbols.FirstOrDefault();
-            await LoadSymbolData(SelectedSymbol);
-        }
-    }
-
-    private async Task LoadSymbolData(string? symbol)
-    {
-        if (symbol == null)
+            Console.WriteLine("Failed to fetch symbols.");
             return;
+        }
 
         var currentDate = DateTime.Now;
         var startDate = currentDate.AddDays(-3);
         startDate = new DateTime(startDate.Year, startDate.Month, startDate.Day, 9, 0, 0);
 
-        var equitiesBars = await NsdaqService.GetEquitiesBars(startDate, symbol);
-        if (equitiesBars != null)
+        foreach (var symbol in Symbols)
         {
-            SymbolData[symbol] = equitiesBars;
-            await JSRuntime.InvokeVoidAsync("LoadData", SymbolData[symbol]);
-            await JSRuntime.InvokeVoidAsync("addChartBoxForSymbol", SymbolData[symbol], symbol);
+            var equitiesBars = await NsdaqService.GetEquitiesBars(startDate, symbol);
+            if (equitiesBars != null)
+            {
+                SymbolData[symbol] = equitiesBars;
+            }
+            else
+            {
+                Console.WriteLine($"Failed to fetch data for symbol: {symbol}");
+            }
         }
     }
 
-    private async Task OnSymbolChange(ChangeEventArgs e)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var newSymbol = e.Value?.ToString();
-        if (!string.IsNullOrEmpty(newSymbol) && newSymbol != SelectedSymbol)
+        if (firstRender && SymbolData != null)
         {
-            SelectedSymbol = newSymbol;
-            await LoadSymbolData(SelectedSymbol);
+            foreach (var symbol in SymbolData.Keys)
+            {
+                await JSRuntime.InvokeVoidAsync("LoadData", SymbolData[symbol]);
+                await JSRuntime.InvokeVoidAsync("addChartBoxForSymbol", SymbolData[symbol], symbol);
+            }
         }
     }
 }
