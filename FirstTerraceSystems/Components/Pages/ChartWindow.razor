@@ -19,6 +19,9 @@
     [Parameter]
     public object? GroupingUnits { get; set; }
 
+    [Parameter]
+    public string? Symbol { get; set; }
+
     private ElementReference ER_ChartWindow { get; set; }
 
     protected override void OnInitialized()
@@ -33,7 +36,7 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
-            await JSRuntime.InvokeVoidAsync("popoutChartWindow", ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits);
+            await JSRuntime.InvokeVoidAsync("popoutChartWindow", ER_ChartWindow, ChartIndx, OhlcData, VolumeData, Symbol, GroupingUnits);
         }
     }
 }

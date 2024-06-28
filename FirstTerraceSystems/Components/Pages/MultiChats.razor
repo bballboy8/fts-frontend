@@ -1,32 +1,62 @@
-﻿@page "/multiChats"
+﻿@page "/multiCharts"
 @using FirstTerraceSystems.Entities.Nasdaq
 @inject NsdaqService NsdaqService
+@inject IJSRuntime JSRuntime
 
 <div class="container-fluid">
+    <div class="form-group">
+        <label for="symbolSelect">Select Symbol:</label>
+        <select id="symbolSelect" class="form-control" @bind-value="SelectedSymbol" @bind-value:event="onchange">
+            @foreach (var symbol in Symbols)
+            {
+                <option value="@symbol">@symbol</option>
+            }
+        </select>
+    </div>
     <div id="chartList" class="row"></div>
 </div>
 
-
-@code
-{
-
-    private IEnumerable<EquitiesBarModal>? EquitiesBars { get; set; }
+@code {
+    private IEnumerable<string>? Symbols { get; set; }
+    private string? SelectedSymbol { get; set; }
+    private Dictionary<string, IEnumerable<EquitiesBarModal>> SymbolData { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var To = DateTime.Now;
-        var from = To.AddDays(-3);
-        from = new DateTime(from.Year, from.Month, from.Day, 9, 0, 0);
-
-        EquitiesBars = await NsdaqService.GetEquitiesBars(from, To, "AAPL");
+        var symbolsResponse = await NsdaqService.GetSymbols();
+        if (symbolsResponse != null)
+        {
+            Symbols = symbolsResponse.Select(s => s.Symbol);
+            SelectedSymbol = Symbols.FirstOrDefault();
+            await LoadSymbolData(SelectedSymbol);
+        }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async Task LoadSymbolData(string? symbol)
     {
-        if (EquitiesBars != null)
+        if (symbol == null)
+            return;
+
+        var currentDate = DateTime.Now;
+        var startDate = currentDate.AddDays(-3);
+        startDate = new DateTime(startDate.Year, startDate.Month, startDate.Day, 9, 0, 0);
+
+        var equitiesBars = await NsdaqService.GetEquitiesBars(startDate, symbol);
+        if (equitiesBars != null)
         {
-            await JSRuntime.InvokeVoidAsync("LoadData", EquitiesBars);
-            await JSRuntime.InvokeVoidAsync("loadDashboard");
+            SymbolData[symbol] = equitiesBars;
+            await JSRuntime.InvokeVoidAsync("LoadData", SymbolData[symbol]);
+            await JSRuntime.InvokeVoidAsync("addChartBoxForSymbol", SymbolData[symbol], symbol);
+        }
+    }
+
+    private async Task OnSymbolChange(ChangeEventArgs e)
+    {
+        var newSymbol = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(newSymbol) && newSymbol != SelectedSymbol)
+        {
+            SelectedSymbol = newSymbol;
+            await LoadSymbolData(SelectedSymbol);
         }
     }
 }

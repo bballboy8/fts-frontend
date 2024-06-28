@@ -131,11 +131,11 @@
 
 
     [JSInvokable]
-    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, object chartId, object ohlc, object volume, object groupingUnits)
+    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, object chartId, object ohlc, object volume, string symbol, object groupingUnits)
     {
         StateContainerService.IsAllowCloseAllWindows = false;
         StateContainerService.IsMainPage = false;
-        var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, groupingUnits);
+        var chartWindow = new ChartWindowPage(jsObject, chartId, ohlc, volume, symbol, groupingUnits);
         var window = new Window(chartWindow);
         Application.Current?.OpenWindow(window);
         return await Task.FromResult(chartId);

@@ -15,7 +15,7 @@
 //}
 
 //var ohlc = [], volume = [], dataLength = 0, groupingUnits = [['week', [1]], ['month', [1, 2, 3, 4, 6]]];
-var ohlc = [], volume = [], dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
+var ohlc = [], volume = [], symbol = "AAPL", dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
 var groupingUnits = [
     [
         'millisecond',
@@ -51,19 +51,81 @@ var groupingUnits = [
     ]
 ];
 
+// Function to add a chart box for a specific symbol
+function addChartBoxForSymbol(ohlc, symbol) {
+    $("#chartList").empty(); // Clear existing charts
 
-function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = true) {
+    var totalCharts = $("#chartList .chart-box").length + 1;
+    var cssClass = "col-12";
+    if (totalCharts == 2 || totalCharts == 4) {
+        cssClass = "col-6";
+    }
+    else if (totalCharts == 5) {
+        cssClass = "col-12";
+    }
+    else if (totalCharts == 6) {
+        cssClass = "col-4";
+    }
+    else if (totalCharts == 8) {
+        cssClass = "col-3";
+    }
+
+    var chartContainerId = "chart-" + totalCharts,
+        chartBoxClass = "chart-box-" + totalCharts;
+    var chartBox = $(`<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${totalCharts}" ></div></div>`);
+
+    $("#chartList").append(chartBox);
+
+    if (totalCharts == 5) {
+        var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
+        var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
+
+        $("#chartList .chart-box").slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
+        $("#chartList .chart-box").appendTo(chartListCol1.find('#chartListCol1'));
+
+        $("#chartList").append(chartListCol1).append(chartListCol2);
+    } else {
+        $("#chartList .chart-box").appendTo('#chartList');
+        $("#chartListCol1").parent().remove();
+        $("#chartListCol2").parent().remove();
+    }
+
+    if (totalCharts == 5) {
+        $('#chartListCol1 .chart-box').removeClass('chart-height-100').removeClass('chart-height-33').addClass('chart-height-50');
+        $('#chartListCol2 .chart-box').removeClass('chart-height-100').removeClass('chart-height-50').addClass('chart-height-33');
+    } else if (totalCharts > 2) {
+        $("#chartList .chart-box").removeClass('chart-height-100').removeClass('chart-height-33');
+        $("#chartList .chart-box").addClass('chart-height-50');
+    } else {
+        $("#chartList .chart-box").removeClass('chart-height-50').removeClass('chart-height-33');
+        $("#chartList .chart-box").addClass('chart-height-100');
+    }
+
+    addChart(chartContainerId, ohlc, volume, symbol);
+}
+
+// Function to add a chart
+function addChart(charContainerId, data, symbol, isDragable = true) {
+    var ohlc = [], volume = [], previousPrice = null;
+    data.forEach(item => {
+        const date = new Date(item.date).getTime();
+        const price = item.price;
+
+        const color = previousPrice === null || price >= previousPrice ? 'green' : 'red';
+        previousPrice = price; // Update previousPrice for the next iteration
+
+        const ohlcPoint = { x: date, y: price / 10000, color: color };
+        const volumePoint = { x: date, y: 0, color: color }; // Volume is 0 for all
+
+        ohlc.push(ohlcPoint);
+        volume.push(volumePoint);
+    });
 
     Highcharts.stockChart(charContainerId, {
-
         chart: {
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
-            //events: {
-            //    load: function () {
-            //    }
-            //}
         },
         plotOptions: {
             series: {
@@ -79,21 +141,19 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             { type: 'day', count: 1, text: '1D' },
             { type: 'day', count: 3, text: '3D' },
             ],
-            //selected: 0,
             inputEnabled: false,
             buttonTheme: {
-                //visibility: 'hidden',
-                fill: '#272C2F', 
+                fill: '#272C2F',
                 stroke: '#272C2F',
                 style: {
                     color: '#FFFFFF',
                 },
                 states: {
                     hover: {
-                        fill: '#5B6970', 
+                        fill: '#5B6970',
                     },
                     select: {
-                        fill: '#5b6970', 
+                        fill: '#5b6970',
                         style: {
                             color: '#FFFFFF',
                             fontWeight: 'bold'
@@ -103,7 +163,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         fill: '#272C2F',
                         stroke: '#272C2F',
                         style: {
-                            color: '#CCCCCC', 
+                            color: '#CCCCCC',
                         }
                     }
                 }
@@ -111,7 +171,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             labelStyle: {
                 visibility: 'hidden'
             },
-            /*verticalAlign: 'top',*/
             buttonSpacing: 10,
             x: 66,
             y: 0
@@ -173,8 +232,8 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
         },
         series: [
             {
-                name: 'AAPL',
-                data: pOHLC,
+                name: symbol,
+                data: ohlc,
                 color: '#C01620', // Color for the fall
                 upColor: '#16C05A', // Color for the rise
                 lineWidth: 0,
@@ -194,10 +253,10 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
             {
                 type: 'column',
                 name: 'Volume',
-                data: pVolume,
+                data: volume,
                 yAxis: 1,
                 dataGrouping: {
-                    units: pGroupingUnits
+                    units: groupingUnits
                 },
                 color: isDarkMode ? '#C01620' : '#16C05A', // Fall or rise color
                 upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
@@ -211,12 +270,11 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                 closeButton: {
                     enabled: true,
                     className: 'btn btn-sm',
-
                     theme: {
                         fill: '#272C2F',
                         stroke: '#5B6970',
                         style: {
-                            color: '#FFFFFF', 
+                            color: '#FFFFFF',
                         },
                         states: {
                             select: {
@@ -227,12 +285,12 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                                 }
                             },
                             hover: {
-                                fill: '#5B6970', 
+                                fill: '#5B6970',
                                 stroke: '#5B6970',
                             },
                         }
                     },
-                    text: 'XNYS:AAPL &nbsp &nbsp ✖',
+                    text: `XNYS:${symbol} &nbsp &nbsp ✖`,
                     onclick: function (e) {
                         if (isDragable) removeChart(this);
                     },
@@ -281,31 +339,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         zoomChart(false, this);
                     },
                 },
-                //minimizeButton: {
-                //    align: 'right',
-                //    verticalAlign: 'top',
-                //    x: -60,
-                //    enabled: isDragable,
-                //    className: 'btn btn-sm',
-                //    theme: {
-                //        fill: '#272C2F',
-                //        stroke: '#272C2F',
-                //        style: {
-                //            color: '#FFFFFF',
-                //        },
-                //        states: {
-                //            hover: {
-                //                fill: '#5B6970',
-                //            },
-                //        }
-                //    },
-                //    useHTML: true,
-                //    text: '<i class="bi bi-dash-lg" tabindex="0"></i>',
-                //    onclick: function (e) {
-                //        console.log(e); 
-                //        this.setSize(null, 100)
-                //    },
-                //},
                 dragButton: {
                     align: 'right',
                     verticalAlign: 'top',
@@ -330,7 +363,7 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                         var jsObjectReference = DotNet.createJSObjectReference(window);
                         var chartId = $(this.renderTo).data("chart-id");
                         removeChart(this);
-                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits)
+                        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, symbol, groupingUnits)
                     },
                 },
                 closeChartButton: {
@@ -354,7 +387,6 @@ function addChart(charContainerId, pOHLC, pVolume, pGroupingUnits, isDragable = 
                     },
                     useHTML: true,
                     text: '<i class="bi bi-x-lg" tabindex="0"></i>',
-
                     onclick: function (e) {
                         if (isDragable) removeChart(this);
                     },
@@ -526,10 +558,10 @@ function addChartBox(totalCharts, chartIndx) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    addChart(chartContainerId, ohlc, volume, groupingUnits);
+    addChart(chartContainerId, ohlc, volume, symbol);
 
     if (totalCharts > 1) {
-        $(".chart-container", chartBox).on("dblclick", async function () {
+        $(".chart-container", chartBox).on("dblclick", async function () {c
             var eleData = $(this).data();
             var chartId = eleData.chartId;
             var jsObjectReference = DotNet.createJSObjectReference(window);
@@ -541,19 +573,19 @@ function addChartBox(totalCharts, chartIndx) {
         });
     }
 }
-function popoutChartWindow(element, chartIndx, ohlc, volume, groupingUnits) {
+
+function popoutChartWindow(element, chartIndx, ohlc, volume, symbol) {
     var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
     calculateZoomLevels(ohlc);
-    addChart(chartContainerId, ohlc, volume, groupingUnits, false);
+    addChart(chartContainerId, ohlc, volume, symbol, false);
 }
 
-function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
-
+function popinChartWindow(chartIndx, ohlc, volume, symbol) {
     var totalCharts = $("#chartList .chart-box").length + 1;
 
-    //Reset Chart Box
+    // Reset Chart Box
     var cssClass = "col-12";
     if (totalCharts == 1) {
         cssClass = "col-12";
@@ -600,13 +632,12 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
     } else if (totalCharts > 2) {
         $("#chartList .chart-box").removeClass('chart-height-100').removeClass('chart-height-33');
         $("#chartList .chart-box").addClass('chart-height-50');
-    }
-    else {
+    } else {
         $("#chartList .chart-box").removeClass('chart-height-50').removeClass('chart-height-33');
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    addChart(chartContainerId, ohlc, volume, groupingUnits);
+    addChart(chartContainerId, ohlc, volume, symbol);
 
     $(".chart-container", chartBox).off("dblclick").on("dblclick", async function () {
         var eleData = $(this).data();
@@ -616,12 +647,11 @@ function popinChartWindow(chartIndx, ohlc, volume, groupingUnits) {
             var chart = Highcharts.charts[eleData.highchartsChart]
             if (chart) removeChart(chart);
         }
-        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, groupingUnits);
+        await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, chartId, ohlc, volume, symbol);
     });
 }
 
 function createDashboard(totalCharts) {
-
     var chartList = $("#chartList");
 
     chartList.html('');
@@ -637,9 +667,7 @@ function createDashboard(totalCharts) {
     }
 }
 
-
 function loadDashboard() {
-
     var totalCharts = localStorage.getItem('SavedLayout') ?? 5;
 
     var chartList = $("#chartList");
