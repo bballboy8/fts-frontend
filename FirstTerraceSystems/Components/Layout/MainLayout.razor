@@ -1,5 +1,6 @@
 ﻿@using FirstTerraceSystems.AuthProviders
 @using FirstTerraceSystems.Entities
+@using FirstTerraceSystems.Entities.Nasdaq
 @using Microsoft.AspNetCore.Components.Authorization
 
 @inherits LayoutComponentBase
@@ -9,6 +10,7 @@
 @inject StateContainerService StateContainer
 @inject BsToastService Toast
 @inject WindowsSerivce WindowsSerivce
+@inject NsdaqService NsdaqService
 
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
 
@@ -17,6 +19,17 @@
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
         {
             <div id="headbar" class="top-row px-4">
+
+                <select @onchange="OnSymbolChanged" class="btn btn-secondary dropdown-toggle layout-btn">
+                    @if (Symbols != null)
+                    {
+                        <option value="" disabled selected>Select a symbol</option>
+                        @foreach (var symbol in Symbols)
+                        {
+                            <option value="@symbol">@symbol</option>
+                        }
+                    }
+                </select>
 
                 @* Display options code here *@
                 <div @ref="Er_DisplayOptions" class="dropdown" id="dropdownDisplayOptions">
@@ -62,6 +75,10 @@
 @code {
     private bool IsDarkMode = true;
     private ElementReference Er_DisplayOptions { get; set; }
+    private IEnumerable<EquitiesBarModal> resultData { get; set; }
+    private IEnumerable<string> Symbols { get; set; }
+    private string SelectedSymbol { get; set; }
+
     private void ToggleDarkMode(bool value)
     {
         IsDarkMode = value;
@@ -96,6 +113,19 @@
         }
 
         await JSRuntime.InvokeVoidAsync("LoadKeyBordEventToDisplayOptions", Er_DisplayOptions, DotNetObjectReference.Create(this));
+
+        // Fetch symbols
+        var symbolsResponse = await NsdaqService.GetSymbols();
+        if (symbolsResponse != null)
+        {
+            Symbols = symbolsResponse.Select(s => s.Symbol).Where(s => !string.IsNullOrEmpty(s)).ToList();
+        }
+
+        // Load initial chart data if a symbol is selected
+        if (!string.IsNullOrEmpty(SelectedSymbol))
+        {
+            await LoadChartData(SelectedSymbol);
+        }
     }
 
     private async Task Logout()
@@ -141,4 +171,31 @@
         return await Task.FromResult(chartId);
     }
 
+    protected async Task LoadChartData(string symbol)
+    {
+        var currentDate = DateTime.Now;
+        var startDate = currentDate.AddDays(-3);
+        startDate = new DateTime(startDate.Year, startDate.Month, startDate.Day, 9, 0, 0);
+
+        resultData = await NsdaqService.GetEquitiesBars(startDate, symbol);
+        if (resultData != null)
+        {
+            await JSRuntime.InvokeVoidAsync("LoadData", resultData, symbol);
+            await JSRuntime.InvokeVoidAsync("loadDashboard");
+        }
+        else
+        {
+            Console.WriteLine($"Failed to fetch data for symbol: {symbol}");
+        }
+    }
+
+    protected async Task OnSymbolChanged(ChangeEventArgs e)
+    {
+        var selectedValue = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(selectedValue))
+        {
+            SelectedSymbol = selectedValue;
+            await LoadChartData(SelectedSymbol);
+        }
+    }
 }
