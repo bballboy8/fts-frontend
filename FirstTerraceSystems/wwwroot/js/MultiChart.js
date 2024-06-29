@@ -1,4 +1,4 @@
-﻿var ohlc = [], volume = [], symbol = "AAPL", dataLength = 0, zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
+﻿var ohlc = [], volume = [], symbol = "AAPL", dataLength = 0, originalData = [], zoomLevels = [], maxZoom = 5, currentZoomLevel = 0;
 var groupingUnits = [
     [
         'millisecond',
@@ -33,6 +33,9 @@ var groupingUnits = [
         null
     ]
 ];
+
+let ws;
+const maxElementsArray = [1000, 2000, 3000, 4000, 5000]; 
 
 // Function to add a chart
 function addChart(charContainerId, pOHLC, pVolume, pSymbol, pGroupingUnits, isDragable = true) {
@@ -328,39 +331,6 @@ function addChart(charContainerId, pOHLC, pVolume, pSymbol, pGroupingUnits, isDr
     });
 }
 
-function zoomChart(zoomIn, chart) {
-    //if (zoomIn)
-    //    currentZoomLevel++;
-    //else
-    //    currentZoomLevel--;
-    //if (currentZoomLevel > 5)
-    //    currentZoomLevel = 5
-    //if (currentZoomLevel < 1)
-    //    currentZoomLevel = 1
-
-    //if (currentZoomLevel >= 1 && currentZoomLevel <= 5) {
-    //    chart.xAxis.forEach(xAxes => xAxes.setExtremes(zoomLevels[currentZoomLevel - 1].min, zoomLevels[currentZoomLevel - 1].max));
-    //}
-
-    var xAxis = chart.xAxis[0];
-    var extremes = chart.xAxis[0].getExtremes();
-    var range = extremes.max - extremes.min;
-    var newMin, newMax;
-
-    if (zoomIn) {
-        newMin = extremes.min + range * 0.2;
-        newMax = extremes.max - range * 0.2;
-    } else {
-        newMin = extremes.min - range * 0.2;
-        newMax = extremes.max + range * 0.2;
-    }
-
-    newMin = Math.max(xAxis.dataMin, newMin);
-    newMax = Math.min(xAxis.dataMax, newMax);
-
-    xAxis.setExtremes(newMin, newMax);
-}
-
 function removeChart(chart) {
 
     if ($("#chartList .chart-box").length == 1)
@@ -476,7 +446,7 @@ function addChartBox(totalCharts, chartIndx) {
     addChart(chartContainerId, ohlc, volume, symbol, groupingUnits);
 
     if (totalCharts > 1) {
-        $(".chart-container", chartBox).on("dblclick", async function () {c
+        $(".chart-container", chartBox).on("dblclick", async function () {
             var eleData = $(this).data();
             var chartId = eleData.chartId;
             var jsObjectReference = DotNet.createJSObjectReference(window);
@@ -618,10 +588,66 @@ function calculateZoomLevels(data) {
 
 }
 
+// Function to downsample data
+function downsampleData(data, maxElements) {
+    if (data.length <= maxElements) return data;
+
+    const step = data.length / maxElements;
+    const downsampledData = [];
+    for (let i = 0; i < maxElements; i++) {
+        downsampledData.push(data[Math.floor(i * step)]);
+    }
+    return downsampledData;
+}
+
+function zoomChart(zoomIn, chart) {
+    var xAxis = chart.xAxis[0];
+    var extremes = xAxis.getExtremes();
+    var range = extremes.max - extremes.min;
+    var newMin, newMax;
+
+    // Check if the current zoom level is within valid range
+    if ((zoomIn && currentZoomLevel >= maxZoom) || (!zoomIn && currentZoomLevel <= 0)) {
+        return;
+    }
+
+    // Adjust the zoom level
+    if (zoomIn) {
+        currentZoomLevel = Math.min(currentZoomLevel + 1, maxZoom);
+    } else {
+        currentZoomLevel = Math.max(currentZoomLevel - 1, 0);
+    }
+
+    // Calculate new range
+    if (zoomIn) {
+        newMin = extremes.min + range * 0.2;
+        newMax = extremes.max - range * 0.2;
+    } else {
+        newMin = extremes.min - range * 0.2;
+        newMax = extremes.max + range * 0.2;
+    }
+
+    // Clamp the new range to the data bounds
+    newMin = Math.max(xAxis.dataMin, newMin);
+    newMax = Math.min(xAxis.dataMax, newMax);
+
+    // Determine the maximum number of elements for the current zoom level
+    const maxElements = maxElementsArray[currentZoomLevel];
+    const filteredData = originalData.filter(d => d.ohlcPoint.x >= newMin && d.ohlcPoint.x <= newMax);
+    const downsampledData = downsampleData(filteredData, maxElements);
+
+    ohlc = downsampledData.map(d => d.ohlcPoint);
+    volume = downsampledData.map(d => d.volumePoint);
+
+    // Set new extremes and update the chart
+    xAxis.setExtremes(newMin, newMax);
+}
+
 function LoadData(resultData, FirstSymbol) {
     ohlc = [];
     volume = [];
-    symbol = FirstSymbol
+    symbol = FirstSymbol;
+    originalData = [];
     let previousPrice = null;
 
     resultData.forEach(item => {
@@ -634,14 +660,74 @@ function LoadData(resultData, FirstSymbol) {
         const ohlcPoint = { x: date, y: price, color: color };
         const volumePoint = { x: date, y: 0, color: color }; // Volume is 0 for all
 
-        ohlc.push(ohlcPoint);
-        volume.push(volumePoint);
+        originalData.push({ ohlcPoint, volumePoint });
     });
 
+    const initialData = downsampleData(originalData, 5000);
+    ohlc = initialData.map(d => d.ohlcPoint);
+    volume = initialData.map(d => d.volumePoint);
+
     calculateZoomLevels(ohlc);
+    
 }
 
 function saveLayout() {
     localStorage.setItem('SavedLayout', $("#chartList .chart-box").length);
     console.log(localStorage.getItem('SavedLayout'));
+}
+
+function connectWebSocket() {
+    ws = new WebSocket("wss://52.0.33.126:8000/nasdaq/get_real_data");
+
+    ws.onopen = function () {
+        console.log("WebSocket connection established");
+    };
+
+    ws.onmessage = function (event) {
+        const message = JSON.parse(event.data);
+        updateChartData(message);
+    };
+
+    ws.onclose = function () {
+        console.log("WebSocket connection closed. Reconnecting...");
+        setTimeout(connectWebSocket, 1000); // Reconnect after 1 second
+    };
+
+    ws.onerror = function (error) {
+        console.error("WebSocket error:", error);
+        ws.close();
+    };
+}
+
+function updateChartData(message) {
+    const date = new Date(message.date).getTime();
+    const price = message.price / 10000;
+    const volumeValue = message.volume; // Assuming volume is provided in the message
+
+    const color = ohlc.length === 0 || price >= ohlc[ohlc.length - 1].y ? 'green' : 'red';
+
+    const ohlcPoint = { x: date, y: price, color: color };
+    const volumePoint = { x: date, y: volumeValue, color: color };
+
+    ohlc.push(ohlcPoint);
+    volume.push(volumePoint);
+
+    originalData.push({ ohlcPoint, volumePoint });
+
+    // Limit the number of stored data points
+    if (ohlc.length > maxElementsArray[maxZoom - 1]) ohlc.shift();
+    if (volume.length > maxElementsArray[maxZoom - 1]) volume.shift();
+
+    // Update the chart with the new data
+    Highcharts.charts.forEach(chart => {
+        if (chart) {
+            const ohlcSeries = chart.series.find(s => s.name === symbol);
+            const volumeSeries = chart.series.find(s => s.name === 'Volume');
+
+            if (ohlcSeries && volumeSeries) {
+                ohlcSeries.addPoint(ohlcPoint, true, ohlc.length > maxElementsArray[maxZoom - 1]);
+                volumeSeries.addPoint(volumePoint, true, volume.length > maxElementsArray[maxZoom - 1]);
+            }
+        }
+    });
 }
