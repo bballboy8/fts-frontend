@@ -1,5 +1,6 @@
 ﻿@using FirstTerraceSystems.AuthProviders
 @using FirstTerraceSystems.Entities
+@using FirstTerraceSystems.Services.IServices
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Timers
 
@@ -9,11 +10,11 @@
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject StateContainerService StateContainer
-@inject NasdaqService NsdaqService
-@* @inject SqlLiteService SqlLiteService *@
-@* @inject Repositories.SymbolicRepository SqlLiteService *@
 @inject BsToastService Toast
 @inject WindowsSerivce WindowsSerivce
+@inject ChartService ChartService
+
+@implements IDisposable
 
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
 
@@ -29,7 +30,7 @@
                         DISPLAY OPTIONS
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a role="button" class="dropdown-item" data-item-type="savelayout" tabindex="1" @onclick="() => SaveLayout()">Save Layout</a>
+                        <a role="button" class="dropdown-item" data-item-type="savelayout" tabindex="1" onclick="saveLayout()">Save Layout</a>
                         @* <a role="button" class="dropdown-item">Load layout</a> *@
 
                         <div class="dropdown dropend">
@@ -92,9 +93,19 @@
         StateContainerService.IsDarkMode = IsDarkMode;
     }
 
+
+    private DotNetObjectReference<MainLayout>? _dotNetMainLayoutRef;
+
+    protected override void OnInitialized()
+    {
+        _dotNetMainLayoutRef = DotNetObjectReference.Create(this);
+    }
+
     // System.Timers.Timer timer;
     protected override async Task OnInitializedAsync()
     {
+
+        await JSRuntime.InvokeVoidAsync("MainLayoutInterop.setDotNetReference", _dotNetMainLayoutRef);
 
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
 
@@ -114,7 +125,7 @@
             }
         }
 
-        await JSRuntime.InvokeVoidAsync("LoadKeyBordEventToDisplayOptions", Er_DisplayOptions, DotNetObjectReference.Create(this));
+        await JSRuntime.InvokeVoidAsync("LoadKeyBordEventToDisplayOptions", Er_DisplayOptions, ChartService.InitialChartSymbols);
     }
 
     private async Task Logout()
@@ -128,30 +139,22 @@
     }
 
     [JSInvokable]
-    public async Task SaveLayout()
+    public void SaveLayout(int totalCharts)
     {
-        await JSRuntime.InvokeVoidAsync("saveLayout");
+        ChartService.UpdateChartLayout(totalCharts);
+        ChartService.SaveChartLayout();
         Toast.ShowSuccessMessage("Layout Saved!");
     }
 
     private async Task LoadTemplate(int totalCharts)
     {
-        await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts);
-
+        await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts, ChartService.InitialChartSymbols);
         StateContainerService.IsAllowCloseAllWindows = true;
         WindowsSerivce.CloseAllOpenedWindows();
     }
 
-
-    [JSInvokable]
-    public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, bool isMaximizeClicked, object chartId, object minPoint, object maxPoint, object symbol)
+    public void Dispose()
     {
-        StateContainerService.IsAllowCloseAllWindows = false;
-        StateContainerService.IsMainPage = false;
-        StateContainerService.IsMaximizeClikedForChart = isMaximizeClicked;
-        var chartWindow = new ChartWindowPage(jsObject, chartId, minPoint, maxPoint, symbol);
-        var window = new Window(chartWindow);
-        Application.Current?.OpenWindow(window);
-        return await Task.FromResult(chartId);
+        _dotNetMainLayoutRef?.Dispose();
     }
 }

@@ -7,7 +7,7 @@ using BlazorBootstrap;
 
 namespace FirstTerraceSystems.Services
 {
-    internal class BsToastService
+    public class BsToastService
     {
         private readonly ToastService _toastService;
 

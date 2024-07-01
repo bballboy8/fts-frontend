@@ -2,6 +2,15 @@ let backgroundColor = '#202527';
 let fontColor = '#ffffff';
 let isDarkMode = true;
 
+var MainLayoutInterop = window.MainLayoutInterop || {};
+
+MainLayoutInterop.dotnetReference = null;
+
+MainLayoutInterop.setDotNetReference = function (dotnetReference) {
+    MainLayoutInterop.dotnetReference = dotnetReference;
+};
+
+
 // Class
 class ButtonComponent extends Highcharts.AccessibilityComponent {
     constructor(chart, rendererButton) {
@@ -292,7 +301,7 @@ window.showLoader = () => {
     }, 1600);
 }
 
-window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
+window.LoadKeyBordEventToDisplayOptions = function (element, initialChartSymbols) {
 
     const dropdownItems = $(element).find('.dropdown-item');
     const itemCount = dropdownItems.length;
@@ -319,13 +328,13 @@ window.LoadKeyBordEventToDisplayOptions = function (element, dotNetObject) {
             var itemType = $(document.activeElement).data('item-type');
 
             if (itemType == 'savelayout') {
-                await dotNetObject.invokeMethodAsync('SaveLayout');
+                await saveLayout();
             } else if (itemType = 'template') {
                 var totalCharts = $(document.activeElement).data('load-template');
                 var num = parseInt(totalCharts, 10);
 
                 if (!isNaN(num) && num > 0) {
-                   await createDashboard(totalCharts);
+                    createDashboard(totalCharts, initialChartSymbols);
                 }
             }
         } else if (event.key === 'Escape') {
@@ -368,6 +377,11 @@ $(document).ready(function () {
             event.preventDefault();
             $('#btn-close-app').focus();
         }
-    }); 
+    });
 
 });
+    
+async function  saveLayout() {
+    await MainLayoutInterop.dotnetReference.invokeMethodAsync('SaveLayout', $("#chartList .chart-box").length);
+    console.log(localStorage.getItem('SavedLayout'));
+}

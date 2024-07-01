@@ -9,7 +9,7 @@ namespace FirstTerraceSystems.Features
     {
         static ClientWebSocket _webSocket = new();
 
-        public delegate void OnRealDataReceived(NasdaqResponse? nasdaqData);
+        public delegate void OnRealDataReceived(string nasdaqData);
 
         public delegate Task ReferenceChartAsync();
 
@@ -29,7 +29,7 @@ namespace FirstTerraceSystems.Features
                     _webSocket = new ClientWebSocket();
                     if (_webSocket.State != WebSocketState.Open)
                     {
-                        await _webSocket.ConnectAsync(new Uri("ws://52.0.33.126:8000/nasdaq/get_real_data"), CancellationToken.None);
+                        await _webSocket.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data"), CancellationToken.None);
                         var buffer = Encoding.UTF8.GetBytes("start");
                         await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
                         connectionTrial = 0;
@@ -52,64 +52,70 @@ namespace FirstTerraceSystems.Features
 
         public static async Task CloseAsync()
         {
-            if (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseSent || _webSocket.State == WebSocketState.CloseReceived)
+            try
             {
-                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-                _webSocket.Dispose();
+                if (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseSent || _webSocket.State == WebSocketState.CloseReceived)
+                {
+                    await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+                    _webSocket.Dispose();
+                }
+                else if (_webSocket.State == WebSocketState.Connecting)
+                {
+                    _webSocket.Abort();
+                    Console.WriteLine("WebSocket is still connecting. Aborting connection.");
+                }
             }
-            else if (_webSocket.State == WebSocketState.Connecting)
+            catch (Exception ex)
             {
-                Console.WriteLine("WebSocket is still connecting. Aborting connection.");
-                _webSocket.Abort();
+                Console.WriteLine(ex.Message);
             }
         }
 
         public async static Task ListenAsync()
         {
-            var buffer = new byte[1024 * 4];
+            var buffer = new byte[1024 * 64];
+            var messageBuilder = new StringBuilder();
 
-            using (var memoryStream = new MemoryStream())
+            try
             {
-                try
+                while (_webSocket.State == WebSocketState.Open)
                 {
-                    while (_webSocket.State == WebSocketState.Open)
+                    WebSocketReceiveResult result;
+                    do
                     {
-                        WebSocketReceiveResult result;
-                        do
-                        {
-                            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                            await memoryStream.WriteAsync(buffer, 0, result.Count);
-                        } while (!result.EndOfMessage);
+                        result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                        messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                    } while (!result.EndOfMessage);
 
-                        memoryStream.Seek(0, SeekOrigin.Begin);
-                        var message = Encoding.UTF8.GetString(memoryStream.ToArray());
 
-                        if (result.MessageType == WebSocketMessageType.Text && !message.Contains("start"))
+                    if (result.MessageType == WebSocketMessageType.Text)
+                    {
+                        string message = messageBuilder.ToString();
+                        if (!message.Contains("start"))
                         {
                             ProcessMessage(message);
                         }
-
-                        memoryStream.SetLength(0);
                     }
+                    messageBuilder.Clear();
                 }
-                catch (WebSocketException ex)
-                {
-                    Console.WriteLine($"WebSocket error: {ex.Message}");
-                    await ConnectAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Unexpected error: {ex.Message}");
-                }
-            }   
+            }
+            catch (WebSocketException ex)
+            {
+                Console.WriteLine($"WebSocket error: {ex.Message}");
+                await ConnectAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+            }
+
         }
 
         static void ProcessMessage(string message)
         {
             try
-            {
-                var data = JsonSerializer.Deserialize<NasdaqResponse>(message);
-                ActionRealDataReceived?.Invoke(data);
+            {          
+                ActionRealDataReceived?.Invoke(message);
                 ActionReferenceChart?.Invoke();
             }
             catch (JsonException ex)

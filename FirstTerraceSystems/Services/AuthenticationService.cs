@@ -1,16 +1,12 @@
-﻿using Blazored.LocalStorage;
-using FirstTerraceSystems.AuthProviders;
-using FirstTerraceSystems.Components.Pages;
+﻿using FirstTerraceSystems.AuthProviders;
 using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
+using FirstTerraceSystems.Services.IServices;
 using Microsoft.AspNetCore.Components.Authorization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace FirstTerraceSystems.Services
 {
@@ -19,13 +15,11 @@ namespace FirstTerraceSystems.Services
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _options;
         private readonly AuthenticationStateProvider _authStateProvider;
-        private readonly ILocalStorageService _localStorage;
-        public AuthenticationService(HttpClient client, AuthenticationStateProvider authStateProvider, ILocalStorageService localStorage)
+        public AuthenticationService(HttpClient client, AuthenticationStateProvider authStateProvider)
         {
             _client = client;
             _options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             _authStateProvider = authStateProvider;
-            _localStorage = localStorage;
         }
 
 
@@ -42,8 +36,8 @@ namespace FirstTerraceSystems.Services
             if (!authResult.IsSuccessStatusCode)
                 return result!;
 
-            await _localStorage.SetItemAsync("authToken", result?.Access_Token);
-            await _localStorage.SetItemAsync("email", model.Email);
+            await SecureStorage.SetAsync(AppSettings.SS_AuthToken, result?.Access_Token ?? "");
+            await SecureStorage.SetAsync(AppSettings.SS_AuthEmail, model.Email ?? "");
 
             ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email ?? "");
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result?.Access_Token);
@@ -75,7 +69,7 @@ namespace FirstTerraceSystems.Services
 
         public async Task Logout(LoginDto model)
         {
-            var email = await _localStorage.GetItemAsync<string>("email");
+            var email = await SecureStorage.GetAsync(AppSettings.SS_AuthEmail);
             var content = JsonSerializer.Serialize(new { email = email?.ToLower() }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
@@ -88,7 +82,8 @@ namespace FirstTerraceSystems.Services
 
             var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
 
-            await _localStorage.RemoveItemAsync("authToken");
+            SecureStorage.RemoveAll();
+            //SecureStorage.Remove(ApplicationConst.SS_AuthToken);
             ((AuthStateProvider)_authStateProvider).NotifyUserLogout();
             _client.DefaultRequestHeaders.Authorization = null;
         }

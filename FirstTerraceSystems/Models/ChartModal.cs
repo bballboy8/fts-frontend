@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 using Microsoft.JSInterop;
 
 namespace FirstTerraceSystems.Models
@@ -13,7 +8,7 @@ namespace FirstTerraceSystems.Models
         [JsonPropertyName("id")]
         public string? ChartId { get; set; }
         [JsonPropertyName("symbol")]
-        public string? Symbol { get; set; }
+        public string Symbol { get; set; } = null!;
         public object? UpdatedMinExtreme { get; set; }
         public object? UpdatedMaxExtreme { get; set; }
         public int ChartOrderIndx { get; set; }
@@ -23,7 +18,7 @@ namespace FirstTerraceSystems.Models
         public IJSRuntime? JSRuntime { get; set; }
     }
 
-    public class LastDataPoint
+    public class DataPoint
     {
         public long PrimaryKey { get; set; }
         public long X { get; set; } 

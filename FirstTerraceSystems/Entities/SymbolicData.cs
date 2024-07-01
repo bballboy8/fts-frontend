@@ -1,58 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
+﻿using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using SQLite;
+using FirstTerraceSystems.Features;
 
 namespace FirstTerraceSystems.Entities
 {
+    //yyyy-MM-dd HH:mm:ss.ffffff
+    //2024-06-28T12:34:01.000535
+
     public class SymbolicData
     {
         public SymbolicData() { }
 
-        public SymbolicData(Dictionary<string, int> headers, object[] row)
+        public SymbolicData(Dictionary<string, int> headers, JsonElement element)
         {
-            TrackingID = row[headers["trackingID"]].ToString();
-            MsgType = row[headers["msgType"]].ToString();
-            Symbol = row[headers["symbol"]].ToString();
-            Price = (double.TryParse(row[headers["price"]].ToString(), out double price) ? price : 0.0) / 10000;
-            TimeStamp = row[headers["date"]].ToString();
-
-            if (DateTime.TryParseExact(TimeStamp, "yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
-            {
-                Date = dateTime;
-                TimeStamp = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffff");
-            }
+            TrackingID = element[headers["trackingID"]].GetString();
+            MsgType = element[headers["msgType"]].GetString();
+            Symbol = element[headers["symbol"]].GetString();
+#if !DEBUG
+            Price = element[headers["price"]].GetDouble() / 10000;
+#else
+            Price = element[headers["price"]].GetDouble();
+#endif
+            Date = element[headers["date"]].GetDateTime("yyyy-MM-dd HH:mm:ss.ffffff");
         }
 
-        [PrimaryKey, AutoIncrement]
         public long Id { get; set; }
-        
+
         [JsonPropertyName("trackingid")]
         public string? TrackingID { get; set; }
-        
+
         [JsonPropertyName("date")]
         public DateTime Date { get; set; }
-        
+
         [JsonPropertyName("msgtype")]
         public string? MsgType { get; set; }
 
-        [Indexed(Name = $"IX_{nameof(SymbolicData)}_{nameof(Symbol)}")]
         [JsonPropertyName("symbol")]
         public string? Symbol { get; set; }
-        
+
         [JsonPropertyName("price")]
         public double Price { get; set; }
-        
-        public string? TimeStamp { get; set; }
-
-        public void ApplyTransformations()
-        {
-            TimeStamp = Date.ToString("yyyy-MM-ddTHH:mm:ss.ffffff");
-            Price /= 10000;
-        }
     }
 }

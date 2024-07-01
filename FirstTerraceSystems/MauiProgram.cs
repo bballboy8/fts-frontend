@@ -1,14 +1,11 @@
-﻿using System.Globalization;
-using System.Net;
-using Blazored.LocalStorage;
+﻿using System.Net;
 using FirstTerraceSystems.AuthProviders;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Repositories;
 using FirstTerraceSystems.Services;
+using FirstTerraceSystems.Services.IServices;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SQLite;
 
 
 namespace FirstTerraceSystems
@@ -27,47 +24,46 @@ namespace FirstTerraceSystems
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddBlazorBootstrap();
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://52.0.33.126:8000/") });
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(ApiEndpoints.RestAPIUri) });
             builder.Services.AddScoped(sp =>
             {
                 var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, })
                 {
-                    BaseAddress = new Uri("https://restapi.clouddataservice.nasdaq.com")
+                    BaseAddress = new Uri(ApiEndpoints.CloudDataServiceUri)
                 };
                 return new NasdaqRestService(client);
             });
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-            builder.Logging.AddDebug();
+            //builder.Logging.AddDebug();
+            builder.Services.AddLogging(logging =>
+            {
+                logging.AddFilter("Microsoft.AspNetCore.Components.WebView", LogLevel.Trace);
+                logging.AddDebug();
+            });
 #endif
-            builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddAuthorizationCore();
+            builder.Services.AddDatabaseService();
+
+            builder.Services.AddSingleton(serviceProvider =>
+            {
+                return serviceProvider.GetRequiredService<DatabaseService>().SymbolicRepository;
+            });
+            
+            builder.Services.AddSingleton(serviceProvider =>
+            {
+                return serviceProvider.GetRequiredService<DatabaseService>().TickerRepository;
+            });
 
             builder.Services.AddSingleton<StateContainerService>();
             builder.Services.AddSingleton<WindowsSerivce>();
             builder.Services.AddSingleton<ChartService>();
 
-            builder.Services.AddSingleton<DatabaseService>(serviceProvider =>
-            {
-                string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
-                return new (dbPath);
-            });
-
-            builder.Services.AddSingleton<SymbolicRepository>(serviceProvider =>
-            {
-                return serviceProvider.GetRequiredService<DatabaseService>().SymbolicRepository;
-            });
-
             builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
             builder.Services.AddScoped<NasdaqService>();
             builder.Services.AddScoped<BsToastService>();
-
-            //var cultureInfo = new CultureInfo("en-US");
-            //cultureInfo.NumberFormat.CurrencySymbol = "$";            
-            //CultureInfo.CurrentCulture = cultureInfo;
-            //CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-            //CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+            builder.Services.AddScoped<NasdaqHistoricalDataService>();
 
             var app = builder.Build();
 
@@ -78,7 +74,7 @@ namespace FirstTerraceSystems
 
         private static void Initialize(MauiApp app)
         {
-            app.Services.GetRequiredService<ChartService>().Load();
+            app.Services.GetRequiredService<ChartService>().LoadChartSettings();
         }
     }
 }

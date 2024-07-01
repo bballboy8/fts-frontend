@@ -1,179 +1,178 @@
 ﻿using FirstTerraceSystems.Entities;
-using FirstTerraceSystems.Models;
-using SQLite;
-using System.Collections;
-using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Data;
+using Dapper;
+using FirstTerraceSystems.Services;
 
 namespace FirstTerraceSystems.Repositories
 {
-    internal class SymbolicRepository
+    public class SymbolicRepository
     {
-        private readonly SQLiteConnection _connection;
+        private const int insertbatchSize = 5000;
+        private readonly IDbConnection _connection;
+        private readonly DatabaseService _databaseService;
 
-        public SymbolicRepository(SQLiteConnection connection)
+        public SymbolicRepository(IDbConnection connection, DatabaseService databaseService)
         {
             _connection = connection;
-        }
-
-        public SymbolicData? GetLastRecord()
-        {
-            return _connection.Table<SymbolicData>().LastOrDefault();
+            _databaseService = databaseService;
         }
 
         public SymbolicData? GetLastRecordBySymbol(string symbol)
         {
-            return _connection.Table<SymbolicData>().LastOrDefault(s => s.Symbol == symbol);
+            try
+            {
+                string sql = $"SELECT * FROM symbol_{symbol} ORDER BY Id DESC LIMIT 1";
+                return _connection.QueryFirstOrDefault<SymbolicData>(sql);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return null;
+            }
         }
 
         public SymbolicData? GetExistsSymbol(string? symbol)
         {
-            if (symbol == null) return null;
-            return _connection.Table<SymbolicData>().FirstOrDefault(s => !string.IsNullOrEmpty(s.Symbol) && (s.Symbol.ToUpper() == symbol.ToUpper()));
-        }
+            if (string.IsNullOrEmpty(symbol)) return null;
 
-        public List<SymbolicData?> GetLastValidSymbols(List<string> symbols)
-        {
-            var lastRecords = _connection.Table<SymbolicData>()
-                .Where(e => symbols.Contains(e.Symbol))
-                .GroupBy(e => e.Symbol)
-                .Select(g => g.OrderByDescending(e => e.Date)
-                .FirstOrDefault()).ToList();
-            return lastRecords ?? [];
-        }
-
-        public IEnumerable<string?>? GetAllSymbols()
-        {
-            var symbols = _connection.Table<SymbolicData>().Select(s => s.Symbol).Distinct();
-            return symbols;
-        }
-
-        public IEnumerable<dynamic> GetSymbolicDataBySymbol(string symbol)
-        {
-            var result = _connection.Table<SymbolicData>().Where(x => x.Symbol == symbol).Select(x => new { t = x.TimeStamp, p = x.Price }).ToList();
-            return result;
-        }
-
-        public IEnumerable<SymbolicData> GetChartDataBySymbol(string symbol)
-        {
-            DateTime threeDaysAgo = DateTime.Now.AddDays(-3);
-            var result = _connection.Table<SymbolicData>().Where(x => x.Symbol == symbol && x.Date >= threeDaysAgo);
-            return result;
-        }
-
-        public IEnumerable<SymbolicData> GetChartDataBySymbol(string symbol, long lastPrimaryKey)
-        {
-            var result = _connection.Table<SymbolicData>().Where(x => x.Symbol == symbol && x.Id > lastPrimaryKey);
-            return result;
-        }
-
-
-        public void UpdateSymbolicDataToDBFromApi(List<SymbolicData>? data)
-        {
-            if (data == null) return;
-
-            List<SymbolicData> batch = [];
-            foreach (var item in data)
-            {
-                item.ApplyTransformations();
-
-                batch.Add(item);
-
-                if (batch.Count > 10000)
-                {
-                    InsertBatchIntoDatabase(batch);
-                    batch.Clear();
-                }
-            }
-
-            if (batch.Count > 0) InsertBatchIntoDatabase(batch);
-        }
-
-        public void UpdateSymbolicDataToDBFromSocket(NasdaqResponse data)
-        {
-            List<SymbolicData> batch = new();
-            Dictionary<string, int> headers = data.Headers.Select((h, i) => new { Header = h, Index = i }).ToDictionary(x => x.Header, x => x.Index);
-
-            foreach (var item in data.Data)
-            {
-                batch.Add(new SymbolicData(headers, item));
-                if (batch.Count > 10000)
-                {
-                    InsertBatchIntoDatabase(batch);
-                    batch.Clear();
-                }
-            }
-
-            if (batch.Count > 0)
-            {
-                InsertBatchIntoDatabase(batch);
-            }
-        }
-
-        //public void UpdateSymbolicDataToDBFromSocket(NasdaqResponse data)
-        //{
-        //    int batchSize = 10000;
-        //    var headers = data.Headers.Select((h, i) => new { Header = h, Index = i }).ToDictionary(x => x.Header, x => x.Index);
-
-        //    ConcurrentBag<List<SymbolicData>> batches = new();
-        //    List<SymbolicData> batch = new(batchSize);
-
-        //    Parallel.ForEach(data.Data, item =>
-        //    {
-        //        var symbolicData = new SymbolicData(headers, item);
-
-        //        lock (batch)
-        //        {
-        //            batch.Add(symbolicData);
-        //            if (batch.Count >= batchSize)
-        //            {
-        //                batches.Add(batch);
-        //                batch = new List<SymbolicData>(batchSize);
-        //            }
-        //        }
-
-        //        // Insert the batch directly into the database
-        //        if (batch.Count > 0)
-        //        {
-        //            lock (_connection)
-        //            {
-        //                //InsertBatchIntoDatabase(batch);
-        //            }
-        //        }
-        //    });
-
-        //    // Insert any remaining items in the last batch
-        //    if (batch.Count > 0)
-        //    {
-        //        lock (_connection)
-        //        {
-        //            //InsertBatchIntoDatabase(batch);
-        //        }
-        //    }
-        //}
-
-
-        public int CleanupOldRecords()
-        {
-            var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-            var cutoffDateUtc = DateTime.UtcNow.AddDays(-3);
-            var cutoffDateETC = TimeZoneInfo.ConvertTimeFromUtc(cutoffDateUtc, easternTimeZone).ToString("yyyy-MM-dd HH:mm:ss");
-
-            var deleteCommand = new SQLiteCommand(_connection);
-            deleteCommand.CommandText = $"DELETE FROM SymbolicData WHERE datetime(TimeStamp) < datetime('{cutoffDateETC}')";
-            //deleteCommand.CommandText = $"DELETE FROM SymbolicData WHERE datetime(DateTime) < datetime('{cutoffDateETC}')";
-            int result = deleteCommand.ExecuteNonQuery();
-            return result;
-        }
-
-        private void InsertBatchIntoDatabase(List<SymbolicData> batch)
-        {
             try
             {
-                _connection.InsertAll(batch);
+                string sql = $"SELECT * FROM symbol_{symbol.ToUpper()} LIMIT 1";
+                return _connection.QueryFirstOrDefault<SymbolicData>(sql);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error inserting batch into database: {ex.Message}");
+                Console.WriteLine(ex.Message);
+                return null;
+            }
+        }
+
+        public async Task<IEnumerable<SymbolicData>> GetChartDataBySymbol(string symbol)
+        {
+            try
+            {
+                DateTime threeDaysAgo = DateTime.Now.AddDays(-3);
+                //string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDate ORDER BY Date";
+                //return _connection.Query<SymbolicData>(sql, new { StartDate = threeDaysAgo });
+                string sql = $"SELECT * FROM symbol_{symbol} ORDER BY Date";
+                return await _connection.QueryAsync<SymbolicData>(sql);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return [];
+            }
+        }
+
+        public async Task<IEnumerable<SymbolicData>> GetChartDataBySymbol(string symbol, long lastId)
+        {
+            try
+            {
+                string sql = $"SELECT * FROM symbol_{symbol} WHERE Id > @LastId ORDER BY Date";
+                return await _connection.QueryAsync<SymbolicData>(sql, new { LastId = lastId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return [];
+            }
+        }
+
+        public IEnumerable<string> GetAllSymbols()
+        {
+            try
+            {
+                string sql = "SELECT REPLACE(name, 'symbol_', '') AS symbol FROM sqlite_master WHERE type = 'table' AND name LIKE 'symbol_%';";
+                return _connection.Query<string>(sql);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return [];
+            }
+        }
+
+        public void InsertMarketFeedDataFromApi(string symbol, IEnumerable<SymbolicData> marketFeeds)
+        {
+            foreach (var item in marketFeeds)
+            {
+                item.Price /= 10000;
+            }
+
+            CreateTableAndIndexes(symbol);
+            InsertRecordsBatch(symbol, marketFeeds);
+        }
+
+        public void InsertLiveMarketFeedDataFromSocket(string jsonData)
+        {
+            using (JsonDocument document = JsonDocument.Parse(jsonData))
+            {
+                var headerElement = document.RootElement.GetProperty("headers");
+                var dataElement = document.RootElement.GetProperty("data");
+                var headers = headerElement.EnumerateArray().Select((element, index) => new { Header = element.GetString() ?? "", Index = index }).ToDictionary(x => x.Header, x => x.Index);
+
+                var groupedElements = dataElement.EnumerateArray().GroupBy(e => e[headers["symbol"]].GetString()!);
+
+                foreach (var groupedElement in groupedElements)
+                {
+                    string symbol = groupedElement.Key;
+
+                    IEnumerable<SymbolicData>? datas = groupedElement.Select(element => new SymbolicData(headers, element));
+
+                    CreateTableAndIndexes(symbol);
+                    InsertRecordsBatch(symbol, datas);
+                }
+            }
+        }
+
+        private void InsertRecordsBatch(string symbol, IEnumerable<SymbolicData> records)
+        {
+            try
+            {
+                using (var connection = _databaseService.GetNewConnection())
+                {
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        connection.Execute($"INSERT INTO symbol_{symbol} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
+
+                        transaction.Commit();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inserting records: {ex.Message}");
+            }
+        }
+
+        private void CreateTableAndIndexes(string symbol)
+        {
+            try      
+            {
+                using (var connection = _databaseService.GetNewConnection())
+                {
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        connection.Execute($"CREATE TABLE IF NOT EXISTS symbol_{symbol} (" +
+                        "Id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "TrackingID VARCHAR," +
+                        "Date BIGINT," +
+                        "MsgType VARCHAR," +
+                        "Symbol VARCHAR," +
+                        "Price FLOAT)");
+
+                        //_connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_symbol ON symbol_{symbol}(Symbol)");
+                        connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_date ON symbol_{symbol}(Date)");
+
+                        transaction.Commit();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in Create Table And Indexes: {ex.Message}");
             }
         }
     }

@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using FirstTerraceSystems.Models;
 
 namespace FirstTerraceSystems.Services
 {
-    internal class ChartService
+    public class ChartService
     {
+        private const string PKey_ChartSymbols = "ChartSymbols";
+        private const string PKey_SavedChartLayout = "SavedChartLayout";
 
-        private const string PreferencesKey = "ChartSymbols";
-
+        public int InitialChartLayout { get; private set; } = 5;
         public List<ChartModal> InitialChartSymbols { get; private set; } = new List<ChartModal>
         {
             new ChartModal { ChartOrderIndx = 1, ChartId = "chart-1", Symbol = "AAPL" , IsVisible = true},
@@ -25,30 +21,33 @@ namespace FirstTerraceSystems.Services
             new ChartModal { ChartOrderIndx = 8, ChartId = "chart-8", Symbol = "GOOG" , IsVisible = false}
         };
 
-        public void Load()
+        public void LoadChartSettings()
         {
-            var savedSymbolsJson = Preferences.Get(PreferencesKey, string.Empty);
+            ClearAll();
+            string savedSymbolsJson = Preferences.Get(PKey_ChartSymbols, string.Empty);
+            InitialChartLayout = Preferences.Get(PKey_SavedChartLayout, 5);
+
             if (!string.IsNullOrEmpty(savedSymbolsJson))
             {
                 var savedSymbols = JsonSerializer.Deserialize<List<ChartModal>>(savedSymbolsJson);
-                if (savedSymbols != null)
+                InitialChartSymbols.ForEach(existingSymbol =>
                 {
-                    foreach (var symbol in savedSymbols)
-                    {
-                        var existingSymbol = InitialChartSymbols.Find(s => s.ChartId == symbol.ChartId);
-                        if (existingSymbol != null)
-                        {
-                            existingSymbol.Symbol = symbol.Symbol;
-                        }
-                    }
-                }
+                    var matchingSymbol = savedSymbols!.Find(s => s.ChartId == existingSymbol.ChartId);
+                    existingSymbol.Symbol = matchingSymbol?.Symbol ?? existingSymbol.Symbol;
+                    existingSymbol.IsVisible = matchingSymbol?.IsVisible ?? existingSymbol.IsVisible;
+                });
             }
         }
 
-        public void Save()
+        public void SaveChartSymbols()
         {
             var json = JsonSerializer.Serialize(InitialChartSymbols);
-            Preferences.Set(PreferencesKey, json);
+            Preferences.Set(PKey_ChartSymbols, json);
+        }
+
+        public void SaveChartLayout()
+        {
+            Preferences.Set(PKey_SavedChartLayout, InitialChartLayout);
         }
 
         public void UpdateSymbol(string id, string newSymbol)
@@ -58,6 +57,17 @@ namespace FirstTerraceSystems.Services
             {
                 symbol.Symbol = newSymbol;
             }
+        }
+
+        public void UpdateChartLayout(int numberOfLayout)
+        {
+            if (numberOfLayout > InitialChartSymbols.Count) return;
+            InitialChartLayout = numberOfLayout;
+        }
+
+        public void ClearAll()
+        {
+            Preferences.Clear();
         }
     }
 }

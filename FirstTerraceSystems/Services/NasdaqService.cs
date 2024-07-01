@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Models;
+using Newtonsoft.Json.Linq;
 
 namespace FirstTerraceSystems.Services
 {
@@ -13,13 +15,12 @@ namespace FirstTerraceSystems.Services
 
         public NasdaqService(HttpClient client)
         {
-            client.Timeout = TimeSpan.FromSeconds(3600); // 1 hour
+            client.Timeout = TimeSpan.FromSeconds(3600);
             _client = client;
         }
 
-        //Get & Update Stock data api
-        //2024-06-25T18:30
-        public async Task<List<SymbolicData>?> GetSymbolicData(DateTime startDatetime, string symbol)
+        //NasdaqMarketFeed
+        public async Task<IEnumerable<SymbolicData>?> NasdaqGetDataAsync(DateTime startDatetime, string symbol)
         {
             string jsonData = JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString("yyyy-MM-ddTHH:ss"), symbol = symbol });
             HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
@@ -35,11 +36,32 @@ namespace FirstTerraceSystems.Services
 
                 using (Stream responseStream = await response.Content.ReadAsStreamAsync())
                 {
-                    return await JsonSerializer.DeserializeAsync<List<SymbolicData>>(responseStream);
+                    return await JsonSerializer.DeserializeAsync<IEnumerable<SymbolicData>>(responseStream);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return null;
+            }
+        }
 
-                //var responseString = await response.Content.ReadAsStringAsync();
-                //return JsonSerializer.Deserialize<List<SymbolicData>>(responseString);
+        public async Task<IEnumerable<NasdaqTicker>?> NasdaqGetTickersAsync()
+        {
+            HttpRequestMessage request = new(HttpMethod.Get, "/nasdaq/get_tickers");
+            try
+            {
+                HttpResponseMessage response = await _client.SendAsync(request);
+
+                response.EnsureSuccessStatusCode();
+
+                using (Stream responseStream = await response.Content.ReadAsStreamAsync())
+                {
+                    return await JsonSerializer.DeserializeAsync<IEnumerable<NasdaqTicker>>(responseStream, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
             }
             catch (Exception ex)
             {
