@@ -40,10 +40,10 @@ namespace FirstTerraceSystems.Components.Pages
                 await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
                 await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
                 await JSRuntime.InvokeVoidAsync("refreshCharts");
-                //await WebSocketClient.ConnectAsync();
-                //WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
-                //WebSocketClient.ActionReferenceChart += RefreshCharts;
-                //await WebSocketClient.ListenAsync();
+                await WebSocketClient.ConnectAsync();
+                WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+                WebSocketClient.ActionReferenceChart += RefreshCharts;
+                await WebSocketClient.ListenAsync();
             }
         }
 

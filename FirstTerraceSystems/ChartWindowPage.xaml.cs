@@ -96,10 +96,7 @@ public partial class ChartWindowPage : ContentPage
         {
             var settings = webView2.CoreWebView2.Settings;
 
-#if !DEBUG
-                settings.AreBrowserAcceleratorKeysEnabled = false;
-#endif
-
+            settings.AreBrowserAcceleratorKeysEnabled = false;
             settings.IsZoomControlEnabled = false;
             settings.AreDefaultContextMenusEnabled = false;
             settings.AreDefaultScriptDialogsEnabled = false;

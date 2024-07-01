@@ -15,7 +15,6 @@ namespace FirstTerraceSystems.Services
 
         public NasdaqService(HttpClient client)
         {
-            client.Timeout = TimeSpan.FromSeconds(3600);
             _client = client;
         }
 

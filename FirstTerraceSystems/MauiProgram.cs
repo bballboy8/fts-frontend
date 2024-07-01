@@ -24,7 +24,15 @@ namespace FirstTerraceSystems
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddBlazorBootstrap();
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(ApiEndpoints.RestAPIUri) });
+            builder.Services.AddScoped(sp =>
+            {
+                var client = new HttpClient
+                {
+                    BaseAddress = new Uri(ApiEndpoints.RestAPIUri)
+                };
+                client.Timeout = TimeSpan.FromSeconds(3600);
+                return client;
+            });
             builder.Services.AddScoped(sp =>
             {
                 var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, })
