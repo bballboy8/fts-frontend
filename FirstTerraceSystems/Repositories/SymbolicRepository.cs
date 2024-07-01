@@ -54,7 +54,7 @@ namespace FirstTerraceSystems.Repositories
             {
                 DateTime threeDaysAgo = DateTime.Now.AddDays(-3);
                 string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDate ORDER BY Date";
-                return _connection.Query<SymbolicData>(sql, new { StartDate = threeDaysAgo });
+                return await _connection.QueryAsync<SymbolicData>(sql, new { StartDate = threeDaysAgo });
             }
             catch (Exception ex)
             {
