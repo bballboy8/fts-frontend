@@ -73,7 +73,7 @@ namespace FirstTerraceSystems.Features
 
         public async static Task ListenAsync()
         {
-            var buffer = new byte[1024 * 64];
+            var buffer = new byte[1024 * 4];
             var messageBuilder = new StringBuilder();
 
             try

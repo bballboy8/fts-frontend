@@ -148,7 +148,8 @@
 
     private async Task LoadTemplate(int totalCharts)
     {
-        await JSRuntime.InvokeVoidAsync("createDashboard", totalCharts, ChartService.InitialChartSymbols);
+        ChartService.UpdateChartLayout(totalCharts);
+        await JSRuntime.InvokeVoidAsync("createDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
         StateContainerService.IsAllowCloseAllWindows = true;
         WindowsSerivce.CloseAllOpenedWindows();
         await JSRuntime.InvokeVoidAsync("refreshCharts");

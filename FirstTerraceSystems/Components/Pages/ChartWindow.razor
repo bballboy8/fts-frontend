@@ -29,7 +29,7 @@
     public string Symbol { get; set; } = "AAPL";
 
     [Parameter]
-    public List<DataPoint>? DataPoints { get; set; }
+    public IEnumerable<DataPoint>? DataPoints { get; set; }
 
     private ElementReference ER_ChartWindow { get; set; }
 

@@ -18,21 +18,22 @@ namespace FirstTerraceSystems
 
 #if WINDOWS
             if (eventArgs.WebView is Microsoft.UI.Xaml.Controls.WebView2 webView2)
-            {
-                var settings = webView2.CoreWebView2.Settings;
+            {     
 
-                settings.AreBrowserAcceleratorKeysEnabled = false;
-                settings.IsZoomControlEnabled = false;
-                settings.AreDefaultContextMenusEnabled = false;
-                settings.AreDefaultScriptDialogsEnabled = false;
-                //settings.AreDevToolsEnabled = false;
-                //settings.AreHostObjectsAllowed = false;
-                settings.HiddenPdfToolbarItems = CoreWebView2PdfToolbarItems.None;
-                //settings.IsBuiltInErrorPageEnabled = false;
-                settings.IsGeneralAutofillEnabled = false;
-                settings.IsPasswordAutosaveEnabled = false;
-                settings.IsPinchZoomEnabled = false;
-                settings.IsStatusBarEnabled = false;
+                //var settings = webView2.CoreWebView2.Settings;
+
+                //settings.AreBrowserAcceleratorKeysEnabled = false;
+                //settings.IsZoomControlEnabled = false;
+                //settings.AreDefaultContextMenusEnabled = false;
+                //settings.AreDefaultScriptDialogsEnabled = false;
+                ////settings.AreDevToolsEnabled = false;
+                ////settings.AreHostObjectsAllowed = false;
+                //settings.HiddenPdfToolbarItems = CoreWebView2PdfToolbarItems.None;
+                ////settings.IsBuiltInErrorPageEnabled = false;
+                //settings.IsGeneralAutofillEnabled = false;
+                //settings.IsPasswordAutosaveEnabled = false;
+                //settings.IsPinchZoomEnabled = false;
+                //settings.IsStatusBarEnabled = false;
             }
 #endif
         }

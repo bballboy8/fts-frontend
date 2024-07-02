@@ -39,14 +39,10 @@ namespace FirstTerraceSystems.Services
             }
         }
 
-        public void SaveChartSymbols()
+        public void SaveChartLayout()
         {
             var json = JsonSerializer.Serialize(InitialChartSymbols);
             Preferences.Set(PKey_ChartSymbols, json);
-        }
-
-        public void SaveChartLayout()
-        {
             Preferences.Set(PKey_SavedChartLayout, InitialChartLayout);
         }
 
@@ -62,6 +58,11 @@ namespace FirstTerraceSystems.Services
         public void UpdateChartLayout(int numberOfLayout)
         {
             if (numberOfLayout > InitialChartSymbols.Count) return;
+
+            InitialChartSymbols.ForEach(modal =>
+            {
+                modal.IsVisible = modal.ChartOrderIndx <= numberOfLayout;
+            });
             InitialChartLayout = numberOfLayout;
         }
 

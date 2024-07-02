@@ -1,11 +1,11 @@
 ﻿using System.Net;
 using FirstTerraceSystems.AuthProviders;
 using FirstTerraceSystems.Features;
-using FirstTerraceSystems.Repositories;
 using FirstTerraceSystems.Services;
 using FirstTerraceSystems.Services.IServices;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 
 namespace FirstTerraceSystems
@@ -14,6 +14,8 @@ namespace FirstTerraceSystems
     {
         public static MauiApp CreateMauiApp()
         {
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.File(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "FTS", "logs", "log.txt"), rollingInterval: RollingInterval.Day).CreateLogger();
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
@@ -21,6 +23,7 @@ namespace FirstTerraceSystems
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
+
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddBlazorBootstrap();
@@ -48,8 +51,15 @@ namespace FirstTerraceSystems
             {
                 logging.AddFilter("Microsoft.AspNetCore.Components.WebView", LogLevel.Trace);
                 logging.AddDebug();
+                logging.AddSerilog();
+            });
+#else
+            builder.Services.AddLogging(logging =>
+            {
+                logging.AddSerilog();
             });
 #endif
+
             builder.Services.AddAuthorizationCore();
             builder.Services.AddDatabaseService();
 
@@ -57,7 +67,7 @@ namespace FirstTerraceSystems
             {
                 return serviceProvider.GetRequiredService<DatabaseService>().SymbolicRepository;
             });
-            
+
             builder.Services.AddSingleton(serviceProvider =>
             {
                 return serviceProvider.GetRequiredService<DatabaseService>().TickerRepository;

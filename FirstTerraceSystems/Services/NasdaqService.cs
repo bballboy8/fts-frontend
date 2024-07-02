@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace FirstTerraceSystems.Services
@@ -19,9 +20,9 @@ namespace FirstTerraceSystems.Services
         }
 
         //NasdaqMarketFeed
-        public async Task<IEnumerable<SymbolicData>?> NasdaqGetDataAsync(DateTime startDatetime, string symbol)
+        public async Task<List<SymbolicData>?> NasdaqGetDataAsync(DateTime startDatetime, string symbol)
         {
-            string jsonData = JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString("yyyy-MM-ddTHH:ss"), symbol = symbol });
+            string jsonData = System.Text.Json.JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString("yyyy-MM-ddTHH:ss"), symbol = symbol });
             HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
             {
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
@@ -35,7 +36,10 @@ namespace FirstTerraceSystems.Services
 
                 using (Stream responseStream = await response.Content.ReadAsStreamAsync())
                 {
-                    return await JsonSerializer.DeserializeAsync<IEnumerable<SymbolicData>>(responseStream);
+                    var serializer = new Newtonsoft.Json.JsonSerializer();
+                    using var streamReader = new StreamReader(responseStream);
+                    using var textReader = new JsonTextReader(streamReader);
+                    return serializer.Deserialize<List<SymbolicData>>(textReader);
                 }
             }
             catch (Exception ex)
@@ -54,12 +58,13 @@ namespace FirstTerraceSystems.Services
 
                 response.EnsureSuccessStatusCode();
 
+                var serializer = new Newtonsoft.Json.JsonSerializer();
+
                 using (Stream responseStream = await response.Content.ReadAsStreamAsync())
                 {
-                    return await JsonSerializer.DeserializeAsync<IEnumerable<NasdaqTicker>>(responseStream, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    using var streamReader = new StreamReader(responseStream);
+                    using var textReader = new JsonTextReader(streamReader);
+                    return serializer.Deserialize<IEnumerable<NasdaqTicker>>(textReader);
                 }
             }
             catch (Exception ex)

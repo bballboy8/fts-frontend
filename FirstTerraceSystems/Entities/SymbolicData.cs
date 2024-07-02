@@ -14,7 +14,7 @@ namespace FirstTerraceSystems.Entities
 
         public SymbolicData(Dictionary<string, int> headers, JsonElement element)
         {
-            TrackingID = element[headers["trackingID"]].GetString();
+            TrackingID = element[headers["trackingID"]].GetRawText();
             MsgType = element[headers["msgType"]].GetString();
             Symbol = element[headers["symbol"]].GetString();
             Price = element[headers["price"]].GetDouble() / 10000;

@@ -1,14 +1,4 @@
-﻿const groupingUnits = [['millisecond', [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]],
-['second', [1, 2, 5, 10, 15, 30]],
-['minute', [1, 2, 5, 10, 15,]],
-['hour', [1, 2, 3, 4, 6, 8, 12]],
-['day', [1, 3]],
-['week', [1]],
-['month', [1, 3, 6]],
-['year', null]
-];
-
-const defaultkeyboardNavigationOrder = [
+﻿const defaultkeyboardNavigationOrder = [
     'symbolButton',
     'rangeSelector',
     'zoomInButton',
@@ -74,12 +64,11 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
 
                             btn.on("click", function () {
 
-                                let isSymbolChanged = false;
                                 var dvInput = $(this).closest("#dvSymbolInput")
                                 symbol = $("#txtSymboleName", dvInput).val();
                                 symbol = symbol.toUpperCase();
 
-                                if (symbol == chart.series[0].name) {
+                                if (symbol == chart.series[0].name || symbol == '') {
                                     $("#dvSymbolInput").remove();
                                     return;
                                 }
@@ -87,21 +76,8 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                 let existingChart = getChartInstanceBySeriesName(symbol)
 
                                 if (existingChart) {
-                                    isSymbolChanged = true;
                                     symbol = existingChart.series[0].name;
                                     chart.series[0].setData(existingChart.series[0].options.data);
-                                } else {
-                                    updateChartSymbol(chart.renderTo.id, symbol).then((seriesData) => {
-
-                                        if (seriesData) {
-                                            isSymbolChanged = true;
-                                            setDataToChart(chart.series[0], seriesData);
-                                        }
-                                    });
-
-                                }
-
-                                if (isSymbolChanged) {
 
                                     chart.series[0].update({
                                         name: symbol,
@@ -112,6 +88,25 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                     if (ChatAppInterop.dotnetReference) {
                                         ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
                                     }
+
+                                } else {
+                                    updateChartSymbol(chart.renderTo.id, symbol).then((seriesData) => {
+
+                                        if (seriesData) {
+                                            setDataToChart(chart.series[0], seriesData);
+
+                                            chart.series[0].update({
+                                                name: symbol,
+                                            })
+                                            chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
+                                            chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
+
+                                            if (ChatAppInterop.dotnetReference) {
+                                                ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
+                                            }
+                                        }
+                                    });
+
                                 }
 
                                 $("#dvSymbolInput").remove();
@@ -290,60 +285,12 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 y: 0
             },
         },
-        xAxis: [
-            {
-                type: 'datetime',
-                offset: 0,
-                labels: {
-                    align: 'left',
-                    x: 5,
-                    style: { color: fontColor },
-
-                    //formatter: function () {
-                    //    //return Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.value);
-                    //    //return Highcharts.dateFormat('%H:%M:%S', this.value);
-                    //    debugger;
-
-                    //}
-                },
-                lineWidth: 0,
-                opposite: false,
-            },
-            {
-                offset: 0,
-                labels: {
-                    align: 'left',
-                    x: 5,
-                    style: {
-                        color: fontColor
-                    }
-                },
-                lineWidth: 0,
-                opposite: false
-            }
-        ],
-        yAxis: [
-            {
-                labels: {
-                    align: 'left',
-                    x: 5,
-                    style: {
-                        color: fontColor // Green color
-                    }
-                },
-                //height: '65%',
-                lineWidth: 2,
-                resize: { enabled: true }
-            }
-        ],
-        tooltip: { split: true },
-        //tooltip: {
-        //    formatter: function () {
-        //        return '<b>' + this.series.name + '</b><br/>' +
-        //            Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
-        //            Highcharts.numberFormat(this.y, 2);
-        //    }
-        //},
+        tooltip: {
+            //formatter: function () {
+            //    return '<b>' + this.series.name + '</b> : ' + Highcharts.numberFormat(this.y / 10000, 2);
+            //},
+            split: true,
+        },
         plotOptions: {
             series: {
                 turboThreshold: 0
@@ -354,6 +301,48 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             //timezone: 'US/Eastern',
             useUTC: false
         },
+        xAxis: [
+            {
+                type: 'datetime',
+                //offset: 0,
+                labels: {
+                    align: 'left',
+                    x: 5,
+                    style: { color: fontColor },
+                    formatter: function () {
+                        return Highcharts.dateFormat('%H:%M:%S', this.value);
+                    }
+                },
+                dateTimeLabelFormats: {
+                    second: '%H:%M:%S',
+                    minute: '%H:%M',
+                    hour: '%H:%M',
+                    day: '%e. %b',
+                    week: '%e. %b',
+                    month: '%b \'%y',
+                    year: '%Y'
+                },
+                lineWidth: 0,
+                opposite: false,
+            },
+        ],
+        yAxis: [
+            {
+                labels: {
+                    align: 'left',
+                    x: 5,
+                    style: {
+                        color: fontColor // Green color
+                    },
+                    formatter: function () {
+                        return Highcharts.numberFormat(this.value, 2);
+                    }
+                },
+                //height: '65%',
+                lineWidth: 2,
+                resize: { enabled: true },
+            }
+        ],
         series: [
             {
                 name: symbol,
@@ -361,8 +350,8 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 dataGrouping: {
                     enabled: false
                 },
-                color: '#C01620', // Color for the fall
-                upColor: '#16C05A', // Color for the rise
+                color: '#C01620',
+                upColor: '#16C05A',
                 lineWidth: 0,
                 marker: {
                     enabled: true,
@@ -875,4 +864,9 @@ function getChartInstance(chartId) {
 function getChartInstanceBySeriesName(seriesName) {
     let chart = Highcharts.charts.find(c => c && c.series[0]?.name === seriesName);
     return chart || null;
+}
+
+function setDataToChartBySymbol(symbol, seriesData) {
+    let chart = getChartInstanceBySeriesName(symbol);
+    setDataToChart(chart.series[0], seriesData)
 }

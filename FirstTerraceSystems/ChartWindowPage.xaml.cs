@@ -13,7 +13,7 @@ public partial class ChartWindowPage : ContentPage
 {
 
     private readonly object _chartIndx;
-    private readonly List<DataPoint> _dataPoints;
+    private readonly IEnumerable<DataPoint> _dataPoints;
     private readonly object _min;
     private readonly object _max;
     private readonly string _symbol;
@@ -22,7 +22,7 @@ public partial class ChartWindowPage : ContentPage
     public delegate void RefreshChart();
 
 
-    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object min, object max, string symbol, List<DataPoint> dataPoints)
+    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object min, object max, string symbol, IEnumerable<DataPoint> dataPoints)
     {
         InitializeComponent();
         _chartIndx = chartIndx;

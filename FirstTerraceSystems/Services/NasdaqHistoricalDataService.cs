@@ -49,7 +49,7 @@ namespace FirstTerraceSystems.Services
             }
         }
 
-        public async Task ProcessHistoricalNasdaqMarketFeedAsync(string symbol)
+        public async Task<IEnumerable<SymbolicData>> ProcessHistoricalNasdaqMarketFeedAsync(string symbol)
         {
 
             var startDate = DateTime.Now.AddDays(-3);
@@ -58,7 +58,9 @@ namespace FirstTerraceSystems.Services
             if (await _nasdaqService.NasdaqGetDataAsync(symbolicDate, symbol) is IEnumerable<SymbolicData> datas)
             {
                 _symbolicRepository.InsertMarketFeedDataFromApi(symbol, datas);
+                return datas;
             };
+            return [];
         }
     }
 }

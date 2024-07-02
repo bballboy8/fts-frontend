@@ -14,7 +14,7 @@
         public const string RestAPIUri = "http://52.72.116.51:8000";
 
         /// <summary>
-        /// Base Address "http://52.0.33.126:8000"
+        /// Base Address "http://52.0.33.126:8000" 
         /// </summary>
         public const string WebSocketUri = "ws://52.0.33.126:8000";
         //public const string WebSocketUri = "ws://localhost:6969";

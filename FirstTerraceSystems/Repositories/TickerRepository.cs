@@ -12,6 +12,7 @@ namespace FirstTerraceSystems.Repositories
 {
     public class TickerRepository
     {
+        private const int insertbatchSize = 5000;
         const string currentTableName = "tickers";
         private readonly IDbConnection _connection;
         private readonly DatabaseService _databaseService;
@@ -39,16 +40,15 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        public void InsertRecords(IEnumerable<NasdaqTicker>? records)
+        public void InsertRecordsBatch(IEnumerable<NasdaqTicker> batch)
         {
-            if (records == null) return;
             try
             {
                 using (var connection = _databaseService.GetNewConnection())
                 {
                     using (var transaction = connection.BeginTransaction())
                     {
-                        connection.Execute($"INSERT INTO {currentTableName} (Symbol) VALUES (@Symbol)", records);
+                        connection.Execute($"INSERT INTO {currentTableName} (Symbol) VALUES (@Symbol)", batch);
 
                         transaction.Commit();
                     }
@@ -57,6 +57,17 @@ namespace FirstTerraceSystems.Repositories
             catch (Exception ex)
             {
                 Console.WriteLine($"Error inserting records: {ex.Message}");
+            }
+        }
+        public void InsertRecords(IEnumerable<NasdaqTicker>? records)
+        {
+            if (records == null) return;
+
+            CreateTableAndIndexes();
+
+            foreach (var batch in records.Chunk(insertbatchSize))
+            {
+                InsertRecordsBatch(batch);
             }
         }
 
