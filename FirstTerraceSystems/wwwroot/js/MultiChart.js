@@ -286,9 +286,9 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             },
         },
         tooltip: {
-            //formatter: function () {
-            //    return '<b>' + this.series.name + '</b> : ' + Highcharts.numberFormat(this.y / 10000, 2);
-            //},
+            formatter: function () {
+               return '<b>' + this.series.name + '</b> : ' + Highcharts.numberFormat(this.y / 10000, 2);
+            },
             split: true,
         },
         plotOptions: {

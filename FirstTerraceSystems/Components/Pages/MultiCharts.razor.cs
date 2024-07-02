@@ -69,7 +69,7 @@ namespace FirstTerraceSystems.Components.Pages
                     Logger.LogInformation($"Getting  3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
                     var symbolics = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
                     Logger.LogInformation($"Got  3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
-
+ 
                     await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolics);
                     Logger.LogInformation($"Chart Rander To Screen: {chart.Symbol}");
                 }

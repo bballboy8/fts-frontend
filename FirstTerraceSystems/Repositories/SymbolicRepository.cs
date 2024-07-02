@@ -8,7 +8,7 @@ namespace FirstTerraceSystems.Repositories
 {
     public class SymbolicRepository
     {
-        private const int insertbatchSize = 10000;
+        private const int insertbatchSize = 5000;
         private readonly IDbConnection _connection;
         private readonly DatabaseService _databaseService;
 
@@ -96,24 +96,39 @@ namespace FirstTerraceSystems.Repositories
         {
 
             CreateTableAndIndexes(symbol);
+            
+            int skip = 0;
 
-            var batch = new List<SymbolicData>(insertbatchSize);
-
-            foreach (var item in marketFeeds)
+            while (true)
             {
-                item.Price /= 10000;
-                batch.Add(item);
+               var batch = marketFeeds.Skip(skip).Take(insertbatchSize);
 
-                if (batch.Count >= insertbatchSize)
-                {
-                    InsertRecordsBatch(symbol, batch);
-                    batch.Clear();
-                }
+               if (!batch.Any())
+               {
+                   break;
+               }
+
+               InsertRecordsBatch(symbol, batch);
+
+               skip += insertbatchSize;
             }
-            if (batch.Count > 0)
-            {
-                InsertRecordsBatch(symbol, batch);
-            }
+
+            // var batch = new List<SymbolicData>(insertbatchSize);
+            // foreach (var item in marketFeeds)
+            // {
+            //     item.Price /= 10000;
+            //     batch.Add(item);
+
+            //     if (batch.Count >= insertbatchSize)
+            //     {
+            //         InsertRecordsBatch(symbol, batch);
+            //         batch.Clear();
+            //     }
+            // }
+            // if (batch.Count > 0)
+            // {
+            //     InsertRecordsBatch(symbol, batch);
+            // }
         }
 
         public void InsertLiveMarketFeedDataFromSocket(string jsonData)

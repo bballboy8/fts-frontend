@@ -17,7 +17,8 @@ namespace FirstTerraceSystems.Entities
             TrackingID = element[headers["trackingID"]].GetRawText();
             MsgType = element[headers["msgType"]].GetString();
             Symbol = element[headers["symbol"]].GetString();
-            Price = element[headers["price"]].GetDouble() / 10000;
+            // Price = element[headers["price"]].GetDouble() / 10000;
+            Price = element[headers["price"]].GetDouble();
             Date = element[headers["date"]].GetDateTime("yyyy-MM-dd HH:mm:ss.ffffff");
         }
 
