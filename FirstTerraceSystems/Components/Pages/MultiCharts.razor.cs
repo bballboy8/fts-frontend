@@ -26,7 +26,7 @@ namespace FirstTerraceSystems.Components.Pages
 
         private async Task UpdateAndRenderChartsAsync()
         {
-            DateTime defaultStartDate = DateTime.Now.AddDays(-3);
+            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
 
             //Parallel.ForEach(ChartService.InitialChartSymbols.Where(a => a.IsVisible), async chart =>
             //{
@@ -54,19 +54,17 @@ namespace FirstTerraceSystems.Components.Pages
                     DateTime startDate = symbolic?.Date ?? defaultStartDate;
 
                     Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
-
                     var symbolicDatas = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
-
                     Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
 
                     if (symbolicDatas != null && symbolicDatas.Any())
                     {
-                        Logger.LogInformation($"Adding Last Historical Data to SQL Lite for symbol: {chart.Symbol}");
+                        Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {chart.Symbol}");
                         SymbolicRepository.InsertMarketFeedDataFromApi(chart.Symbol, symbolicDatas);
                         Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {chart.Symbol}");
                     }
 
-                    Logger.LogInformation($"Getting  3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
+                    Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
                     var symbolics = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
                     Logger.LogInformation($"Got  3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
  
@@ -105,10 +103,10 @@ namespace FirstTerraceSystems.Components.Pages
                 await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
                 await UpdateAndRenderChartsAsync();
 
-                await WebSocketClient.ConnectAsync();
-                WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
-                WebSocketClient.ActionReferenceChart += RefreshCharts;
-                await WebSocketClient.ListenAsync();
+                //await WebSocketClient.ConnectAsync();
+                //WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+                //WebSocketClient.ActionReferenceChart += RefreshCharts;
+                //await WebSocketClient.ListenAsync();
             }
         }
 

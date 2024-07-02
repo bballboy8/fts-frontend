@@ -92,43 +92,76 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        public void InsertMarketFeedDataFromApi(string symbol, List<SymbolicData> marketFeeds)
+        public void InsertMarketFeedDataFromApi(string symbol, IEnumerable<SymbolicData>? marketFeeds)
         {
 
+            if (marketFeeds == null) return;
+
             CreateTableAndIndexes(symbol);
-            
-            int skip = 0;
 
-            while (true)
+
+            //using (var enumerator = marketFeeds.GetEnumerator())
+            //{
+            //    while (enumerator.MoveNext())
+            //    {
+            //        var batch = new List<SymbolicData>();
+
+            //        for (int i = 0; i < insertbatchSize && enumerator.Current != null; i++)
+            //        {
+            //            batch.Add(enumerator.Current);
+            //            enumerator.MoveNext();
+            //        }
+
+            //        if (batch.Any())
+            //        {
+            //            InsertRecordsBatch(symbol, batch);
+            //        }
+
+            //        batch.Clear();
+            //        batch = null;
+            //    }
+            //}
+
+
+
+            var queue = new Queue<SymbolicData>(marketFeeds);
+            int batchSize = insertbatchSize;
+
+            while (queue.Count > 0)
             {
-               var batch = marketFeeds.Skip(skip).Take(insertbatchSize);
+                var batch = new List<SymbolicData>();
 
-               if (!batch.Any())
-               {
-                   break;
-               }
+                for (int i = 0; i < batchSize && queue.Count > 0; i++)
+                {
+                    batch.Add(queue.Dequeue());
+                }
 
-               InsertRecordsBatch(symbol, batch);
+                if (batch.Count != 0)
+                {
+                    InsertRecordsBatch(symbol, batch);
+                }
 
-               skip += insertbatchSize;
+                batch.Clear();
+                batch = null;
             }
 
-            // var batch = new List<SymbolicData>(insertbatchSize);
-            // foreach (var item in marketFeeds)
-            // {
-            //     item.Price /= 10000;
-            //     batch.Add(item);
 
-            //     if (batch.Count >= insertbatchSize)
-            //     {
-            //         InsertRecordsBatch(symbol, batch);
-            //         batch.Clear();
-            //     }
-            // }
-            // if (batch.Count > 0)
-            // {
-            //     InsertRecordsBatch(symbol, batch);
-            // }
+            //var batch = new List<SymbolicData>(insertbatchSize);
+            //foreach (var item in marketFeeds)
+            //{
+            //    item.Price /= 10000;
+            //    batch.Add(item);
+
+            //    if (batch.Count >= insertbatchSize)
+            //    {
+            //        InsertRecordsBatch(symbol, batch);
+            //        batch.Clear();
+            //    }
+            //}
+            //if (batch.Count > 0)
+            //{
+            //    InsertRecordsBatch(symbol, batch);
+            //}
         }
 
         public void InsertLiveMarketFeedDataFromSocket(string jsonData)
@@ -183,6 +216,26 @@ namespace FirstTerraceSystems.Repositories
                     using (var transaction = connection.BeginTransaction())
                     {
                         connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
+
+                        transaction.Commit();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inserting records: {ex.Message}");
+            }
+        }
+
+        private async Task InsertRecordsBatchAsync(string symbol, IEnumerable<SymbolicData> records)
+        {
+            try
+            {
+                using (var connection = _databaseService.GetNewConnection())
+                {
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        await connection.ExecuteAsync($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
 
                         transaction.Commit();
                     }

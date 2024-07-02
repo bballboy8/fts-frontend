@@ -285,11 +285,14 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 y: 0
             },
         },
-        tooltip: {
-            formatter: function () {
-               return '<b>' + this.series.name + '</b> : ' + Highcharts.numberFormat(this.y / 10000, 2);
-            },
+        tooltip: {     
             split: true,
+            formatter: function () {
+                return [
+                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S', this.x)}</b>`,
+                    ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat( point.y / 10000, 2)}`) : [])
+                ]
+            },
         },
         plotOptions: {
             series: {
@@ -335,7 +338,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                         color: fontColor // Green color
                     },
                     formatter: function () {
-                        return Highcharts.numberFormat(this.value, 2);
+                        return Highcharts.numberFormat(this.value / 10000, 2);
                     }
                 },
                 //height: '65%',
@@ -355,7 +358,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 lineWidth: 0,
                 marker: {
                     enabled: true,
-                    radius: 4
+                    radius: 2
                 },
                 tooltip: {
                     valueDecimals: 2
