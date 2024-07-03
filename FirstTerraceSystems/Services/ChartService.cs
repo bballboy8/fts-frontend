@@ -29,10 +29,10 @@ namespace FirstTerraceSystems.Services
 
             if (!string.IsNullOrEmpty(savedSymbolsJson))
             {
-                var savedSymbols = JsonSerializer.Deserialize<List<ChartModal>>(savedSymbolsJson);
+                List<ChartModal>? savedSymbols = JsonSerializer.Deserialize<List<ChartModal>>(savedSymbolsJson);
                 InitialChartSymbols.ForEach(existingSymbol =>
                 {
-                    var matchingSymbol = savedSymbols!.Find(s => s.ChartId == existingSymbol.ChartId);
+                    ChartModal? matchingSymbol = savedSymbols!.Find(s => s.ChartId == existingSymbol.ChartId);
                     existingSymbol.Symbol = matchingSymbol?.Symbol ?? existingSymbol.Symbol;
                     existingSymbol.IsVisible = matchingSymbol?.IsVisible ?? existingSymbol.IsVisible;
                 });
@@ -41,14 +41,14 @@ namespace FirstTerraceSystems.Services
 
         public void SaveChartLayout()
         {
-            var json = JsonSerializer.Serialize(InitialChartSymbols);
+            string? json = JsonSerializer.Serialize(InitialChartSymbols);
             Preferences.Set(PKey_ChartSymbols, json);
             Preferences.Set(PKey_SavedChartLayout, InitialChartLayout);
         }
 
         public void UpdateSymbol(string id, string newSymbol)
         {
-            var symbol = InitialChartSymbols.Find(s => s.ChartId == id);
+            ChartModal? symbol = InitialChartSymbols.Find(s => s.ChartId == id);
             if (symbol != null)
             {
                 symbol.Symbol = newSymbol;

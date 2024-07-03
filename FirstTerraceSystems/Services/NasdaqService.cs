@@ -1,12 +1,8 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using System.Text;
 using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace FirstTerraceSystems.Services
 {
@@ -20,9 +16,9 @@ namespace FirstTerraceSystems.Services
         }
 
         //NasdaqMarketFeed
-        public async Task<List<SymbolicData>?> NasdaqGetDataAsync(DateTime startDatetime, string symbol)
+        public async Task<IEnumerable<MarketFeed>?> NasdaqGetDataAsync(DateTime startDatetime, string symbol)
         {
-            string jsonData = System.Text.Json.JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString("yyyy-MM-ddTHH:ss"), symbol = symbol });
+            string jsonData = System.Text.Json.JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString(AppSettings.DFormat_NasdaqGetData), symbol = symbol });
             HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
             {
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
@@ -36,10 +32,10 @@ namespace FirstTerraceSystems.Services
 
                 using (Stream responseStream = await response.Content.ReadAsStreamAsync())
                 {
-                    var serializer = new Newtonsoft.Json.JsonSerializer();
-                    using var streamReader = new StreamReader(responseStream);
-                    using var textReader = new JsonTextReader(streamReader);
-                    return serializer.Deserialize<List<SymbolicData>>(textReader);
+                    JsonSerializer? serializer = new Newtonsoft.Json.JsonSerializer();
+                    using StreamReader? streamReader = new StreamReader(responseStream);
+                    using JsonTextReader? textReader = new JsonTextReader(streamReader);
+                    return serializer.Deserialize<IEnumerable<MarketFeed>>(textReader);
                 }
             }
             catch (Exception ex)
@@ -58,12 +54,12 @@ namespace FirstTerraceSystems.Services
 
                 response.EnsureSuccessStatusCode();
 
-                var serializer = new Newtonsoft.Json.JsonSerializer();
+                JsonSerializer? serializer = new Newtonsoft.Json.JsonSerializer();
 
                 using (Stream responseStream = await response.Content.ReadAsStreamAsync())
                 {
-                    using var streamReader = new StreamReader(responseStream);
-                    using var textReader = new JsonTextReader(streamReader);
+                    using StreamReader? streamReader = new StreamReader(responseStream);
+                    using JsonTextReader? textReader = new JsonTextReader(streamReader);
                     return serializer.Deserialize<IEnumerable<NasdaqTicker>>(textReader);
                 }
             }

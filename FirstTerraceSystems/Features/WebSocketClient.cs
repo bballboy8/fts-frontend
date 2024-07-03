@@ -9,7 +9,7 @@ namespace FirstTerraceSystems.Features
     {
         static ClientWebSocket _webSocket = new();
 
-        public delegate void OnRealDataReceived(string nasdaqData);
+        public delegate void OnRealDataReceived(NasdaqResponse? response);
 
         public delegate Task ReferenceChartAsync();
 
@@ -74,8 +74,9 @@ namespace FirstTerraceSystems.Features
         public async static Task ListenAsync()
         {
             var buffer = new byte[1024 * 4];
-            var messageBuilder = new StringBuilder();
+            StringBuilder messageBuilder = new StringBuilder();
 
+            bool isStarted = false;
             try
             {
                 while (_webSocket.State == WebSocketState.Open)
@@ -91,7 +92,16 @@ namespace FirstTerraceSystems.Features
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
                         string message = messageBuilder.ToString();
-                        if (!message.Contains("start"))
+                        if (!isStarted)
+                        {
+                            if (message.Contains("start"))
+                            {
+                                isStarted = true;
+                                continue;
+                            }
+                        }
+
+                        if (isStarted)
                         {
                             ProcessMessage(message);
                         }
@@ -108,14 +118,14 @@ namespace FirstTerraceSystems.Features
             {
                 Console.WriteLine($"Unexpected error: {ex.Message}");
             }
-
+            isStarted = false;
         }
 
         static void ProcessMessage(string message)
         {
             try
-            {          
-                ActionRealDataReceived?.Invoke(message);
+            {
+                ActionRealDataReceived?.Invoke(JsonSerializer.Deserialize<NasdaqResponse>(message));
                 ActionReferenceChart?.Invoke();
             }
             catch (JsonException ex)

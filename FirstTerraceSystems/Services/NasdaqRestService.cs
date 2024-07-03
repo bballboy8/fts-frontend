@@ -81,16 +81,16 @@ namespace FirstTerraceSystems.Services
             string endDateString = endDate.ToString("yyyy-MM-ddTHH:mm");
             string relativePath = $"/v1/nasdaq/delayed/equities/bars/{symbol}/1minute/{startDateString}/{endDateString}";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
+            HttpRequestMessage? request = new HttpRequestMessage(HttpMethod.Get, relativePath);
 
             request.Headers.Add("Authorization", $"Bearer {_token}");
 
             try
             {
-                var response = await _client.SendAsync(request);
+                HttpResponseMessage? response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
-                var contentString = await response.Content.ReadAsStringAsync();
-                var equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBar>>(contentString);
+                string? contentString = await response.Content.ReadAsStringAsync();
+                IEnumerable<EquitiesBar>? equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBar>>(contentString);
 
                 return equitiesBars;
             }

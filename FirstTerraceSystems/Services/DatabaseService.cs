@@ -10,14 +10,14 @@ namespace FirstTerraceSystems.Services
 
         private readonly IDbConnection _connection;
 
-        public SymbolicRepository SymbolicRepository { get; }
+        public MarketFeedRepository MarketFeedRepository { get; }
         public TickerRepository TickerRepository { get; }
 
         public DatabaseService(string dbPath)
         {
             _connection = new SqliteConnection($"Data Source={dbPath}");
             _connection.Open();
-            SymbolicRepository = new SymbolicRepository(_connection, this);
+            MarketFeedRepository = new MarketFeedRepository(_connection, this);
             TickerRepository = new TickerRepository(_connection, this);
         }
 

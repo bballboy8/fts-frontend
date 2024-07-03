@@ -1,11 +1,10 @@
 ﻿@page "/multiChats"
 
 @inject NasdaqService NasdaqService
-@inject Repositories.SymbolicRepository SymbolicRepository
+@inject Repositories.MarketFeedRepository MarketFeedRepository
 @inject Repositories.TickerRepository TickerRepository
 @inject DatabaseService DatabaseService
 @inject NasdaqHistoricalDataService HistoricalDataService
-@inject IJSRuntime JSRuntime
 @inject ChartService ChartService
 @inject BsToastService Toast
 @inject ILogger<MultiCharts> Logger

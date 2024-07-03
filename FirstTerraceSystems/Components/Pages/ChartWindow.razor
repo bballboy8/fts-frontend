@@ -1,11 +1,6 @@
-﻿@using FirstTerraceSystems.Entities
-@using FirstTerraceSystems.Features
-@using FirstTerraceSystems.Models
-
-@inject IJSRuntime JSRuntime
-@inject StateContainerService StateContainer
+﻿@inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
-@inject Repositories.SymbolicRepository SymbolicRepository
+@inject Repositories.MarketFeedRepository MarketFeedRepository
 @inject Repositories.TickerRepository TickerRepository
 @inject BsToastService Toast
 @inject ChartService ChartService
@@ -81,22 +76,22 @@
     } 
     
     [JSInvokable]
-    public async Task<IEnumerable<SymbolicData>> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
+    public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
     {
         if (lastPoint == null)
         {
-            var symbolics = await SymbolicRepository.GetChartDataBySymbol(symbol);
+            var symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now);
             return symbolics;
         }
         else
         {
-            var symbolics = await SymbolicRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
+            var symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
             return symbolics;
         }
     }
 
     [JSInvokable]
-    public async Task<IEnumerable<SymbolicData>?> UpdateChartSymbol(string chartId, string symbol)
+    public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
     {
         if (!TickerRepository.IsTickerExists(symbol))
         {
@@ -110,7 +105,8 @@
 
         await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol);
 
-        var symbolics = await SymbolicRepository.GetChartDataBySymbol(symbol);
+        var symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now);
+
         return symbolics;
     }
 

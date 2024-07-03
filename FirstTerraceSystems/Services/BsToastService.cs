@@ -18,19 +18,19 @@ namespace FirstTerraceSystems.Services
 
         public void ShowSuccessMessage(string message, bool autoHide = true)
         {
-            var toastMessage = new ToastMessage { Type = ToastType.Success, Message = message, AutoHide = autoHide };
+            ToastMessage? toastMessage = new ToastMessage { Type = ToastType.Success, Message = message, AutoHide = autoHide };
             _toastService.Notify(toastMessage);
         }
 
         public void ShowWarningMessage(string message, bool autoHide = true)
         {
-            var toastMessage = new ToastMessage { Type = ToastType.Warning, Message = message, AutoHide = true };
+            ToastMessage? toastMessage = new ToastMessage { Type = ToastType.Warning, Message = message, AutoHide = autoHide };
             _toastService.Notify(toastMessage);
         }
 
         public void ShowDangerMessage(string message, bool autoHide = true)
         {
-            var toastMessage = new ToastMessage { Type = ToastType.Danger, Message = message, AutoHide = autoHide };
+            ToastMessage? toastMessage = new ToastMessage { Type = ToastType.Danger, Message = message, AutoHide = autoHide };
             _toastService.Notify(toastMessage);
         }
     }

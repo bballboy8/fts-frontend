@@ -65,7 +65,7 @@ namespace FirstTerraceSystems
 
             builder.Services.AddSingleton(serviceProvider =>
             {
-                return serviceProvider.GetRequiredService<DatabaseService>().SymbolicRepository;
+                return serviceProvider.GetRequiredService<DatabaseService>().MarketFeedRepository;
             });
 
             builder.Services.AddSingleton(serviceProvider =>

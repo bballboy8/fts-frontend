@@ -1,4 +1,10 @@
-﻿const defaultkeyboardNavigationOrder = [
+﻿Highcharts.setOptions({
+    global: {
+        useUTC: false
+    }
+});
+
+const defaultkeyboardNavigationOrder = [
     'symbolButton',
     'rangeSelector',
     'zoomInButton',
@@ -33,11 +39,7 @@ ChatAppInterop.setDotNetReference = function (dotnetReference) {
 
 function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
 
-    //Highcharts.setOptions({
-    //    lang: {
-    //        rangeSelectorZoom: ""
-    //    }
-    //});
+    
 
     return Highcharts.stockChart(charContainerId, {
 
@@ -48,6 +50,9 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             events: {
                 load: function () {
                     var chart = this;
+
+                    chart.showLoading();
+
                     chart.ButtonNamespace = {};
 
                     chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
@@ -285,12 +290,12 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 y: 0
             },
         },
-        tooltip: {     
+        tooltip: {
             split: true,
             formatter: function () {
                 return [
-                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S', this.x)}</b>`,
-                    ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat( point.y / 10000, 2)}`) : [])
+                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S', this.x, false)}</b>`,
+                    ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
                 ]
             },
         },
@@ -313,7 +318,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                     x: 5,
                     style: { color: fontColor },
                     formatter: function () {
-                        return Highcharts.dateFormat('%H:%M:%S', this.value);
+                        return Highcharts.dateFormat('%H:%M:%S', this.value, false);
                     }
                 },
                 dateTimeLabelFormats: {
@@ -548,30 +553,31 @@ async function updateChartSymbol(chartId, symbol) {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("UpdateChartSymbol", chartId, symbol);
 }
 
+function processDataPoint(data, previousPrice) {
+    return {
+        primaryKey: data.id,
+        x: new Date(data.date).getTime(),
+        y: data.price,
+        color: data.price > previousPrice ? 'green' : 'red'
+    };
+}
 
 function setDataToChart(series, seriesData) {
-    var dataPoints = seriesData.slice(1).map((data, index) => ({
-        primaryKey: data['id'],
-        x: new Date(data['date']).getTime(),
-        //x: new Date(data['date']),
-        y: data['price'],
-        color: data['price'] > seriesData[index]['price'] ? 'green' : 'red'
-    }));
-    series.setData(dataPoints, true, true)
+    if (seriesData.length < 2) return;
+
+    const dataPoints = seriesData.slice(1).map((data, index) =>
+        processDataPoint(data, seriesData[index].price)
+    );
+
+    series.setData(dataPoints, true, true);
 }
 
 function addPointToChart(series, seriesData) {
+    if (seriesData.length < 2) return;
 
     seriesData.slice(1).forEach((data, index) => {
-        var dataPoint = {
-            primaryKey: data['id'],
-            //x: new Date(data['date']),
-            x: new Date(data['date']).getTime(),
-            y: data['price'],
-            color: data['price'] > seriesData[index]['price'] ? 'green' : 'red'
-            //color: data['price'] > seriesData[index - 1]['price'] ? 'green' : 'red'
-        }
-        series.addPoint(dataPoint, false, false);
+        const point = processDataPoint(data, seriesData[index].price);
+        series.addPoint(point, false, false);
     });
 }
 
@@ -588,6 +594,14 @@ function removeOldPoints(chart, daysToKeep) {
         } else {
             break;
         }
+    }
+}
+
+async function RefreshChartBySymbol() {
+    for (let chart of Highcharts.charts) {
+        if (!chart) continue;
+
+        await ChatAppInterop.dotnetReference.invokeMethodAsync("RefreshChartBySymbol", chart.series[0].name);
     }
 }
 
@@ -869,7 +883,18 @@ function getChartInstanceBySeriesName(seriesName) {
     return chart || null;
 }
 
-function setDataToChartBySymbol(symbol, seriesData) {
+function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
     let chart = getChartInstanceBySeriesName(symbol);
-    setDataToChart(chart.series[0], seriesData)
+    if (chart) {
+        let series = chart.series[0];
+        if (series.data.length === 0) {
+            setDataToChart(series, seriesData);
+        } else {
+            addPointToChart(series, seriesData);
+        }
+        if (isAllLoaded) {
+            chart.redraw();
+            chart.hideLoading()
+        }
+    }
 }

@@ -3,29 +3,31 @@ using System.Text.Json;
 using System.Data;
 using Dapper;
 using FirstTerraceSystems.Services;
+using FirstTerraceSystems.Features;
+using FirstTerraceSystems.Models;
 
 namespace FirstTerraceSystems.Repositories
 {
-    public class SymbolicRepository
+    public class MarketFeedRepository
     {
-        private const int insertbatchSize = 5000;
+        private const int InsertBatchSize = 10000;
         private readonly IDbConnection _connection;
         private readonly DatabaseService _databaseService;
 
-        public SymbolicRepository(IDbConnection connection, DatabaseService databaseService)
+        public MarketFeedRepository(IDbConnection connection, DatabaseService databaseService)
         {
             _connection = connection;
             _databaseService = databaseService;
         }
 
-        public SymbolicData? GetLastRecordBySymbol(string symbol)
+        public MarketFeed? GetLastRecordBySymbol(string symbol)
         {
             if (!_databaseService.IsTableExists(GetSymbolTableName(symbol))) return null;
 
             try
             {
                 string sql = $"SELECT * FROM {GetSymbolTableName(symbol)} ORDER BY Id DESC LIMIT 1";
-                return _connection.QueryFirstOrDefault<SymbolicData>(sql);
+                return _connection.QueryFirstOrDefault<MarketFeed>(sql);
             }
             catch (Exception ex)
             {
@@ -34,14 +36,14 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        public SymbolicData? GetExistsSymbol(string? symbol)
+        public MarketFeed? GetExistsSymbol(string? symbol)
         {
             if (string.IsNullOrEmpty(symbol)) return null;
 
             try
             {
                 string sql = $"SELECT * FROM symbol_{symbol.ToUpper()} LIMIT 1";
-                return _connection.QueryFirstOrDefault<SymbolicData>(sql);
+                return _connection.QueryFirstOrDefault<MarketFeed>(sql);
             }
             catch (Exception ex)
             {
@@ -50,12 +52,12 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        public async Task<IEnumerable<SymbolicData>> GetChartDataBySymbol(string symbol)
+        public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, DateTime startDateTime)
         {
             try
             {
-                string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= DATETIME(DATE('now'), '-3 days') ORDER BY Date";
-                return await _connection.QueryAsync<SymbolicData>(sql);
+                string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
+                return await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite) });
             }
             catch (Exception ex)
             {
@@ -64,12 +66,12 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        public async Task<IEnumerable<SymbolicData>> GetChartDataBySymbol(string symbol, long lastId)
+        public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, long lastId)
         {
             try
             {
                 string sql = $"SELECT * FROM symbol_{symbol} WHERE Id > @LastId ORDER BY Date";
-                return await _connection.QueryAsync<SymbolicData>(sql, new { LastId = lastId });
+                return await _connection.QueryAsync<MarketFeed>(sql, new { LastId = lastId });
             }
             catch (Exception ex)
             {
@@ -92,46 +94,20 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        public void InsertMarketFeedDataFromApi(string symbol, IEnumerable<SymbolicData>? marketFeeds)
+        public void InsertMarketFeedDataFromApi(string symbol, IEnumerable<MarketFeed>? marketFeeds)
         {
 
             if (marketFeeds == null) return;
 
             CreateTableAndIndexes(symbol);
 
-
-            //using (var enumerator = marketFeeds.GetEnumerator())
-            //{
-            //    while (enumerator.MoveNext())
-            //    {
-            //        var batch = new List<SymbolicData>();
-
-            //        for (int i = 0; i < insertbatchSize && enumerator.Current != null; i++)
-            //        {
-            //            batch.Add(enumerator.Current);
-            //            enumerator.MoveNext();
-            //        }
-
-            //        if (batch.Any())
-            //        {
-            //            InsertRecordsBatch(symbol, batch);
-            //        }
-
-            //        batch.Clear();
-            //        batch = null;
-            //    }
-            //}
-
-
-
-            var queue = new Queue<SymbolicData>(marketFeeds);
-            int batchSize = insertbatchSize;
+            Queue<MarketFeed>? queue = new Queue<MarketFeed>(marketFeeds);
 
             while (queue.Count > 0)
             {
-                var batch = new List<SymbolicData>();
+                List<MarketFeed>? batch = new List<MarketFeed>();
 
-                for (int i = 0; i < batchSize && queue.Count > 0; i++)
+                for (int i = 0; i < InsertBatchSize && queue.Count > 0; i++)
                 {
                     batch.Add(queue.Dequeue());
                 }
@@ -144,76 +120,33 @@ namespace FirstTerraceSystems.Repositories
                 batch.Clear();
                 batch = null;
             }
-
-
-            //var batch = new List<SymbolicData>(insertbatchSize);
-            //foreach (var item in marketFeeds)
-            //{
-            //    item.Price /= 10000;
-            //    batch.Add(item);
-
-            //    if (batch.Count >= insertbatchSize)
-            //    {
-            //        InsertRecordsBatch(symbol, batch);
-            //        batch.Clear();
-            //    }
-            //}
-            //if (batch.Count > 0)
-            //{
-            //    InsertRecordsBatch(symbol, batch);
-            //}
         }
 
-        public void InsertLiveMarketFeedDataFromSocket(string jsonData)
+        public void InsertLiveMarketFeedDataFromSocket(NasdaqResponse? response)
         {
-            using (JsonDocument document = JsonDocument.Parse(jsonData))
+            if (response == null) return;
+
+            IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data.Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
+
+            foreach (var groupedMarketFeeds in groupedData)
             {
-                var headerElement = document.RootElement.GetProperty("headers");
-                var dataElement = document.RootElement.GetProperty("data");
-                var headers = headerElement.EnumerateArray().Select((element, index) => new { Header = element.GetString() ?? "", Index = index }).ToDictionary(x => x.Header, x => x.Index);
-
-                var groupedElements = dataElement.EnumerateArray().GroupBy(e => e[headers["symbol"]].GetString()!);
-
-                foreach (var groupedElement in groupedElements)
+                foreach (var batch in groupedMarketFeeds.Chunk(InsertBatchSize))
                 {
-                    ProcessSymbolGroup(groupedElement.Key, headers, groupedElement);
+                    CreateTableAndIndexes(groupedMarketFeeds.Key!);
+
+                    InsertRecordsBatch(groupedMarketFeeds.Key!, batch);
                 }
+
             }
         }
 
-        private void ProcessSymbolGroup(string symbol, Dictionary<string, int> headers, IGrouping<string, JsonElement> groupedElement)
-        {
-            CreateTableAndIndexes(symbol);
-
-            foreach (var batch in groupedElement.Chunk(insertbatchSize))
-            {
-                InsertRecordsBatch(symbol, batch.Select(element => new SymbolicData(headers, element)));
-            }
-
-            //int skip = 0;
-
-            //while (true)
-            //{
-            //    var batch = groupedElement.Skip(skip).Take(insertbatchSize).Select(element => new SymbolicData(headers, element));
-
-            //    if (!batch.Any())
-            //    {
-            //        break;
-            //    }
-
-            //    InsertRecordsBatch(symbol, batch);
-
-            //    skip += insertbatchSize;
-            //}
-        }
-
-        private void InsertRecordsBatch(string symbol, IEnumerable<SymbolicData> records)
+        private void InsertRecordsBatch(string symbol, IEnumerable<MarketFeed> records)
         {
             try
             {
-                using (var connection = _databaseService.GetNewConnection())
+                using (IDbConnection? connection = _databaseService.GetNewConnection())
                 {
-                    using (var transaction = connection.BeginTransaction())
+                    using (IDbTransaction? transaction = connection.BeginTransaction())
                     {
                         connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
 
@@ -227,13 +160,13 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        private async Task InsertRecordsBatchAsync(string symbol, IEnumerable<SymbolicData> records)
+        private async Task InsertRecordsBatchAsync(string symbol, IEnumerable<MarketFeed> records)
         {
             try
             {
-                using (var connection = _databaseService.GetNewConnection())
+                using (IDbConnection? connection = _databaseService.GetNewConnection())
                 {
-                    using (var transaction = connection.BeginTransaction())
+                    using (IDbTransaction? transaction = connection.BeginTransaction())
                     {
                         await connection.ExecuteAsync($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
 
