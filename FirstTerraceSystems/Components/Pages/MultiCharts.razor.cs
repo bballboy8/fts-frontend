@@ -142,23 +142,10 @@ namespace FirstTerraceSystems.Components.Pages
         {
             MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
         }
+
         private async Task RefreshCharts()
         {
             await JSRuntime.InvokeVoidAsync("refreshCharts");
-        }
-
-        [JSInvokable]
-        public void SymbolChanged(string chartId, string symbol)
-        {
-            ChartService.UpdateSymbol(chartId, symbol);
-        }
-
-        [JSInvokable]
-        public async Task RefreshChartBySymbol(string symbol)
-        {
-            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
-            await SendChartDataInChunks(symbol, marketFeeds);
-            marketFeeds = null;
         }
 
         [JSInvokable]
@@ -178,6 +165,22 @@ namespace FirstTerraceSystems.Components.Pages
                 return marketFeeds;
             }
         }
+
+        [JSInvokable]
+        public void SymbolChanged(string chartId, string symbol)
+        {
+            ChartService.UpdateSymbol(chartId, symbol);
+        }
+
+        [JSInvokable]
+        public async Task RefreshChartBySymbol(string symbol)
+        {
+            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
+            await SendChartDataInChunks(symbol, marketFeeds);
+            marketFeeds = null;
+        }
+
+        
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)

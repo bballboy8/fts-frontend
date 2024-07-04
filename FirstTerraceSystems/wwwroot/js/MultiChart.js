@@ -39,11 +39,12 @@ ChatAppInterop.setDotNetReference = function (dotnetReference) {
 
 function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
 
-    
+
 
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
+            animation: false,
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
@@ -572,12 +573,12 @@ function setDataToChart(series, seriesData) {
     series.setData(dataPoints, true, true);
 }
 
-function addPointToChart(series, seriesData) {
+function addPointToChart(series, seriesData, redraw = false, animateOnUpdate = false) {
     if (seriesData.length < 2) return;
 
     seriesData.slice(1).forEach((data, index) => {
         const point = processDataPoint(data, seriesData[index].price);
-        series.addPoint(point, false, false);
+        series.addPoint(point, redraw, animateOnUpdate);
     });
 }
 
@@ -612,9 +613,9 @@ async function refreshCharts() {
         let series = chart.series[0];
         let lastPoint = series.options.data[series.options.data.length - 1];
         let seriesData = await getChartDataBySymbol(series.name, lastPoint);
-        addPointToChart(series, seriesData, false, false);
+        addPointToChart(series, seriesData, true, true);
         //removeOldPoints(chart, 3);
-        chart.redraw();
+        //chart.redraw();
     }
 }
 
@@ -890,7 +891,7 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
         if (series.data.length === 0) {
             setDataToChart(series, seriesData);
         } else {
-            addPointToChart(series, seriesData);
+            addPointToChart(series, seriesData, false, false);
         }
         if (isAllLoaded) {
             chart.redraw();

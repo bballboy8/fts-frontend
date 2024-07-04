@@ -2,6 +2,7 @@
 using System.Text;
 using FirstTerraceSystems.Models;
 using System.Text.Json;
+using Serilog;
 
 namespace FirstTerraceSystems.Features
 {
@@ -27,13 +28,10 @@ namespace FirstTerraceSystems.Features
                 try
                 {
                     _webSocket = new ClientWebSocket();
-                    if (_webSocket.State != WebSocketState.Open)
-                    {
-                        await _webSocket.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data"), CancellationToken.None);
-                        var buffer = Encoding.UTF8.GetBytes("start");
-                        await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
-                        connectionTrial = 0;
-                    }
+                    await _webSocket.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data"), CancellationToken.None);
+                    var buffer = Encoding.UTF8.GetBytes("start");
+                    await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                    connectionTrial = 0;
 
                     while (_webSocket.State == WebSocketState.Connecting)
                     {
@@ -42,8 +40,9 @@ namespace FirstTerraceSystems.Features
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Log.Error($"WebSocket connection error: {ex.Message}");
                     connectionTrial++;
+                    Log.Information($"Retry to connect WebSocket: {connectionTrial}");
                     await ConnectAsync();
                 }
             }
@@ -58,79 +57,99 @@ namespace FirstTerraceSystems.Features
                 {
                     await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
                     _webSocket.Dispose();
+                    Log.Information("WebSocket Close");
                 }
                 else if (_webSocket.State == WebSocketState.Connecting)
                 {
                     _webSocket.Abort();
-                    Console.WriteLine("WebSocket is still connecting. Aborting connection.");
+                    Log.Information("WebSocket is still connecting. Aborting connection.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Log.Error($"WebSocket close error: {ex.Message}");
             }
         }
 
         public async static Task ListenAsync()
         {
-            var buffer = new byte[1024 * 4];
-            StringBuilder messageBuilder = new StringBuilder();
+            byte[] buffer = new byte[1024 * 10];
 
             bool isStarted = false;
             try
             {
                 while (_webSocket.State == WebSocketState.Open)
                 {
-                    WebSocketReceiveResult result;
-                    do
+                    using (MemoryStream memoryStream = new MemoryStream())
                     {
-                        result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                        messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
-                    } while (!result.EndOfMessage);
-
-
-                    if (result.MessageType == WebSocketMessageType.Text)
-                    {
-                        string message = messageBuilder.ToString();
-                        if (!isStarted)
+                        WebSocketReceiveResult result;
+                        do
                         {
-                            if (message.Contains("start"))
+                            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                            memoryStream.Write(buffer, 0, result.Count);
+                        } while (!result.EndOfMessage);
+
+                        if (result.MessageType == WebSocketMessageType.Text)
+                        {
+                            memoryStream.Seek(0, SeekOrigin.Begin);
+
+                            if (!isStarted)
                             {
-                                isStarted = true;
-                                continue;
+                                isStarted = IsStarted(memoryStream);
+                            }
+                            else
+                            {
+                                ProcessMessage(memoryStream);
                             }
                         }
-
-                        if (isStarted)
-                        {
-                            ProcessMessage(message);
-                        }
                     }
-                    messageBuilder.Clear();
                 }
             }
             catch (WebSocketException ex)
             {
-                Console.WriteLine($"WebSocket error: {ex.Message}");
+                Log.Error($"WebSocket error: {ex.Message}");
+                Log.Information($"Reconnecting WebSocket");
                 await ConnectAsync();
+                Log.Information($"Reconnected WebSocket");
+                Log.Information($"Listening WebSocket");
+                await ListenAsync();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
+                Log.Error($"Unexpected error: {ex.Message}");
             }
             isStarted = false;
         }
 
-        static void ProcessMessage(string message)
+        static bool IsStarted(MemoryStream memoryStream)
+        {
+            using (StreamReader reader = new StreamReader(memoryStream, Encoding.UTF8))
+            {
+                string? message = reader.ReadToEnd();
+                memoryStream.SetLength(0);
+                return message.Contains("start");
+            }
+        }
+
+        static void ProcessMessage(MemoryStream memoryStream)
         {
             try
             {
-                ActionRealDataReceived?.Invoke(JsonSerializer.Deserialize<NasdaqResponse>(message));
-                ActionReferenceChart?.Invoke();
+                NasdaqResponse? response = JsonSerializer.Deserialize<NasdaqResponse>(memoryStream);
+                Log.Information($"Real Data Received: {response?.Data.Length}");
+                if (response?.Data.Length > 0)
+                {
+                    ActionRealDataReceived?.Invoke(response);
+                    ActionReferenceChart?.Invoke();
+                }
             }
-            catch (JsonException ex)
+            catch (Exception ex)
             {
-                Console.WriteLine($"JSON deserialization error: {ex.Message}");
+                Log.Error($"ProcessMessage error: {ex.Message}");
+            }
+            finally
+            {
+                memoryStream.SetLength(0);
             }
         }
     }
