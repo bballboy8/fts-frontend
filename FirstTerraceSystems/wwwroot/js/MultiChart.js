@@ -38,9 +38,6 @@ ChatAppInterop.setDotNetReference = function (dotnetReference) {
 };
 
 function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
-
-
-
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
@@ -82,34 +79,36 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                 let existingChart = getChartInstanceBySeriesName(symbol)
 
                                 if (existingChart) {
+                                    chart.showLoading();
                                     symbol = existingChart.series[0].name;
                                     chart.series[0].setData(existingChart.series[0].options.data);
 
                                     chart.series[0].update({
                                         name: symbol,
                                     })
+
                                     chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
                                     chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
 
                                     if (ChatAppInterop.dotnetReference) {
                                         ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
                                     }
+                                    chart.hideLoading();
 
                                 } else {
-                                    updateChartSymbol(chart.renderTo.id, symbol).then((seriesData) => {
-
-                                        if (seriesData) {
-                                            setDataToChart(chart.series[0], seriesData);
-
+                                    chart.showLoading();
+                                    updateChartSymbol(chart.renderTo.id, symbol).then((isUpdated) => {
+                                        if (isUpdated) {
                                             chart.series[0].update({
                                                 name: symbol,
                                             })
                                             chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
                                             chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
+                                            chart.hideLoading();
+                                        }
 
-                                            if (ChatAppInterop.dotnetReference) {
-                                                ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
-                                            }
+                                        if (ChatAppInterop.dotnetReference) {
+                                            ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
                                         }
                                     });
 
@@ -159,9 +158,9 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                 var jsObjectReference = DotNet.createJSObjectReference(window);
                                 var chartId = $(chart.renderTo).data("chart-id");
                                 var extremes = chart.xAxis[0].getExtremes();
-                                var data = chart.options.series[0].data;
+                                //var data = chart.options.series[0].data;
                                 removeChart(chart);
-                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, extremes.min, extremes.max, symbol, data);
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, extremes.min, extremes.max, symbol);
                             }
                         });
 
@@ -172,9 +171,9 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                 var jsObjectReference = DotNet.createJSObjectReference(window);
                                 var chartId = $(chart.renderTo).data("chart-id");
                                 var extremes = chart.xAxis[0].getExtremes();
-                                var data = chart.options.series[0].data;
+                                //var data = chart.options.series[0].data;
                                 removeChart(chart);
-                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, extremes.min, extremes.max, symbol, data)
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, extremes.min, extremes.max, symbol)
                             }
                         });
 
@@ -546,8 +545,8 @@ function addWindowControlButtonsToChart() {
     });
 }
 
-async function getChartDataBySymbol(symbol, lastPoint = undefined) {
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataBySymbol", symbol, lastPoint);
+async function getChartDataByLastFeedPoint(symbol, lastPoint) {
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataByLastFeedPoint", symbol, lastPoint);
 }
 
 async function updateChartSymbol(chartId, symbol) {
@@ -612,7 +611,7 @@ async function refreshCharts() {
 
         let series = chart.series[0];
         let lastPoint = series.options.data[series.options.data.length - 1];
-        let seriesData = await getChartDataBySymbol(series.name, lastPoint);
+        let seriesData = await getChartDataByLastFeedPoint(series.name, lastPoint);
         addPointToChart(series, seriesData, true, true);
         //removeOldPoints(chart, 3);
         //chart.redraw();
@@ -770,27 +769,16 @@ function loadDashboard(totalCharts, initialChartSymbols) {
     //setDataToChart(chart, seriesData);
 }
 
-async function popoutChartWindow(dotNetObject, element, chartIndx, minPoint, maxPoint, symbol, dataPoints) {
+function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     removeUnusedElement();
 
     var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
 
-    var chart = addChart(chartContainerId, [], symbol, false, dotNetObject);
+    addChart(chartContainerId, [], symbol, false, dotNetObject);
 
     removeWindowControlButtonsFromChart();
-
-    if (dataPoints) {
-        chart.series[0].setData(dataPoints, true, true)
-    } else {
-        getChartDataBySymbol(symbol).then((seriesData) => {
-            setDataToChart(chart.series[0], seriesData);
-            if (minPoint && maxPoint) {
-                chart.xAxis[0].setExtremes(minPoint, maxPoint);
-            }
-        });
-    }
 }
 
 async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
@@ -859,15 +847,18 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
+    let existingChart = getChartInstanceBySeriesName(symbol)
 
-    var chart = addChart(chartContainerId, [], symbol);
+    let chart = addChart(chartContainerId, [], symbol);
 
     addWindowControlButtonsToChart();
 
-    getChartDataBySymbol(symbol).then((seriesData) => {
-        setDataToChart(chart.series[0], seriesData);
-    });
-
+    if (existingChart) {
+        chart.series[0].setData(existingChart.series[0].options.data);
+        chart.hideLoading();
+    } else {
+        await updateChartSymbol(chartContainerId, symbol);
+    }
     if (minPoint && maxPoint) {
         chart.xAxis[0].setExtremes(minPoint, maxPoint);
     }
@@ -884,7 +875,13 @@ function getChartInstanceBySeriesName(seriesName) {
     return chart || null;
 }
 
-function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
+function setMinMaxPointToPopoutChart(minPoint, maxPoint) {
+    if (minPoint && maxPoint) {
+        Highcharts.charts[0].xAxis[0].setExtremes(minPoint, maxPoint);
+    }
+}
+
+function setDataToChartBySymbol(symbol, seriesData, isAllPointLoaded) {
     let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
         let series = chart.series[0];
@@ -893,9 +890,9 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
         } else {
             addPointToChart(series, seriesData, false, false);
         }
-        if (isAllLoaded) {
+        if (isAllPointLoaded) {
             chart.redraw();
-            chart.hideLoading()
+            chart.hideLoading();
         }
     }
 }

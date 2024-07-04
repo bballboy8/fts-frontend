@@ -18,11 +18,6 @@ namespace FirstTerraceSystems.Components.Pages
             _dotNetMualtiChatsRef = DotNetObjectReference.Create(this);
         }
 
-        protected override async Task OnInitializedAsync()
-        {
-            await InitializedDataBaseAsync();
-        }
-
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -46,77 +41,66 @@ namespace FirstTerraceSystems.Components.Pages
         {
             DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
 
-            //Parallel.ForEach(ChartService.InitialChartSymbols.Where(a => a.IsVisible), async chart =>
-            //{
-            //    var symbolic = SymbolicRepository.GetLastRecordBySymbol(chart.Symbol);
-            //    DateTime startDate = symbolic?.Date ?? defaultStartDate;
-            //    var symbolicDatas = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
-
-            //    if (symbolicDatas != null && symbolicDatas.Any())
-            //    {
-            //        SymbolicRepository.InsertMarketFeedDataFromApi(chart.Symbol, symbolicDatas);
-            //    }
-
-            //    symbolicDatas = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
-            //    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolicDatas);
-            //});
-
             Logger.LogInformation("Starting InitialChartSymbols");
 
-            IEnumerable<Task>? tasks = ChartService.InitialChartSymbols.Where(a => a.IsVisible).Select(async chart =>
+            try
             {
+                List<Task> tasks = new();
+
+                foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
+                {
+                    tasks.Add(ChartTask(symbol, defaultStartDate));
+                }
+
+                while (tasks.Any())
+                {
+                    Task completedTask = await Task.WhenAny(tasks);
+                    tasks.Remove(completedTask);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInformation(ex, $"Error in UpdateAndRenderChartsAsync");
+            }
+
+            Logger.LogInformation($"End InitialChartSymbols");
+        }
+
+        private async Task ChartTask(ChartModal chart, DateTime defaultStartDate)
+        {
+
+            try
+            {
+                Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
+                IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, DateTime.Now.GetPastBusinessDay(3));
+                Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
+
                 try
                 {
-
-                    MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(chart.Symbol);
-                    DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
-
-                    Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
-                    IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
-                    Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
-
-                    if (marketFeeds != null && marketFeeds.Any())
-                    {
-                        Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {chart.Symbol}");
-                        MarketFeedRepository.InsertMarketFeedDataFromApi(chart.Symbol, marketFeeds);
-                        Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
-                        marketFeeds = null;
-                    }
-
-                    Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
-                    marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate);
-                    Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
-
-                    try
-                    {
-                        Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
-                        await SendChartDataInChunks(chart.Symbol, marketFeeds);
-                        Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, $"For : {chart.Symbol}");
-                    }
-                    finally
-                    {
-                        marketFeeds = null;
-                    }
+                    Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
+                    await SendChartDataInChunks(chart.Symbol, marketFeeds);
+                    Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, $"For : {chart.Symbol} ");
+                    Logger.LogError(ex, $"For : {chart.Symbol}");
                 }
-            });
-
-            await Task.WhenAll(tasks);
-            Logger.LogInformation($"End InitialChartSymbols");
+                finally
+                {
+                    marketFeeds = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"For : {chart.Symbol} ");
+            }
         }
 
         private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
         {
             int totalCount = marketFeeds.Count();
             int processedCount = 0;
-            foreach (var chunk in marketFeeds.Chunk(MarketFeedChunkSize))
+            foreach (MarketFeed[] chunk in marketFeeds.Chunk(MarketFeedChunkSize))
             {
                 processedCount += chunk.Count();
                 await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, processedCount == totalCount);
@@ -149,21 +133,10 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
         [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
+        public async Task<IEnumerable<MarketFeed>?> GetChartDataByLastFeedPoint(string symbol, DataPoint lastPoint)
         {
-            if (lastPoint == null)
-            {
-
-                IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
-                //await SendChartDataInChunks(symbol, marketFeeds);
-
-                return marketFeeds;
-            }
-            else
-            {
-                IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
-                return marketFeeds;
-            }
+            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
+            return marketFeeds;
         }
 
         [JSInvokable]
@@ -180,37 +153,33 @@ namespace FirstTerraceSystems.Components.Pages
             marketFeeds = null;
         }
 
-        
-
         [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
+        public async Task<bool> UpdateChartSymbol(string chartId, string symbol)
         {
             if (!TickerRepository.IsTickerExists(symbol))
             {
                 Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
-                return null;
+                return false;
             }
 
-            IEnumerable<MarketFeed>? symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
-            IEnumerable<MarketFeed>? data = await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol);
-            return symbolics;
+            ChartService.UpdateSymbol(chartId, symbol);
 
-            //if (DatabaseService.IsTableExists($"symbol_{symbol}"))
-            //{
-            //}
-            //else
-            //{
-            //    return data.OrderBy(mf => mf.Date);
-            //}
+            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
+
+            await SendChartDataInChunks(symbol, marketFeeds);
+
+            //IEnumerable<MarketFeed>? data = await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol);
+
+            return true;
         }
 
         [JSInvokable]
-        public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, bool isMaximizeClicked, object chartId, object minPoint, object maxPoint, string symbol, IEnumerable<DataPoint> dataPoints)
+        public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, bool isMaximizeClicked, object chartId, object minPoint, object maxPoint, string symbol)
         {
             StateContainerService.IsAllowCloseAllWindows = false;
             StateContainerService.IsMainPage = false;
             StateContainerService.IsMaximizeClikedForChart = isMaximizeClicked;
-            ChartWindowPage? chartWindow = new ChartWindowPage(jsObject, chartId, minPoint, maxPoint, symbol, dataPoints);
+            ChartWindowPage? chartWindow = new ChartWindowPage(jsObject, chartId, minPoint, maxPoint, symbol);
             Window? window = new Window(chartWindow);
             Application.Current?.OpenWindow(window);
             return await Task.FromResult(chartId);
