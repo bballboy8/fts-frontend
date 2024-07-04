@@ -1,9 +1,11 @@
-﻿using Blazored.LocalStorage;
+﻿using System.Net;
 using FirstTerraceSystems.AuthProviders;
+using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Services;
+using FirstTerraceSystems.Services.IServices;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 
 namespace FirstTerraceSystems
@@ -12,6 +14,8 @@ namespace FirstTerraceSystems
     {
         public static MauiApp CreateMauiApp()
         {
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.File(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "FTS", "logs", "log.txt"), rollingInterval: RollingInterval.Day).CreateLogger();
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
@@ -20,24 +24,75 @@ namespace FirstTerraceSystems
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
+
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddBlazorBootstrap();
-            builder.Services.AddBlazorBootstrap();
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://52.0.33.126:8000/") });
+            builder.Services.AddScoped(sp =>
+            {
+                var client = new HttpClient
+                {
+                    BaseAddress = new Uri(ApiEndpoints.RestAPIUri)
+                };
+                client.Timeout = TimeSpan.FromSeconds(3600);
+                return client;
+            });
+            builder.Services.AddScoped(sp =>
+            {
+                var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, })
+                {
+                    BaseAddress = new Uri(ApiEndpoints.CloudDataServiceUri)
+                };
+                return new NasdaqRestService(client);
+            });
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-            builder.Logging.AddDebug();
+            //builder.Logging.AddDebug();
+            builder.Services.AddLogging(logging =>
+            {
+                logging.AddFilter("Microsoft.AspNetCore.Components.WebView", LogLevel.Trace);
+                logging.AddDebug();
+                logging.AddSerilog();
+            });
+#else
+            builder.Services.AddLogging(logging =>
+            {
+                logging.AddSerilog();
+            });
 #endif
-            builder.Services.AddBlazoredLocalStorage();
+
             builder.Services.AddAuthorizationCore();
-            builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
-            builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-            builder.Services.AddScoped<NsdaqService>();
-            builder.Services.AddScoped<BsToastService>();
+            builder.Services.AddDatabaseService();
+
+            builder.Services.AddSingleton(serviceProvider =>
+            {
+                return serviceProvider.GetRequiredService<DatabaseService>().MarketFeedRepository;
+            });
+
+            builder.Services.AddSingleton(serviceProvider =>
+            {
+                return serviceProvider.GetRequiredService<DatabaseService>().TickerRepository;
+            });
+
             builder.Services.AddSingleton<StateContainerService>();
             builder.Services.AddSingleton<WindowsSerivce>();
+            builder.Services.AddSingleton<ChartService>();
 
-            return builder.Build();
+            builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
+            builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+            builder.Services.AddScoped<NasdaqService>();
+            builder.Services.AddScoped<BsToastService>();
+            builder.Services.AddScoped<NasdaqHistoricalDataService>();
+
+            var app = builder.Build();
+
+            Initialize(app);
+
+            return app;
+        }
+
+        private static void Initialize(MauiApp app)
+        {
+            app.Services.GetRequiredService<ChartService>().LoadChartSettings();
         }
     }
 }

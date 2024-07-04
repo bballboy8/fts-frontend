@@ -1,59 +1,84 @@
 using FirstTerraceSystems.Components.Pages;
+using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Services;
 using Microsoft.JSInterop;
+
+#if WINDOWS
+using Microsoft.Web.WebView2.Core;
+#endif
 
 namespace FirstTerraceSystems;
 
 public partial class ChartWindowPage : ContentPage
 {
 
-    private readonly object _ohlcData;
     private readonly object _chartIndx;
-    private readonly object _volumeData;
-    private readonly object _groupingUnits;
+    private readonly object _min;
+    private readonly object _max;
+    private readonly string _symbol;
     private readonly IJSObjectReference _jsObjectReference;
 
+    public delegate void RefreshChart();
 
-    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object ohlc, object volume, object groupingUnits)
+
+    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object min, object max, string symbol)
     {
         InitializeComponent();
-        _ohlcData = ohlc;
         _chartIndx = chartIndx;
-        _volumeData = volume;
-        _groupingUnits = groupingUnits;
         _jsObjectReference = jsObjectReference;
+        _min = min;
+        _max = max;
+        _symbol = symbol;
     }
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
-        ChartComponent.ComponentType = typeof(ChartWindow);
+        base.OnAppearing();
+
+        ChartComponent.ComponentType = typeof(FirstTerraceSystems.Components.Pages.ChartWindow);
         ChartComponent.Parameters = new Dictionary<string, object?>
         {
-            { "OhlcData", _ohlcData },
-            { "GroupingUnits", _groupingUnits },
-            { "VolumeData", _volumeData },
-            { "ChartIndx", _chartIndx }
+            { "ChartIndx", _chartIndx },
+            { "MinPoint", _min },
+            { "MaxPoint", _max },
+            { "Symbol", _symbol },
         };
-
-        //var jsRuntime = BlazorWebView.Handler?.MauiContext?.Services.GetService<IJSRuntime>();
-        var wasDispatchCalled = await BlazorWebView.TryDispatchAsync(sp =>
-        {
-            var jsRuntime = sp.GetRequiredService<IJSRuntime>();
-            jsRuntime?.InvokeVoidAsync("changeBackgroundColor", false);
-        });
-
-
-        base.OnAppearing();
     }
 
     protected override void OnDisappearing()
     {
         if (!StateContainerService.IsAllowCloseAllWindows)
         {
-            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, _ohlcData, _volumeData, _groupingUnits);
+            var chartPage = StateContainerService.ChartPages.FirstOrDefault(a => a.ChartId == _chartIndx?.ToString());
+            _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme, chartPage?.Symbol);
+            //_jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme, chartPage?.Symbol);
         }
 
         StateContainerService.RemoveChartPage(_chartIndx.ToString());
         base.OnDisappearing();
+    }
+
+    private void BlazorWebView_BlazorWebViewInitialized(object sender, Microsoft.AspNetCore.Components.WebView.BlazorWebViewInitializedEventArgs eventArgs)
+    {
+
+#if WINDOWS
+        if (eventArgs.WebView is Microsoft.UI.Xaml.Controls.WebView2 webView2)
+        {
+            var settings = webView2.CoreWebView2.Settings;
+
+            settings.AreBrowserAcceleratorKeysEnabled = false;
+            settings.IsZoomControlEnabled = false;
+            settings.AreDefaultContextMenusEnabled = false;
+            settings.AreDefaultScriptDialogsEnabled = false;
+            //settings.AreDevToolsEnabled = false;
+            //settings.AreHostObjectsAllowed = false;
+            settings.HiddenPdfToolbarItems = CoreWebView2PdfToolbarItems.None;
+            //settings.IsBuiltInErrorPageEnabled = false;
+            settings.IsGeneralAutofillEnabled = false;
+            settings.IsPasswordAutosaveEnabled = false;
+            settings.IsPinchZoomEnabled = false;
+            settings.IsStatusBarEnabled = false;
+        }
+#endif
     }
 }

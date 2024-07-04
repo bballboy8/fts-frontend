@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace FirstTerraceSystems.Entities.Nasdaq
+namespace FirstTerraceSystems.Models
 {
     public class TokenResponse
     {

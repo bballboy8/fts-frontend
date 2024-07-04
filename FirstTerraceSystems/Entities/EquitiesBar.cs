@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
-namespace FirstTerraceSystems.Entities.Nasdaq
+namespace FirstTerraceSystems.Entities
 {
-    public class EquitiesBarModal
+    public class EquitiesBar
     {
+        public int Id { get; set; }
         [JsonPropertyName("t")]
         public DateTime Timestamp { get; set; }
 

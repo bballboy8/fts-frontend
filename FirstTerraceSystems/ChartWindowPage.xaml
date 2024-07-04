@@ -10,7 +10,8 @@
         x:Name="BlazorWebView"
         HorizontalOptions="FillAndExpand"
         HostPage="wwwroot/index.html"
-        VerticalOptions="FillAndExpand">
+        VerticalOptions="FillAndExpand"
+        BlazorWebViewInitialized="BlazorWebView_BlazorWebViewInitialized">
         <BlazorWebView.RootComponents>
             <RootComponent
                 x:Name="ChartComponent"

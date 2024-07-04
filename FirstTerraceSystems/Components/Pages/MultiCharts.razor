@@ -1,0 +1,27 @@
+﻿@page "/multi-charts"
+
+@inject NasdaqService NasdaqService
+@inject Repositories.MarketFeedRepository MarketFeedRepository
+@inject Repositories.TickerRepository TickerRepository
+@inject DatabaseService DatabaseService
+@inject NasdaqHistoricalDataService HistoricalDataService
+@inject ChartService ChartService
+@inject BsToastService Toast
+@inject ILogger<MultiCharts> Logger
+
+@implements IAsyncDisposable
+
+<style>
+    #popup {
+        display: none;
+        position: absolute;
+        border: 1px solid #000;
+        background-color: #fff;
+        padding: 10px;
+        z-index: 10000;
+    }
+</style>
+
+<div class="container-fluid">
+    <div id="chartList" class="row"></div>
+</div>

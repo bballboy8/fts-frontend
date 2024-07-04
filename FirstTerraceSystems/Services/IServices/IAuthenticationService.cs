@@ -6,12 +6,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FirstTerraceSystems.Services
+namespace FirstTerraceSystems.Services.IServices
 {
     public interface IAuthenticationService
     {
         Task<RegisterResponseDto> Registration(RegisterModel model);
-        Task<AuthResponseDto> Login(LoginDto userForAuthentication);
+        Task<AuthResponse> Login(LoginDto userForAuthentication);
         Task Logout(LoginDto model);
         Task<bool?> ValidateUserEmail(string? email);
     }

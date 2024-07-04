@@ -1,13 +1,19 @@
-﻿@using System.ComponentModel.DataAnnotations
-@using FirstTerraceSystems.Entities
-
-@page "/"
+﻿@page "/"
 @page "/login"
+
+@using System.ComponentModel.DataAnnotations
+@using FirstTerraceSystems.Entities
+@using FirstTerraceSystems.Features
+@using FirstTerraceSystems.Models
+@using FirstTerraceSystems.Components
+@using FirstTerraceSystems.Services.IServices
+
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager NavigationManager
 @inject WindowsSerivce WindowsSerivce
+@inject BsToastService Toast
 
-<Button Type="ButtonType.Button" Color="ButtonColor.Danger" Outline="true" Class="top-right-corner shadow-none text-white border-0 rounded-0" @onclick="() => CloseApplication()"> <Icon Name="IconName.XLg" /> </Button>
+<CloseButton />
 
 <div class="signIn">
     <div class="row g-0 justify-content-center">
@@ -26,16 +32,12 @@
                         <i class="password-toggle bi bi-eye"></i>
                         <ValidationMessage For="@(() => _loginDto.Password)" />
                     </div>
-                    @if (ShowAuthError)
-                    {
-                        <span class="text-danger">@Error</span>
-                    }
 
                     <button class="login-btn create-new" type="Submit">Sign in</button>
                     <button type="button" class="login-btn create-new sign-in-down" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</button>
                     <span class="separator">OR</span>
                     <button type="button" class="social-media mb-4"><img src="../images/devicon_google.png" alt="devivon_google" />Continue using Google ID</button>
-                    <button type="button" class="social-media"><img src="../images/apple.png" alt="apple" />Continue using Apple ID</button>
+                    <button type="button" class="social-media tab-to-close-app"><img src="../images/apple.png" alt="apple" />Continue using Apple ID</button>
                 </EditForm>
             </div>
         </div>
@@ -49,8 +51,6 @@
 
 @code {
     private LoginDto _loginDto = new LoginDto();
-    public bool ShowAuthError { get; set; }
-    public string? Error { get; set; }
 
     protected override void OnInitialized()
     {
@@ -58,19 +58,21 @@
         base.OnInitialized();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeVoidAsync("removeUnusedElement");
+    }
+
     private async Task HandleValidSubmit()
     {
-        ShowAuthError = false;
         var result = await AuthenticationService.Login(_loginDto);
         if (!string.IsNullOrEmpty(result.Detail))
         {
-            Error = result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail;
-            ShowAuthError = true;
+            Toast.ShowDangerMessage(result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail);
         }
         else
         {
-            WindowsSerivce.RevertWindowResize();
-            NavigationManager.NavigateTo("/multiChats");
+            NavigationManager.NavigateTo("/loading");
         }
     }
 
@@ -90,8 +92,4 @@
         // Handle Google login
     }
     
-    private void CloseApplication()
-    {
-        Application.Current?.CloseWindow(Application.Current!.Windows.First());
-    }
 }

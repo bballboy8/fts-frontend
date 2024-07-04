@@ -4,6 +4,33 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/**
+    Disable selecting content and texts
+**/
+*:not(input) {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/**
+    Remove the default tapping effect
+**/
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/**
+    Handling Safe areas
+**/
+@supports (-webkit-touch-callout: none) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-right: env(safe-area-inset-right);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+    }
+}
+
 a, .btn-link {
     color: #006bb7;
 }
@@ -633,7 +660,3 @@ h1:focus {
     right: 10px;
     z-index: 1000;
 }
-
-/*.highcharts-button-box:hover {
-    fill: #5b6970;
-}*/

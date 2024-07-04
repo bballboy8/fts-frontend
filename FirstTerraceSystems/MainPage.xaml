@@ -6,7 +6,12 @@
     xmlns:local="clr-namespace:FirstTerraceSystems.Components"
     BackgroundColor="{DynamicResource PageBackgroundColor}">
 
-    <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
+    <BlazorWebView  
+        BlazorWebViewInitialized="MainBlazorWebView_BlazorWebViewInitialized"
+        BlazorWebViewInitializing="MainBlazorWebView_BlazorWebViewInitializing"
+        
+        x:Name="MainBlazorWebView" 
+        HostPage="wwwroot/index.html">
         <BlazorWebView.RootComponents>
             <RootComponent ComponentType="{x:Type local:Routes}" Selector="#app" />
         </BlazorWebView.RootComponents>

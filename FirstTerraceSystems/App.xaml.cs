@@ -1,4 +1,8 @@
-﻿namespace FirstTerraceSystems
+﻿using FirstTerraceSystems.Features;
+using FirstTerraceSystems.Services;
+using System.Net.WebSockets;
+
+namespace FirstTerraceSystems
 {
     public partial class App : Application
     {
@@ -14,6 +18,11 @@
             base.OnResume();
         }
 
+        protected override void OnSleep()
+        {
+            base.OnSleep();
+        }
+
         protected override Window CreateWindow(IActivationState? activationState)
         {
             Window window = base.CreateWindow(activationState);
@@ -23,8 +32,9 @@
                 Console.WriteLine("Created");
             };
 
-            window.Destroying += (s, e) =>
+            window.Destroying += async (s, e) =>
             {
+                await WebSocketClient.CloseAsync();
 
                 var windowsToClose = Application.Current!.Windows.Where(w => w != window).ToList();
 

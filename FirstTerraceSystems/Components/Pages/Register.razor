@@ -1,9 +1,13 @@
 ﻿@page "/register"
+@using FirstTerraceSystems.Components
+@using FirstTerraceSystems.Services.IServices
+
 @inject BsToastService Toast
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager NavigationManager
 
-<Button Type="ButtonType.Button" Color="ButtonColor.Danger" Outline="true" Class="top-right-corner shadow-none text-white border-0 rounded-0" @onclick="() => CloseApplication()"> <Icon Name="IconName.XLg" /> </Button>
+
+<CloseButton />
 
 @if (ShowRegister)
 {
@@ -31,7 +35,7 @@
                         <ValidationMessage For="@(() => _registerDto.confirm_password)" />
                     </div>
                     <Button Class="login-btn create-new" Type="ButtonType.Submit">Continue</Button>
-                    <Button Class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
+                    <Button Class="login-btn create-new tab-to-close-app" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
 
                 </EditForm>
             </div>
@@ -101,8 +105,8 @@ else
 
 
                     <Button Class="login-btn create-new" Type="ButtonType.Submit">Create account</Button>
-                    <Button class="login-btn create-new" @onclick="BackToRegistration">Back</Button>
-                    <Button class="login-btn create-new" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back to Sign In</Button>
+                    <Button Class="login-btn create-new" @onclick="BackToRegistration">Back</Button>
+                    <Button Class="login-btn create-new tab-to-close-app" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back to Sign In</Button>
 
                 </EditForm>
             </div>

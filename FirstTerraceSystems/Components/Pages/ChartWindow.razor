@@ -1,31 +1,49 @@
-﻿@inject IJSRuntime JSRuntime
-@inject StateContainerService StateContainer
+﻿@inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
+@inject Repositories.MarketFeedRepository MarketFeedRepository
+@inject Repositories.TickerRepository TickerRepository
+@inject BsToastService Toast
+@inject ChartService ChartService
+@inject NasdaqHistoricalDataService HistoricalDataService
+
+@implements IDisposable
 
 <div @ref="ER_ChartWindow"></div>
 
 @code {
-
+    private const int MarketFeedChunkSize = 20000;
 
     [Parameter]
     public object? ChartIndx { get; set; }
 
     [Parameter]
-    public object? OhlcData { get; set; }
+    public object? MinPoint { get; set; }
 
     [Parameter]
-    public object? VolumeData { get; set; }
+    public object? MaxPoint { get; set; }
 
     [Parameter]
-    public object? GroupingUnits { get; set; }
+    public string Symbol { get; set; } = "AAPL";
 
     private ElementReference ER_ChartWindow { get; set; }
 
+    private Models.ChartModal ChartPageModal { get; set; } = new();
+
+    private DotNetObjectReference<ChartWindow>? _dotChartWindowRef;
+
     protected override void OnInitialized()
     {
-        WindowsSerivce.RevertWindowResize();
-        StateContainerService.AddChartPage(new Models.ChartPageModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime });
         base.OnInitialized();
+        ChartPageModal = new Models.ChartModal { ChartId = ChartIndx?.ToString(), JSRuntime = JSRuntime, UpdatedMinExtreme = MinPoint, UpdatedMaxExtreme = MaxPoint, Symbol = Symbol };
+        WindowsSerivce.UnlockWindowResize();
+        StateContainerService.AddChartPage(ChartPageModal);
+        _dotChartWindowRef = DotNetObjectReference.Create(this);
+        WebSocketClient.ActionReferenceChart += RefreshCharts;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotChartWindowRef);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -33,7 +51,81 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
-            await JSRuntime.InvokeVoidAsync("popoutChartWindow", ER_ChartWindow, ChartIndx, OhlcData, VolumeData, GroupingUnits);
+            await JSRuntime.InvokeVoidAsync("popoutChartWindow", _dotChartWindowRef, ER_ChartWindow, ChartIndx, Symbol);
+
+            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(Symbol, DateTime.Now.GetPastBusinessDay(3));
+
+            await SendChartDataInChunks(Symbol, marketFeeds);
+
+            await JSRuntime.InvokeVoidAsync("setMinMaxPointToPopoutChart", MinPoint, MaxPoint);
         }
     }
+
+    private async Task RefreshCharts()
+    {
+        await JSRuntime.InvokeVoidAsync("refreshCharts");
+    }
+
+    [JSInvokable]
+    public void ZoomingChanged(object minPoint, object maxPoint)
+    {
+        ChartPageModal.UpdatedMinExtreme = minPoint;
+        ChartPageModal.UpdatedMaxExtreme = maxPoint;
+    }
+
+    [JSInvokable]
+    public void SymbolChanged(string symbol)
+    {
+        Symbol = symbol;
+
+        ChartPageModal.Symbol = symbol;
+    }
+
+    [JSInvokable]
+    public async Task<IEnumerable<MarketFeed>> GetChartDataByLastFeedPoint(string symbol, DataPoint lastPoint)
+    {
+        IEnumerable<MarketFeed> marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
+        return marketFeeds;
+    }
+
+    [JSInvokable]
+    public async Task<bool> UpdateChartSymbol(string chartId, string symbol)
+    {
+        if (!TickerRepository.IsTickerExists(symbol))
+        {
+            Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
+            return false;
+        }
+
+        Symbol = symbol;
+
+        ChartPageModal.Symbol = symbol;
+
+        ChartService.UpdateSymbol(chartId, symbol);
+
+        IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
+
+        await SendChartDataInChunks(symbol, marketFeeds);
+
+        //IEnumerable<MarketFeed>? data = await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol);
+
+        return true;
+    }
+
+    private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
+    {
+        int totalCount = marketFeeds.Count();
+        int processedCount = 0;
+        foreach (MarketFeed[] chunk in marketFeeds.Chunk(MarketFeedChunkSize))
+        {
+            processedCount += chunk.Count();
+            await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, processedCount == totalCount);
+        }
+    }
+
+    public void Dispose()
+    {
+        _dotChartWindowRef?.Dispose();
+    }
+
 }

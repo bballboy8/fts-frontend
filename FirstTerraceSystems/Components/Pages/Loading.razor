@@ -1,0 +1,34 @@
+﻿@page "/loading"
+
+@using FirstTerraceSystems.Components.Layout
+
+@* @layout EmptyLayout  *@
+
+@inject NasdaqService NasdaqService
+@inject Repositories.TickerRepository TickerRepository
+@inject Repositories.MarketFeedRepository MarketFeedRepository
+@inject ILogger<Loading> Logger
+@inject DatabaseService DatabaseService
+@inject NavigationManager NavigationManager
+@inject ChartService ChartService
+@inject WindowsSerivce WindowsSerivce
+
+<div class="position-relative vh-100">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <Card Class="text-light" Style="--bs-card-bg:#2D3539;width:18rem;">
+            <CardBody>
+                <CardTitle Class="text-center py-3">Loading Platform ...</CardTitle>
+                <Progress Class="my-3 rounded-2 position-relative bg-dark" Height="30">
+                    <ProgressBar Class="rounded-2" Color="ProgressColor.Success" Width="@progress" />
+                    <small class="justify-content-center align-self-center text-white d-flex position-absolute w-100">@progress%</small>
+                </Progress>
+            </CardBody>
+        </Card>
+    </div>
+</div>
+
+<style>
+    body {
+        background: radial-gradient(63.38% 63.38% at 50% 8.19%, #18362D 0%, #202527 100%);
+    }
+</style>

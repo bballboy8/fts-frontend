@@ -1,24 +1,25 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
-using FirstTerraceSystems.Entities.Nasdaq;
+using System.Threading.Tasks;
+using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Models;
+
 namespace FirstTerraceSystems.Services
 {
-    public class NsdaqService
+    public class NasdaqRestService
     {
         private string? _token;
         private DateTime _tokenExpirationTime;
         private readonly HttpClient _client;
 
-        public NsdaqService()
+        public NasdaqRestService(HttpClient client)
         {
-            _client = new HttpClient(new HttpClientHandler
-            {
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-            });
-            _client.BaseAddress = new Uri("https://restapi.clouddataservice.nasdaq.com");
+            _client = client;
         }
-
 
         private async Task InitializeTokensAsync()
         {
@@ -72,7 +73,7 @@ namespace FirstTerraceSystems.Services
             }
         }
 
-        public async Task<IEnumerable<EquitiesBarModal>?> GetEquitiesBars(DateTime startDate, DateTime endDate, string symbol)
+        public async Task<IEnumerable<EquitiesBar>?> GetEquitiesBars(DateTime startDate, DateTime endDate, string symbol)
         {
             await EnsureTokenIsValidAsync();
 
@@ -80,16 +81,16 @@ namespace FirstTerraceSystems.Services
             string endDateString = endDate.ToString("yyyy-MM-ddTHH:mm");
             string relativePath = $"/v1/nasdaq/delayed/equities/bars/{symbol}/1minute/{startDateString}/{endDateString}";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, relativePath);
+            HttpRequestMessage? request = new HttpRequestMessage(HttpMethod.Get, relativePath);
 
             request.Headers.Add("Authorization", $"Bearer {_token}");
 
             try
             {
-                var response = await _client.SendAsync(request);
+                HttpResponseMessage? response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
-                var contentString = await response.Content.ReadAsStringAsync();
-                var equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBarModal>>(contentString);
+                string? contentString = await response.Content.ReadAsStringAsync();
+                IEnumerable<EquitiesBar>? equitiesBars = JsonSerializer.Deserialize<IEnumerable<EquitiesBar>>(contentString);
 
                 return equitiesBars;
             }
