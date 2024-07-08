@@ -24,20 +24,20 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
                 await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
-                await UpdateAndRenderChartsAsync();
+                await RenderChartsAsync();
 
-                Logger.LogInformation($"Connecting WebSocketClient");
-                await WebSocketClient.ConnectAsync();
-                Logger.LogInformation($"Connected WebSocketClient");
-                WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
-                WebSocketClient.ActionReferenceChart += RefreshCharts;
-                Logger.LogInformation($"Listening WebSocketClient");
-                await WebSocketClient.ListenAsync();
-                Logger.LogInformation($"WebSocketClient Close");
+                //Logger.LogInformation($"Connecting WebSocketClient");
+                //await WebSocketClient.ConnectAsync();
+                //Logger.LogInformation($"Connected WebSocketClient");
+                //WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+                //WebSocketClient.ActionReferenceChart += RefreshCharts;
+                //Logger.LogInformation($"Listening WebSocketClient");
+                //await WebSocketClient.ListenAsync();
+                //Logger.LogInformation($"WebSocketClient Close");
             }
         }
 
-        private async Task UpdateAndRenderChartsAsync()
+        private async Task RenderChartsAsync()
         {
             DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
 
@@ -50,6 +50,7 @@ namespace FirstTerraceSystems.Components.Pages
                 foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
                 {
                     tasks.Add(ChartTask(symbol, defaultStartDate));
+                    //await ChartTask(symbol, defaultStartDate);
                 }
 
                 while (tasks.Any())
@@ -74,20 +75,16 @@ namespace FirstTerraceSystems.Components.Pages
                 Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
                 IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, DateTime.Now.GetPastBusinessDay(3));
                 Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
-
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
                     await SendChartDataInChunks(chart.Symbol, marketFeeds);
                     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
+                    marketFeeds = null;
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, $"For : {chart.Symbol}");
-                }
-                finally
-                {
-                    marketFeeds = null;
                 }
             }
             catch (Exception ex)
@@ -107,20 +104,6 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
-        private async Task InitializedDataBaseAsync()
-        {
-            if (!TickerRepository.IsTickerTableExists())
-            {
-                Logger.LogInformation($"Starting API call for GetTickers");
-                IEnumerable<NasdaqTicker>? tickers = await NasdaqService.NasdaqGetTickersAsync();
-                Logger.LogInformation($"Got Response from API GetTickers");
-
-                Logger.LogInformation($"Inserting Tickers To  SQLite DB");
-                TickerRepository.InsertRecords(tickers);
-                Logger.LogInformation($"Inserted Tickers To  SQLite DB");
-                tickers = null;
-            }
-        }
 
         private void OnRealDataReceived(NasdaqResponse? response)
         {
@@ -135,7 +118,7 @@ namespace FirstTerraceSystems.Components.Pages
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataByLastFeedPoint(string symbol, DataPoint lastPoint)
         {
-            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
+            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.TrackingID);
             return marketFeeds;
         }
 
@@ -187,7 +170,7 @@ namespace FirstTerraceSystems.Components.Pages
 
         public async ValueTask DisposeAsync()
         {
-            _dotNetMualtiChatsRef?.Dispose();
+            //_dotNetMualtiChatsRef?.Dispose();
 
             WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;
             WebSocketClient.ActionReferenceChart -= RefreshCharts;

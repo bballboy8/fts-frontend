@@ -1,5 +1,24 @@
 ﻿@inherits LayoutComponentBase
-@Body
-@code {
 
+@inject WindowsSerivce WindowsSerivce
+
+<Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
+
+<CloseButton />
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    @Body
+</div>
+
+<style type="text/css">
+    body {
+        background: radial-gradient(63.38% 63.38% at 50% 8.19%, #18362D 0%, #202527 100%);
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        WindowsSerivce.LockWindowResize();
+    }
 }

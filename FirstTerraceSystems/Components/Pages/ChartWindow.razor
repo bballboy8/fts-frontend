@@ -84,7 +84,7 @@
     [JSInvokable]
     public async Task<IEnumerable<MarketFeed>> GetChartDataByLastFeedPoint(string symbol, DataPoint lastPoint)
     {
-        IEnumerable<MarketFeed> marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
+        IEnumerable<MarketFeed> marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.TrackingID);
         return marketFeeds;
     }
 

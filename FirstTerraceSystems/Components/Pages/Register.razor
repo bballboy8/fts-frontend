@@ -1,19 +1,21 @@
 ﻿@page "/register"
+
 @using FirstTerraceSystems.Components
+@using FirstTerraceSystems.Components.Layout
 @using FirstTerraceSystems.Services.IServices
 
 @inject BsToastService Toast
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager NavigationManager
+@* @inject WindowsSerivce WindowsSerivce *@
 
+@layout EmptyLayout
 
-<CloseButton />
-
-@if (ShowRegister)
-{
-    <div class="row justify-content-center w-100">
-        <div class="col-sm-8 col-lg-4">
-            <div Class="signIn signUp questions login-content">
+<div class="row justify-content-center w-100">
+    <div class="col-sm-8 col-lg-4">
+        <div Class="signIn signUp questions login-content">
+            @if (ShowRegister)
+            {
                 <EditForm Model="@_registerDto" OnValidSubmit="ValidateUserAsync" autocomplete="off" aria-autocomplete="none">
                     <DataAnnotationsValidator />
                     <img src="../images/logo.png" Alt="logo" class="logo" />
@@ -38,16 +40,9 @@
                     <Button Class="login-btn create-new tab-to-close-app" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back</Button>
 
                 </EditForm>
-            </div>
-        </div>
-    </div>
-
-}
-else
-{
-    <div class="row justify-content-center w-100">
-        <div class="col-sm-8 col-lg-4">
-            <div Class="signIn signUp questions login-content">
+            }
+            else
+            {
                 <EditForm Model="@_registerQuestion" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <p>Before we continue, we require a bit of information regarding your trading experience.</p>
@@ -109,9 +104,7 @@ else
                     <Button Class="login-btn create-new tab-to-close-app" @onclick="@(() => NavigationManager.NavigateTo("/login"))">Back to Sign In</Button>
 
                 </EditForm>
-            </div>
+            }
         </div>
     </div>
-
-}
-
+</div>

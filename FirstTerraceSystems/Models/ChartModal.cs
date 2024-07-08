@@ -20,7 +20,7 @@ namespace FirstTerraceSystems.Models
 
     public class DataPoint
     {
-        public long PrimaryKey { get; set; }
+        public string? TrackingID { get; set; }
         public long X { get; set; } 
         //public DateTime X { get; set; } 
         public double Y { get; set; }

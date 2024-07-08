@@ -1,0 +1,55 @@
+﻿@inject StateContainerService StateContainer
+@inject IJSRuntime JSRuntime
+@inject ChartService ChartService
+@inject WindowsSerivce WindowsSerivce
+@inject IAuthenticationService AuthenticationService
+@inject NavigationManager NavigationManager
+@inject BsToastService Toast
+
+<div id="headbar" class="top-row px-4">
+
+    @* Display options code here *@
+    <div @ref="Er_BtnDisplayOptions" class="dropdown" id="dropdownDisplayOptions">
+        <button class="btn btn-secondary dropdown-toggle layout-btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            DISPLAY OPTIONS
+        </button>
+        <div class="dropdown-menu pb-0" aria-labelledby="dropdownMenuButton">
+            <a role="button" class="dropdown-item rounded-top" data-item-type="savelayout" tabindex="1" @onclick="SaveLayout">Save Layout</a>
+            @* <a role="button" class="dropdown-item">Load layout</a> *@
+
+            <div class="dropdown">
+                <a id="dropdown-item-LoadLayout" class="dropdown-item rounded-bottom dropdown-toggle-down" href="javascript:void(0)">Load Layout</a>
+                <div class="dropdown-menu py-0" id="load-template-dropdown">
+                    <a role="button" class="dropdown-item load-template rounded-top" data-item-type="template" data-load-template="5" tabindex="2" @onclick="() => LoadTemplate(5)">
+                        <span style="margin-top: -7px;"><span class="default-chart-2-grid"> <span class="default-chart-2"></span> <span class="default-chart-2"></span></span> <span class="default-chart-3-grid"><span class="default-chart-3"></span> <span class="default-chart-3"></span> <span class="default-chart-3"></span> </span></span> Default Layout
+                    </a>
+                    <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="1" tabindex="3" @onclick="() => LoadTemplate(1)">
+                        <span class="chart-1"></span> 1 chart
+                    </a>
+                    <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="2" tabindex="4" @onclick="() => LoadTemplate(2)">
+                        <span class="main-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span>2 charts
+                    </a>
+                    <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="4" tabindex="5" @onclick="() => LoadTemplate(4)">
+                        <span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-2"></span> <span class="chart-2"></span></span> <span class="chart-3-grid"><span class="chart-2"></span> <span class="chart-2"></span> </span></span>4 charts
+                    </a>
+                    <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="6" tabindex="6" @onclick="() => LoadTemplate(6)">
+                        <span style="margin-top: -7px;"><span class="chart-3-grid"> <span class="chart-6"></span> <span class="chart-6"></span></span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> <span class="chart-3-grid"><span class="chart-6"></span> <span class="chart-6"></span> </span> </span>6 charts
+                    </a>
+                    <a role="button" class="dropdown-item load-template rounded-bottom" data-item-type="template" data-load-template="8" tabindex="7" @onclick="() => LoadTemplate(8)">
+                        <span style="margin-top: -7px;"><span class="chart-8-grid"> <span class="chart-8"></span> <span class="chart-8"></span></span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> </span>8 charts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="market-time">
+        <span class="market-time-text">4:34 AM EST</span>
+    </div>
+
+    <div class="market-open">
+        <span class="market-time-text">MARKET <span style="font-weight: 700;">OPEN</span></span>
+    </div>
+    <Button ElementId="btn-logout" Class="me-2" Color="ButtonColor.Success" Outline="true" @onclick="Logout">Logout </Button>
+    <Switch Class="w-auto" Value="IsDarkMode" ValueExpression="() => IsDarkMode" ValueChanged="ToggleDarkMode" />
+</div>

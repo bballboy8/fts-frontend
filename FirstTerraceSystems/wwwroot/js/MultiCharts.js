@@ -190,6 +190,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                             }
                         }
                     });
+
                 },
                 //redraw: function () {
                 //    var chart = this;
@@ -412,19 +413,16 @@ function removeChart(chart) {
 
     var chartContaner = $(chart.renderTo);
     var chartId = chartContaner.data("chart-id");
+
     $(".chart-box.chart-box-" + chartId).remove();
-    //$("#popup-chart-" + chartId).remove();
 
     chart.destroy();
+
     var totalCharts = $("#chartList .chart-box").length;
-
-
     var cssClass = "col-12";
+
     if (totalCharts == 1) {
         cssClass = "col-12";
-        //$("#chartList").sortable({ disabled: true });
-        //if (!$(".chart-container").hasClass("chart-popup"))
-        /*$(".chart-container").off("dblclick");*/
         removeWindowControlButtonsFromChart()
     }
     else if (totalCharts == 5) {
@@ -444,7 +442,6 @@ function removeChart(chart) {
     $("#chartList .chart-box").removeClass('col-3').removeClass('col-4').removeClass('col-6').removeClass('col-12');
     $("#chartList .chart-box").addClass(cssClass);
 
-
     var chartBoxes = $('#chartList').find('.chart-box');
 
     chartBoxes.sort(function (a, b) {
@@ -452,7 +449,6 @@ function removeChart(chart) {
         var counterB = $('.chart-container', b).data('chart-id');
         return counterA - counterB;
     });
-
 
     if (totalCharts == 5) {
         var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
@@ -468,7 +464,6 @@ function removeChart(chart) {
         $("#chartListCol1").parent().remove();
         $("#chartListCol2").parent().remove();
     }
-
 
     if (totalCharts == 5) {
         $('#chartListCol1 .chart-box').removeClass('chart-height-100').removeClass('chart-height-33').addClass('chart-height-50');
@@ -506,7 +501,6 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined) {
         dotNetObject.invokeMethodAsync('ZoomingChanged', newMin, newMax);
     }
 }
-
 
 function removeWindowControlButtonsFromChart() {
     let chart = Highcharts.charts.filter(c => c)[0];
@@ -555,7 +549,7 @@ async function updateChartSymbol(chartId, symbol) {
 
 function processDataPoint(data, previousPrice) {
     return {
-        primaryKey: data.id,
+        trackingId: data.trackingid,
         x: new Date(data.date).getTime(),
         y: data.price,
         color: data.price > previousPrice ? 'green' : 'red'
@@ -606,8 +600,7 @@ async function RefreshChartBySymbol() {
 }
 
 async function refreshCharts() {
-    for (let chart of Highcharts.charts) {
-        if (!chart) continue;
+    for (let chart of Highcharts.charts.filter(hc => hc)) {
 
         let series = chart.series[0];
         let lastPoint = series.options.data[series.options.data.length - 1];
@@ -618,8 +611,23 @@ async function refreshCharts() {
     }
 }
 
+function getHightClassForChartBox(totalCharts) {
+    let cssClass = "chart-height-100";
 
-function addClassToChartBoxes(totalCharts) {
+    if (totalCharts == 5) {
+        if ($("#chartList .chart-box").length < 3) {
+            cssClass = "chart-height-33";
+        } else {
+            cssClass = "chart-height-50";
+        }
+    }
+    else if (totalCharts > 2) {
+        cssClass = "chart-height-50";
+    }
+    return cssClass;
+}
+
+function getColClassForChartBox(totalCharts) {
     let cssClass = "col-12";
 
     if (totalCharts == 2 || totalCharts == 4) {
@@ -635,11 +643,9 @@ function addClassToChartBoxes(totalCharts) {
         cssClass = "col-3";
     }
 
-    $("#chartList .chart-box").addClass(cssClass);
+    return cssClass;
+    //$("#chartList .chart-box").addClass(cssClass);
 }
-
-
-
 
 function addChartBoxToChartList(totalCharts, chartBox) {
     if (totalCharts == 5) {
@@ -651,77 +657,11 @@ function addChartBoxToChartList(totalCharts, chartBox) {
     } else {
         $("#chartList").append(chartBox);
     }
-
-    if (totalCharts == 5) {
-        if ($("#chartList .chart-box").length > 3) {
-            chartBox.addClass('chart-height-50');
-        } else {
-            chartBox.addClass('chart-height-33');
-        }
-    }
-    else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100');
-        $("#chartList .chart-box").addClass('chart-height-50');
-    }
-    else {
-        $("#chartList .chart-box").removeClass('chart-height-50');
-        $("#chartList .chart-box").addClass('chart-height-100');
-    }
 }
 
-function addChartBox(totalCharts, chartIndx, symbol) {
-
-    var cssClass = "col-12";
-
-    if (totalCharts == 2 || totalCharts == 4) {
-        cssClass = "col-6";
-    }
-    else if (totalCharts == 5) {
-        cssClass = "col-12";
-    }
-    else if (totalCharts == 6) {
-        cssClass = "col-4";
-    }
-    else if (totalCharts == 8) {
-        cssClass = "col-3";
-    }
-
-    var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
-    var chartBox = $(`<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
-
-    if (totalCharts == 5) {
-        if ($("#chartList .chart-box").length < 3) {
-            $('#chartListCol2').append(chartBox);
-        } else {
-            $('#chartListCol1').append(chartBox);
-        }
-    } else {
-        $("#chartList").append(chartBox);
-    }
-
-    if (totalCharts == 5) {
-        if ($("#chartList .chart-box").length > 3) {
-            chartBox.addClass('chart-height-50');
-        } else {
-            chartBox.addClass('chart-height-33');
-        }
-    }
-    else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100');
-        $("#chartList .chart-box").addClass('chart-height-50');
-    }
-    else {
-        $("#chartList .chart-box").removeClass('chart-height-50');
-        $("#chartList .chart-box").addClass('chart-height-100');
-    }
-
-    var chart = addChart(chartContainerId, [], symbol);
-
-    if (totalCharts == 1) {
-        removeWindowControlButtonsFromChart();
-    }
-
-    return chart
+function createChartBox(chartSymbol, totalCharts) {
+    let chartBox = $(`<div class="chart-box chart-box-${chartSymbol.chartOrderIndx} ${getColClassForChartBox(totalCharts)} ${getHightClassForChartBox(totalCharts)}"><div class="chart-container" id="${chartSymbol.id}" data-chart-id="${chartSymbol.chartOrderIndx}" ></div></div>`);
+    return chartBox;
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
@@ -732,24 +672,63 @@ function createDashboard(totalCharts, initialChartSymbols) {
 
     if (charts.length == totalCharts) return;
 
+    charts.forEach(c => c.destroy());
+
     let chartList = $("#chartList");
 
-    chartList.html('');
-
-    charts.forEach(c => c.destroy());
+    chartList.empty();
 
     if (totalCharts == 5) {
         chartList
-            .append($('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'))
-            .append($('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'));
+            .append($('<div class="col-sm-8"><div id="chartListCol1" class="row g-4"></div></div>'))
+            .append($('<div class="col-sm-4"><div id="chartListCol2" class="row g-3"></div></div>'));
     }
 
-    for (let indx = 1; indx <= totalCharts; indx++) {
+    initialChartSymbols.slice(0, totalCharts).forEach((chartSymbol) => {
+        let chartBox = createChartBox(chartSymbol, totalCharts);
+        addChartBoxToChartList(totalCharts, chartBox);
+        addChart(chartSymbol.id, [], chartSymbol.symbol);
+    });
 
-        let symbolInfo = initialChartSymbols[indx - 1];
+    if (totalCharts == 1) removeWindowControlButtonsFromChart();
+}
 
-        let chart = addChartBox(totalCharts, indx, symbolInfo.symbol);
+function updateDashboard(targetChartCount, initialChartSymbols) {
+
+    removeUnusedElement();
+
+    let existingCharts = Highcharts.charts.filter(hc => hc);
+    let currentChartCount = existingCharts.length;
+
+    if (currentChartCount == targetChartCount) return;
+
+    if (targetChartCount == 5) {
+        chartList
+            .append($('<div class="col-sm-8"><div id="chartListCol1" class="row g-3"></div></div>'))
+            .append($('<div class="col-sm-4"><div id="chartListCol2" class="row g-4"></div></div>'));
     }
+
+    if (targetChartCount < currentChartCount) {
+
+        let countToRemove = currentChartCount - targetChartCount;
+
+        let chartsToRemove = existingCharts.slice(-countToRemove);
+
+        chartsToRemove.forEach(chart => {
+            chart.destroy();
+        });
+
+    } else if (targetChartCount > currentChartCount) {
+        let countToAdd = targetChartCount - currentChartCount;
+
+        initialChartSymbols.slice(currentChartCount, currentChartCount + countToAdd).forEach(chartSymbol => {
+            let chartBox = createChartBox(chartSymbol, targetChartCount);
+            addChartBoxToChartList(targetChartCount, chartBox);
+            addChart(chartSymbol.id, [], chartSymbol.symbol);
+        });
+    }
+
+    if (targetChartCount == 1) removeWindowControlButtonsFromChart();
 }
 
 function loadDashboard(totalCharts, initialChartSymbols) {
@@ -758,15 +737,17 @@ function loadDashboard(totalCharts, initialChartSymbols) {
 
     if (totalCharts == 5) {
         chartList
-            .append($('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'))
-            .append($('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'));
+            .append($('<div class="col-sm-8"><div id="chartListCol1" class="row g-4"></div></div>'))
+            .append($('<div class="col-sm-4"><div id="chartListCol2" class="row g-3"></div></div>'));
     }
 
-    initialChartSymbols.slice(0, totalCharts).forEach((chartSymbol, index) => {
-        const chart = addChartBox(totalCharts, index + 1, chartSymbol.symbol);
+    initialChartSymbols.slice(0, totalCharts).forEach((chartSymbol) => {
+        let chartBox = createChartBox(chartSymbol, totalCharts);
+        addChartBoxToChartList(totalCharts, chartBox);
+        addChart(chartSymbol.id, [], chartSymbol.symbol);
     });
-    //var seriesData = await getChartDataBySymbol(rec.symbol);
-    //setDataToChart(chart, seriesData);
+
+    if (totalCharts == 1) removeWindowControlButtonsFromChart();
 }
 
 function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
@@ -821,8 +802,8 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
 
 
     if (totalCharts == 5) {
-        var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
-        var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
+        var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row g-4"></div></div>');
+        var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row g-3"></div></div>');
 
         chartBoxes.slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
         chartBoxes.slice(3).appendTo(chartListCol1.find('#chartListCol1'));
@@ -863,7 +844,6 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
         chart.xAxis[0].setExtremes(minPoint, maxPoint);
     }
 }
-
 
 function getChartInstance(chartId) {
     let chart = Highcharts.charts.find(c => c && c.renderTo.id === chartId);

@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using FirstTerraceSystems.Models;
-using FirstTerraceSystems.Services;
 
 namespace FirstTerraceSystems.Repositories
 {
@@ -14,23 +13,21 @@ namespace FirstTerraceSystems.Repositories
     {
         private const int insertbatchSize = 5000;
         const string currentTableName = "tickers";
-        private readonly IDbConnection _connection;
-        private readonly DatabaseService _databaseService;
+        private readonly DatabaseContext _context;
 
-        public TickerRepository(IDbConnection connection, DatabaseService databaseService)
+        public TickerRepository(DatabaseContext context)
         {
-            _connection = connection;
-            _databaseService = databaseService;
+            _context = context;
         }
 
         public bool IsTickerTableExists()
         {
-            return _databaseService.IsTableExists(currentTableName);
+            return _context.IsTableExists(currentTableName);
         }
 
         public void CreateTableAndIndexes()
         {
-            using (var connection = _databaseService.GetNewConnection())
+            using (IDbConnection connection = _context.CreateConnection())
             {
                 connection.Execute($"CREATE TABLE IF NOT EXISTS {currentTableName} (" +
                     $"Id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -44,8 +41,9 @@ namespace FirstTerraceSystems.Repositories
         {
             try
             {
-                using (var connection = _databaseService.GetNewConnection())
+                using (IDbConnection connection = _context.CreateConnection())
                 {
+                    connection.Open();
                     using (var transaction = connection.BeginTransaction())
                     {
                         connection.Execute($"INSERT INTO {currentTableName} (Symbol) VALUES (@Symbol)", batch);
@@ -59,6 +57,7 @@ namespace FirstTerraceSystems.Repositories
                 Console.WriteLine($"Error inserting records: {ex.Message}");
             }
         }
+
         public void InsertRecords(IEnumerable<NasdaqTicker>? records)
         {
             if (records == null) return;
@@ -76,8 +75,9 @@ namespace FirstTerraceSystems.Repositories
             if (string.IsNullOrEmpty(symbol)) return false;
             try
             {
+                using IDbConnection connection = _context.CreateConnection();
                 string sql = $"SELECT(CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END) AS symbol_exists FROM tickers WHERE symbol = '{symbol}';";
-                int result = _connection.ExecuteScalar<int>(sql);
+                int result = connection.ExecuteScalar<int>(sql);
                 return result > 0;
             }
             catch (Exception ex)

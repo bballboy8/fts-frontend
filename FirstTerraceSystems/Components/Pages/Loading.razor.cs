@@ -2,6 +2,7 @@
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace FirstTerraceSystems.Components.Pages
 {
@@ -37,6 +38,8 @@ namespace FirstTerraceSystems.Components.Pages
             await Task.Delay(1000);
 
             WindowsSerivce.UnlockWindowResize();
+
+            await JSRuntime.InvokeVoidAsync("changeBackgroundColor", true);
 
             NavigationManager.NavigateTo("/multi-charts");
         }

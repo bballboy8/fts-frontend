@@ -23,6 +23,7 @@ namespace FirstTerraceSystems.Components.Pages
         protected override void OnInitialized()
         {
             base.OnInitialized();
+            //WindowsSerivce.LockWindowResize();
         }
 
         private void BackToRegistration()

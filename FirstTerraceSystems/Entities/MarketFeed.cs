@@ -28,10 +28,6 @@ namespace FirstTerraceSystems.Entities
             }
         }
 
-
-        [JsonPropertyName("id")]
-        public long Id { get; set; }
-
         [JsonPropertyName("trackingid")]
         public string? TrackingID { get; set; }
 

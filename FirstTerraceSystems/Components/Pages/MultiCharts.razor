@@ -1,10 +1,10 @@
-﻿@page "/multi-charts"
+﻿@* @page "/" *@
+@page "/multi-charts"
 
 @inject NasdaqService NasdaqService
+@inject NasdaqHistoricalDataService HistoricalDataService
 @inject Repositories.MarketFeedRepository MarketFeedRepository
 @inject Repositories.TickerRepository TickerRepository
-@inject DatabaseService DatabaseService
-@inject NasdaqHistoricalDataService HistoricalDataService
 @inject ChartService ChartService
 @inject BsToastService Toast
 @inject ILogger<MultiCharts> Logger
@@ -22,6 +22,4 @@
     }
 </style>
 
-<div class="container-fluid">
-    <div id="chartList" class="row"></div>
-</div>
+<div id="chartList" class="row g-4"></div>

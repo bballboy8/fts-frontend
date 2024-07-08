@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using FirstTerraceSystems.AuthProviders;
 using FirstTerraceSystems.Features;
+using FirstTerraceSystems.Repositories;
 using FirstTerraceSystems.Services;
 using FirstTerraceSystems.Services.IServices;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -63,15 +64,8 @@ namespace FirstTerraceSystems
             builder.Services.AddAuthorizationCore();
             builder.Services.AddDatabaseService();
 
-            builder.Services.AddSingleton(serviceProvider =>
-            {
-                return serviceProvider.GetRequiredService<DatabaseService>().MarketFeedRepository;
-            });
-
-            builder.Services.AddSingleton(serviceProvider =>
-            {
-                return serviceProvider.GetRequiredService<DatabaseService>().TickerRepository;
-            });
+            builder.Services.AddScoped<MarketFeedRepository>();
+            builder.Services.AddScoped<TickerRepository>();
 
             builder.Services.AddSingleton<StateContainerService>();
             builder.Services.AddSingleton<WindowsSerivce>();

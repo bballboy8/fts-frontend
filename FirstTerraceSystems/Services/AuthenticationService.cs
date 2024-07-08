@@ -67,7 +67,7 @@ namespace FirstTerraceSystems.Services
         }
 
 
-        public async Task Logout(LoginDto model)
+        public async Task Logout()
         {
             var email = await SecureStorage.GetAsync(AppSettings.SS_AuthEmail);
             var content = JsonSerializer.Serialize(new { email = email?.ToLower() }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });

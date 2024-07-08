@@ -2,15 +2,6 @@ let backgroundColor = '#202527';
 let fontColor = '#ffffff';
 let isDarkMode = true;
 
-var MainLayoutInterop = window.MainLayoutInterop || {};
-
-MainLayoutInterop.dotnetReference = null;
-
-MainLayoutInterop.setDotNetReference = function (dotnetReference) {
-    MainLayoutInterop.dotnetReference = dotnetReference;
-};
-
-
 // Class
 class ButtonComponent extends Highcharts.AccessibilityComponent {
     constructor(chart, rendererButton) {
@@ -187,27 +178,6 @@ function addButtonToChart(chart, options) {
 function removeUnusedElement() {
     $('#dvSymbolInput').remove();
 }
-
-
-function loadTemplates(e) {
-    let showDropDownClass = 'show';
-    let templateDropDown = document.getElementById("load-template-dropdown");
-    if (templateDropDown.classList.contains(showDropDownClass)) {
-        templateDropDown.classList.remove(showDropDownClass);
-        e.currentTarget.classList.remove("display-Option-clicked-color");
-        templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
-            ct.classList.remove('display-Option-clicked-color');
-        });
-    } else {
-        templateDropDown.classList.add(showDropDownClass);
-        e.currentTarget.classList.add("display-Option-clicked-color");
-        templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
-            ct.classList.add('display-Option-clicked-color');
-        });
-    }
-    e.stopPropagation();
-}
-
 function truncateText(text, maxWidth, ellipsis = '...') {
     if (!text || typeof text !== 'string') {
         return '';
@@ -262,12 +232,6 @@ window.changeBackgroundColor = (mode) => {
                             color: fontColor
                         }
                     }
-                }, {
-                    labels: {
-                        style: {
-                            color: fontColor
-                        }
-                    }
                 }],
                 yAxis: [{
                     labels: {
@@ -301,7 +265,7 @@ window.showLoader = () => {
     }, 1600);
 }
 
-window.LoadKeyBordEventToDisplayOptions = function (element, initialChartSymbols) {
+window.initializeKeyBordEventToDisplayOptions = function (element, initialChartSymbols, dotNetHeaderRef) {
 
     const dropdownItems = $(element).find('.dropdown-item');
     const itemCount = dropdownItems.length;
@@ -315,8 +279,8 @@ window.LoadKeyBordEventToDisplayOptions = function (element, initialChartSymbols
 
             if (itemCount === 0) return;
 
-            var currentIndex = dropdownItems.index(document.activeElement);
-            var isArrowDown = event.key === 'ArrowDown';
+            let currentIndex = dropdownItems.index(document.activeElement);
+            let isArrowDown = event.key === 'ArrowDown';
 
             if (currentIndex === -1) {
                 dropdownItems.eq(isArrowDown ? 0 : itemCount - 1).focus();
@@ -325,13 +289,13 @@ window.LoadKeyBordEventToDisplayOptions = function (element, initialChartSymbols
             }
         }
         else if (event.key === 'Enter' || event.key === ' ') {
-            var itemType = $(document.activeElement).data('item-type');
+            let itemType = $(document.activeElement).data('item-type');
 
             if (itemType == 'savelayout') {
-                await saveLayout();
+                await dotNetHeaderRef.invokeMethodAsync('SaveLayout');
             } else if (itemType = 'template') {
-                var totalCharts = $(document.activeElement).data('load-template');
-                var num = parseInt(totalCharts, 10);
+                let totalCharts = $(document.activeElement).data('load-template');
+                let num = parseInt(totalCharts, 10);
 
                 if (!isNaN(num) && num > 0) {
                     createDashboard(totalCharts, initialChartSymbols);
@@ -340,6 +304,13 @@ window.LoadKeyBordEventToDisplayOptions = function (element, initialChartSymbols
         } else if (event.key === 'Escape') {
             $('.dropdown-toggle', this).eq(0).dropdown('toggle');
         }
+    });
+
+    $('#dropdown-item-LoadLayout', element).on('click', function (event) {
+        $(this).toggleClass('clicked-option');
+        $('#load-template-dropdown', element).toggleClass('show');
+        $('#load-template-dropdown .dropdown-item.load-template').toggleClass('clicked-option'); 
+        event.stopPropagation();
     });
 }
 
@@ -359,19 +330,6 @@ $(document).ready(function () {
         }
     })
 
-    $('body').on('keydown', '.dropdown-toggle', function (event) {
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            event.preventDefault();
-
-            var isOpen = $(this).attr('aria-expanded') === 'true';
-
-            if (!isOpen && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
-                $(this).dropdown('toggle');
-            }
-        }
-    });
-
-
     $('body').on('keydown', '.tab-to-close-app', function (event) {
         if (event.key === 'Tab' || event.keyCode === 9) {
             event.preventDefault();
@@ -380,8 +338,3 @@ $(document).ready(function () {
     });
 
 });
-    
-async function  saveLayout() {
-    await MainLayoutInterop.dotnetReference.invokeMethodAsync('SaveLayout', $("#chartList .chart-box").length);
-    console.log(localStorage.getItem('SavedLayout'));
-}
