@@ -13,7 +13,7 @@ namespace FirstTerraceSystems.Repositories
         private const int InsertBatchSize = 10000;
         private readonly IDbConnection _connection;
         private readonly DatabaseService _databaseService;
-
+        private readonly object _databaseLock = new object();
         public MarketFeedRepository(IDbConnection connection, DatabaseService databaseService)
         {
             _connection = connection;
@@ -100,29 +100,16 @@ namespace FirstTerraceSystems.Repositories
             if (marketFeeds == null) return;
 
             CreateTableAndIndexes(symbol);
-
-            Queue<MarketFeed>? queue = new Queue<MarketFeed>(marketFeeds);
-
-            while (queue.Count > 0)
+            var feedsList = marketFeeds.ToList(); // Materialize enumerable to list
+            for (int i = 0; i < feedsList.Count; i += InsertBatchSize)
             {
-                List<MarketFeed>? batch = new List<MarketFeed>();
-
-                for (int i = 0; i < InsertBatchSize && queue.Count > 0; i++)
-                {
-                    batch.Add(queue.Dequeue());
-                }
-
-                if (batch.Count != 0)
-                {
-                    InsertRecordsBatch(symbol, batch);
-                }
-
-                batch.Clear();
-                batch = null;
+                var batch = feedsList.Skip(i).Take(InsertBatchSize).ToList();
+                InsertRecordsBatch(symbol, batch);
             }
+            
         }
 
-        public void InsertLiveMarketFeedDataFromSocket(NasdaqResponse? response)
+        public async Task InsertLiveMarketFeedDataFromSocket(NasdaqResponse? response)
         {
             if (response == null) return;
 
@@ -134,82 +121,92 @@ namespace FirstTerraceSystems.Repositories
                 {
                     CreateTableAndIndexes(groupedMarketFeeds.Key!);
 
-                    InsertRecordsBatch(groupedMarketFeeds.Key!, batch);
+                    await InsertRecordsBatchAsync(groupedMarketFeeds.Key!, batch).ConfigureAwait(false);
                 }
 
             }
         }
-
         private void InsertRecordsBatch(string symbol, IEnumerable<MarketFeed> records)
         {
-            try
+            lock (_databaseLock)
             {
-                using (IDbConnection? connection = _databaseService.GetNewConnection())
+                try
                 {
-                    using (IDbTransaction? transaction = connection.BeginTransaction())
+                    using (IDbConnection? connection = _databaseService.GetNewConnection())
                     {
-                        connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
-
-                        transaction.Commit();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error inserting records: {ex.Message}");
-            }
-        }
-
-        private async Task InsertRecordsBatchAsync(string symbol, IEnumerable<MarketFeed> records)
-        {
-            try
-            {
-                using (IDbConnection? connection = _databaseService.GetNewConnection())
-                {
-                    using (IDbTransaction? transaction = connection.BeginTransaction())
-                    {
-                        await connection.ExecuteAsync($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
-
-                        transaction.Commit();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error inserting records: {ex.Message}");
-            }
-        }
-
-        private void CreateTableAndIndexes(string symbol)
-        {
-            try
-            {
-                using (var connection = _databaseService.GetNewConnection())
-                {
-                    if (!_databaseService.IsTableExists($"symbol_{symbol}"))
-                    {
-                        using (var transaction = connection.BeginTransaction())
+                        using (IDbTransaction? transaction = connection.BeginTransaction())
                         {
-
-                            connection.Execute($"CREATE TABLE IF NOT EXISTS symbol_{symbol} (" +
-                            "Id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                            "TrackingID VARCHAR," +
-                            "Date DATETIME," +
-                            "MsgType VARCHAR," +
-                            "Symbol VARCHAR," +
-                            "Price FLOAT)");
-
-                            //_connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_symbol ON symbol_{symbol}(Symbol)");
-                            connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_date ON symbol_{symbol}(Date)");
+                            connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
 
                             transaction.Commit();
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error inserting records: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+        }
+
+        private async Task InsertRecordsBatchAsync(string symbol, IEnumerable<MarketFeed> records)
+        {
+            await Task.Run(() => { 
+            lock (_databaseLock)
             {
-                Console.WriteLine($"Error in Create Table And Indexes: {ex.Message}");
+                try
+                {
+                    using (IDbConnection? connection = _databaseService.GetNewConnection())
+                    {
+                        using (IDbTransaction? transaction = connection.BeginTransaction())
+                        {
+                            connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
+
+                            transaction.Commit();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error inserting records: {ex.Message}");
+                }
+            }
+            });
+        }
+
+        private void CreateTableAndIndexes(string symbol)
+        {
+            lock (_databaseLock)
+            {
+                try
+                {
+                    using (var connection = _databaseService.GetNewConnection())
+                    {
+                        if (!_databaseService.IsTableExists($"symbol_{symbol}"))
+                        {
+                            using (var transaction = connection.BeginTransaction())
+                            {
+
+                                connection.Execute($"CREATE TABLE IF NOT EXISTS symbol_{symbol} (" +
+                                "Id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                                "TrackingID VARCHAR," +
+                                "Date DATETIME," +
+                                "MsgType VARCHAR," +
+                                "Symbol VARCHAR," +
+                                "Price FLOAT)");
+
+                                //_connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_symbol ON symbol_{symbol}(Symbol)");
+                                connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_date ON symbol_{symbol}(Date)");
+
+                                transaction.Commit();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in Create Table And Indexes: {ex.Message}");
+                }
             }
         }
 
