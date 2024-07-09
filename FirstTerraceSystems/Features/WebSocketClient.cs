@@ -10,7 +10,7 @@ namespace FirstTerraceSystems.Features
     {
         static ClientWebSocket _webSocket = new();
 
-        public delegate void OnRealDataReceived(NasdaqResponse? response);
+        public delegate Task OnRealDataReceived(NasdaqResponse? response);
 
         public delegate Task ReferenceChartAsync();
 
@@ -71,57 +71,63 @@ namespace FirstTerraceSystems.Features
             }
         }
 
-        public async static Task ListenAsync()
+    public static async Task ListenAsync()
+    {
+      await Task.Run(async () =>
+      {
+        byte[] buffer = new byte[1024 * 10];
+
+        bool isStarted = false;
+        try
         {
-            byte[] buffer = new byte[1024 * 10];
-
-            bool isStarted = false;
-            try
+          while (_webSocket.State == WebSocketState.Open)
+          {
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                while (_webSocket.State == WebSocketState.Open)
+              WebSocketReceiveResult result;
+              do
+              {
+                result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                memoryStream.Write(buffer, 0, result.Count);
+              } while (!result.EndOfMessage);
+
+              if (result.MessageType == WebSocketMessageType.Text)
+              {
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                if (!isStarted)
                 {
-                    using (MemoryStream memoryStream = new MemoryStream())
-                    {
-                        WebSocketReceiveResult result;
-                        do
-                        {
-                            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                            memoryStream.Write(buffer, 0, result.Count);
-                        } while (!result.EndOfMessage);
-
-                        if (result.MessageType == WebSocketMessageType.Text)
-                        {
-                            memoryStream.Seek(0, SeekOrigin.Begin);
-
-                            if (!isStarted)
-                            {
-                                isStarted = IsStarted(memoryStream);
-                            }
-                            else
-                            {
-                                ProcessMessage(memoryStream);
-                            }
-                        }
-                    }
+                  isStarted = IsStarted(memoryStream);
                 }
+                else
+                {
+                  ProcessMessage(memoryStream);
+                }
+              }
             }
-            catch (WebSocketException ex)
-            {
-                Log.Error($"WebSocket error: {ex.Message}");
-                Log.Information($"Reconnecting WebSocket");
-                await ConnectAsync();
-                Log.Information($"Reconnected WebSocket");
-                Log.Information($"Listening WebSocket");
-                await ListenAsync();
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Unexpected error: {ex.Message}");
-            }
-            isStarted = false;
+          }
         }
+        catch (WebSocketException ex)
+        {
+          Log.Error($"WebSocket error: {ex.Message}");
+          Log.Information($"Reconnecting WebSocket");
+          await ConnectAsync();
+          Log.Information($"Reconnected WebSocket");
+          Log.Information($"Listening WebSocket");
+          await ListenAsync(); // Restart listening on reconnection
+        }
+        catch (Exception ex)
+        {
+          Log.Error($"Unexpected error: {ex.Message}");
+        }
+        finally
+        {
+          isStarted = false;
+        }
+      });
+    }
 
-        static bool IsStarted(MemoryStream memoryStream)
+    static bool IsStarted(MemoryStream memoryStream)
         {
             using (StreamReader reader = new StreamReader(memoryStream, Encoding.UTF8))
             {
@@ -139,9 +145,9 @@ namespace FirstTerraceSystems.Features
                 Log.Information($"Real Data Received: {response?.Data.Length}");
                 if (response?.Data.Length > 0)
                 {
-                    ActionRealDataReceived?.Invoke(response);
-                    ActionReferenceChart?.Invoke();
-                }
+                   ActionRealDataReceived?.Invoke(response);
+                   ActionReferenceChart?.Invoke();
+        }
             }
             catch (Exception ex)
             {

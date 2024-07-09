@@ -888,14 +888,20 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
     let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
         let series = chart.series[0];
-        if (series.data.length === 0) {
-            setDataToChart(series, seriesData);
-        } else {
-            addPointToChart(series, seriesData, false, false);
+
+        if (!seriesData) {
+            // Handle case where no series data is provided (indicating all data loaded)
+            chart.redraw();
+            chart.hideLoading();
+            return;
         }
+        
+        addPointToChart(series, seriesData, false, false);
+        
+
         if (isAllLoaded) {
             chart.redraw();
-            chart.hideLoading()
+            chart.hideLoading();
         }
     }
 }

@@ -1,9 +1,13 @@
-﻿using System.Text;
+﻿using System.Buffers;
+using System.IO.Pipelines;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace FirstTerraceSystems.Services
 {
@@ -36,31 +40,33 @@ namespace FirstTerraceSystems.Services
       }
       catch (Exception ex)
       {
+        Log.Logger.Error(ex, "NasdaqGetDataAsync");
         Console.WriteLine(ex.Message);
         return null;
       }
     }
-    private async Task<List<MarketFeed>> DeserializeStreamAsync(Stream stream)
+    private async Task<IEnumerable<MarketFeed>> DeserializeStreamAsync(Stream stream)
     {
       var result = new List<MarketFeed>();
-      using var reader = new StreamReader(stream);
-      var json = await reader.ReadToEndAsync();
-      ProcessJson(json, result);
-      return result;
-    }
+      var serializer = new Newtonsoft.Json.JsonSerializer();
 
-    private void ProcessJson(string json, List<MarketFeed> result)
-    {
-      var jsonReader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
-
-      while (jsonReader.Read())
+      using (var sr = new StreamReader(stream))
+      using (var jr = new JsonTextReader(sr))
       {
-        if (jsonReader.TokenType == JsonTokenType.StartObject)
+        while (await jr.ReadAsync())
         {
-          var jsonElement = System.Text.Json.JsonSerializer.Deserialize<MarketFeed>(ref jsonReader);
-          result.Add(jsonElement);
+          if (jr.TokenType == JsonToken.StartObject)
+          {
+            var marketFeed = serializer.Deserialize<MarketFeed>(jr);
+            if (marketFeed != null)
+            {
+              result.Add(marketFeed);
+            }
+          }
         }
       }
+
+      return result;
     }
 
     public async Task<IEnumerable<NasdaqTicker>?> NasdaqGetTickersAsync()

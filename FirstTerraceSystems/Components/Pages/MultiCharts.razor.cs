@@ -10,7 +10,7 @@ namespace FirstTerraceSystems.Components.Pages
 {
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 20000;
+        private const int MarketFeedChunkSize = 5000;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
 
         protected override void OnInitialized()
@@ -72,7 +72,7 @@ namespace FirstTerraceSystems.Components.Pages
                     DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
                     Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
-                    IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol).ConfigureAwait(false); 
+                    IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol); 
                     Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
 
                     if (marketFeeds != null && marketFeeds.Any())
@@ -91,7 +91,7 @@ namespace FirstTerraceSystems.Components.Pages
                     try
                     {
                         Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
-                        await SendChartDataInChunks(chart.Symbol, marketFeeds).ConfigureAwait(false); ;
+                        await SendChartDataInChunks(chart.Symbol, marketFeeds) ;
                         Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                     }
                     catch (Exception ex)
@@ -113,18 +113,49 @@ namespace FirstTerraceSystems.Components.Pages
             Logger.LogInformation($"End InitialChartSymbols");
         }
 
-        private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
-        {
-            int totalCount = marketFeeds.Count();
-            int processedCount = 0;
-            foreach (var chunk in marketFeeds.Chunk(MarketFeedChunkSize))
-            {
-                processedCount += chunk.Count();
-                await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, processedCount == totalCount).ConfigureAwait(false);
-            }
-        }
+    private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
+    {
+      
+      var chunks = marketFeeds.Chunk(MarketFeedChunkSize); 
 
-        private async Task InitializedDataBaseAsync()
+      foreach (var chunk in chunks)
+      {
+        try
+        {
+
+          // Invoke JavaScript function asynchronously with chunk of data
+          await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, false);
+
+          var tempChunk = chunk;
+
+          // Example: Set properties of tempChunk to null or dispose items within it
+          tempChunk = null;
+
+          // Force garbage collection to release memory
+          GC.Collect();
+          GC.WaitForPendingFinalizers();
+        }
+        catch (Exception ex)
+        {
+          // Handle exceptions
+          Logger.LogError(ex, $"For: {symbol}");
+        }
+      }
+
+      try
+      {
+        // After all chunks are sent, indicate that all data is loaded
+        await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, null, true);
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, $"Error indicating all data loaded for symbol: {symbol}");
+      }
+    }
+
+
+
+    private async Task InitializedDataBaseAsync()
         {
             if (!TickerRepository.IsTickerTableExists())
             {
@@ -139,14 +170,14 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
-        private async void OnRealDataReceived(NasdaqResponse? response)
+        private async Task OnRealDataReceived(NasdaqResponse? response)
         {
             await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response).ConfigureAwait(false);
     }
 
         private async Task RefreshCharts()
         {
-            await JSRuntime.InvokeVoidAsync("refreshCharts").ConfigureAwait(false);
+            await JSRuntime.InvokeVoidAsync("refreshCharts");
         }
 
         [JSInvokable]

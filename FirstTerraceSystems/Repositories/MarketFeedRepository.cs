@@ -144,7 +144,12 @@ namespace FirstTerraceSystems.Repositories
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error inserting records: {ex.Message}");
+          if (ex.Message.Contains("database is locked"))
+          {
+            Thread.Sleep(100);
+            InsertRecordsBatch(symbol,records);
+          }
+          Console.WriteLine($"Error inserting records: {ex.Message}");
                 }
             }
         }
