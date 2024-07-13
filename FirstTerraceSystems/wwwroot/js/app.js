@@ -171,11 +171,10 @@ function addButtonToChart(chart, options) {
             stroke: 'darkgray'
         }, // disabledState
         'rect', //shape
-        false // useHTML
+        true // useHTML
     ).attr({
-        width: width,
-        height: height,
         title: title
+    }).css({
     });
 
     //button.addClass('btn btn-sm')

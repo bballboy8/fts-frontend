@@ -1,6 +1,10 @@
 ﻿Highcharts.setOptions({
     global: {
         useUTC: false
+    },
+    boost: {
+        useGPUTranslations: true,
+        usePreAllocated: true
     }
 });
 
@@ -44,7 +48,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
-            animation: false,
+            boostThreshold:1,
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
@@ -301,8 +305,10 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             },
         },
         plotOptions: {
+            
             series: {
-                turboThreshold: 0
+                turboThreshold: 0,
+                
             }
         },
         time: {
@@ -355,25 +361,23 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
         series: [
             {
                 name: symbol,
-                data: data,
-                dataGrouping: {
-                    enabled: false
-                },
-                color: '#C01620',
-                upColor: '#16C05A',
                 lineWidth: 0,
-                marker: {
-                    enabled: true,
-                    radius: 2
-                },
-                tooltip: {
-                    valueDecimals: 2
-                },
+ marker: {
+ enabled: true,
+                                radius: 2
+                           },
+                        tooltip: {
+ valueDecimals: 2
+                   },
                 states: {
-                    hover: {
-                        lineWidthPlus: 0
-                    }
-                }
+                       hover: {
+                               lineWidthPlus: 0
+                                }
+                   },
+                data: [],
+                boostThreshold: 10000,
+                turboThreshold:0
+                
             }
         ],
         exporting: {
@@ -391,6 +395,10 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
         navigator: {
             enabled: false,
             adaptToUpdateData: false,
+        },
+        boost: {
+            enabled: true,
+            useGPUTranslations:true
         },
         accessibility: {
             highContrastTheme: null,
@@ -613,9 +621,9 @@ async function refreshCharts() {
         let series = chart.series[0];
         let lastPoint = series.options.data[series.options.data.length - 1];
         let seriesData = await getChartDataBySymbol(series.name, lastPoint);
-        addPointToChart(series, seriesData, true, true);
+        setTimeout(addPointToChart(series, seriesData, false, false),0);
         //removeOldPoints(chart, 3);
-        //chart.redraw();
+        chart.redraw();
     }
 }
 
@@ -896,7 +904,7 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
             return;
         }
         
-        addPointToChart(series, seriesData, false, false);
+       setTimeout(addPointToChart(series, seriesData, false, false),0);
         
 
         if (isAllLoaded) {
