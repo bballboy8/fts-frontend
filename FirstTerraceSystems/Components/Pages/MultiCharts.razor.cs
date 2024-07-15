@@ -1,10 +1,12 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Text.Json;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+using Microsoft.VisualBasic;
 
 namespace FirstTerraceSystems.Components.Pages
 {
@@ -12,8 +14,9 @@ namespace FirstTerraceSystems.Components.Pages
     {
         private const int MarketFeedChunkSize = 5000;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
-
-        protected override void OnInitialized()
+    Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
+    Dictionary<string, double> Ranges = new Dictionary<string, double>();
+    protected override void OnInitialized()
         {
             _dotNetMualtiChatsRef = DotNetObjectReference.Create(this);
         }
@@ -45,23 +48,23 @@ namespace FirstTerraceSystems.Components.Pages
         private async Task UpdateAndRenderChartsAsync()
         {
             DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+      DateTime defaultdbStartDate = DateTime.Now.AddMinutes(-30);
+      //Parallel.ForEach(ChartService.InitialChartSymbols.Where(a => a.IsVisible), async chart =>
+      //{
+      //    var symbolic = SymbolicRepository.GetLastRecordBySymbol(chart.Symbol);
+      //    DateTime startDate = symbolic?.Date ?? defaultStartDate;
+      //    var symbolicDatas = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
 
-            //Parallel.ForEach(ChartService.InitialChartSymbols.Where(a => a.IsVisible), async chart =>
-            //{
-            //    var symbolic = SymbolicRepository.GetLastRecordBySymbol(chart.Symbol);
-            //    DateTime startDate = symbolic?.Date ?? defaultStartDate;
-            //    var symbolicDatas = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
+      //    if (symbolicDatas != null && symbolicDatas.Any())
+      //    {
+      //        SymbolicRepository.InsertMarketFeedDataFromApi(chart.Symbol, symbolicDatas);
+      //    }
 
-            //    if (symbolicDatas != null && symbolicDatas.Any())
-            //    {
-            //        SymbolicRepository.InsertMarketFeedDataFromApi(chart.Symbol, symbolicDatas);
-            //    }
+      //    symbolicDatas = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
+      //    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolicDatas);
+      //});
 
-            //    symbolicDatas = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
-            //    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolicDatas);
-            //});
-
-            Logger.LogInformation("Starting InitialChartSymbols");
+      Logger.LogInformation("Starting InitialChartSymbols");
 
             IEnumerable<Task>? tasks = ChartService.InitialChartSymbols.Where(a => a.IsVisible).Select(async chart =>
             {
@@ -72,8 +75,8 @@ namespace FirstTerraceSystems.Components.Pages
                     DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
                     Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
-                    IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol); 
-                    Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
+                    IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol).ConfigureAwait(false);
+                Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
 
                     if (marketFeeds != null && marketFeeds.Any())
                     {
@@ -113,10 +116,25 @@ namespace FirstTerraceSystems.Components.Pages
             Logger.LogInformation($"End InitialChartSymbols");
         }
 
+    private List<MarketFeed> FilterData(List<MarketFeed> data, int numPoints)
+    {
+      var filteredData = data;
+
+
+      if (numPoints > 0 && numPoints < filteredData.Count)
+      {
+        var step = Math.Max(1, filteredData.Count / numPoints);
+        return filteredData.Where((_, index) => index % step == 0).Take(numPoints).ToList();
+      }
+
+      return filteredData;
+    }
+
     private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
     {
+      datasets[symbol] = marketFeeds.ToList();
       
-      var chunks = marketFeeds.Chunk(MarketFeedChunkSize); 
+      var chunks = FilterData(marketFeeds.ToList(),500).Chunk(MarketFeedChunkSize); 
 
       foreach (var chunk in chunks)
       {
@@ -153,9 +171,22 @@ namespace FirstTerraceSystems.Components.Pages
       }
     }
 
+    [JSInvokable]
+    public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
+    {
+      Ranges[symbol] = range;
+      var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+      DateTime eastern = TimeZoneInfo
+  .ConvertTimeFromUtc(
+    RangeDate,
+    TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+      var last = datasets[symbol][datasets[symbol].Count - 1];
+      var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+      filtered = FilterData(filtered, 500);
+      return filtered;
+    }
 
-
-    private async Task InitializedDataBaseAsync()
+      private async Task InitializedDataBaseAsync()
         {
             if (!TickerRepository.IsTickerTableExists())
             {
@@ -180,6 +211,25 @@ namespace FirstTerraceSystems.Components.Pages
             await JSRuntime.InvokeVoidAsync("refreshCharts");
         }
 
+    private async Task UpdateChartWithUpdatedPoints(string symbol, IEnumerable<MarketFeed> UpdatedFeeds)
+    {
+      List<MarketFeed> filtered = datasets[symbol];
+      if (Ranges.ContainsKey(symbol) && Ranges[symbol] != 0)
+      {
+        var RangeDate = DateTime.UtcNow.AddMilliseconds(-Ranges[symbol]);
+        DateTime eastern = TimeZoneInfo
+    .ConvertTimeFromUtc(
+      RangeDate,
+      TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+         filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+      }
+        filtered = FilterData(filtered, 500);
+      filtered = filtered.Concat(UpdatedFeeds).ToList();
+      datasets[symbol] = datasets[symbol].Concat(UpdatedFeeds).ToList();
+      await JSRuntime.InvokeVoidAsync("setNewDataToChartBySymbol",symbol,filtered);
+    
+    }
+
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
         {
@@ -194,7 +244,9 @@ namespace FirstTerraceSystems.Components.Pages
             else
             {
                 IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey).ConfigureAwait(false);
-                return marketFeeds;
+        
+        UpdateChartWithUpdatedPoints(symbol,marketFeeds);
+        return marketFeeds;
             }
         }
 
