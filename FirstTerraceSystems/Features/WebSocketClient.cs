@@ -3,14 +3,14 @@ using System.Text;
 using FirstTerraceSystems.Models;
 using System.Text.Json;
 using Serilog;
+using System.Timers;
 
 namespace FirstTerraceSystems.Features
 {
     public static class WebSocketClient
     {
         static ClientWebSocket _webSocket = new();
-
-        public delegate Task OnRealDataReceived(NasdaqResponse? response);
+    public delegate Task OnRealDataReceived(NasdaqResponse? response);
 
         public delegate Task ReferenceChartAsync();
 
@@ -18,7 +18,8 @@ namespace FirstTerraceSystems.Features
 
         public static event ReferenceChartAsync? ActionReferenceChart;
 
-        public async static Task ConnectAsync()
+
+    public async static Task ConnectAsync()
         {
 
             int connectionTrial = 0;
@@ -32,7 +33,6 @@ namespace FirstTerraceSystems.Features
                     var buffer = Encoding.UTF8.GetBytes("start");
                     await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
                     connectionTrial = 0;
-
                     while (_webSocket.State == WebSocketState.Connecting)
                     {
                         await Task.Delay(50); // Small delay to avoid busy waiting
@@ -73,40 +73,43 @@ namespace FirstTerraceSystems.Features
 
     public static async Task ListenAsync()
     {
-      await Task.Run(async () =>
-      {
-        byte[] buffer = new byte[1024 * 10];
+        byte[] buffer = new byte[1024 * 5];
 
         bool isStarted = false;
         try
         {
-          while (_webSocket.State == WebSocketState.Open)
+        while (_webSocket.State == WebSocketState.Open)
+        {
+          WebSocketReceiveResult result;
+          StringBuilder messageBuilder = new StringBuilder();
+
+          do
           {
-            using (MemoryStream memoryStream = new MemoryStream())
+            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+            if (result.MessageType == WebSocketMessageType.Text)
             {
-              WebSocketReceiveResult result;
-              do
-              {
-                result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                memoryStream.Write(buffer, 0, result.Count);
-              } while (!result.EndOfMessage);
+              string messagePart = Encoding.UTF8.GetString(buffer, 0, result.Count);
+              messageBuilder.Append(messagePart);
+            }
+            // Handle other message types if necessary
+          } while (!result.EndOfMessage);
 
-              if (result.MessageType == WebSocketMessageType.Text)
-              {
-                memoryStream.Seek(0, SeekOrigin.Begin);
+          if (messageBuilder.Length > 0)
+          {
+            string message = messageBuilder.ToString();
 
-                if (!isStarted)
-                {
-                  isStarted = IsStarted(memoryStream);
-                }
-                else
-                {
-                  ProcessMessage(memoryStream);
-                }
-              }
+            if (!isStarted)
+            {
+              isStarted = IsStarted(message);
+            }
+            else
+            {
+              ProcessMessage(message);
             }
           }
         }
+      }
         catch (WebSocketException ex)
         {
           Log.Error($"WebSocket error: {ex.Message}");
@@ -124,24 +127,19 @@ namespace FirstTerraceSystems.Features
         {
           isStarted = false;
         }
-      });
     }
 
-    static bool IsStarted(MemoryStream memoryStream)
+    static bool IsStarted(string message)
         {
-            using (StreamReader reader = new StreamReader(memoryStream, Encoding.UTF8))
-            {
-                string? message = reader.ReadToEnd();
-                memoryStream.SetLength(0);
                 return message.Contains("start");
-            }
+            
         }
 
-        static void ProcessMessage(MemoryStream memoryStream)
+        static void ProcessMessage(string message)
         {
             try
             {
-                NasdaqResponse? response = JsonSerializer.Deserialize<NasdaqResponse>(memoryStream);
+                NasdaqResponse? response = JsonSerializer.Deserialize<NasdaqResponse>(message);
                 Log.Information($"Real Data Received: {response?.Data.Length}");
                 if (response?.Data.Length > 0)
                 {
@@ -155,7 +153,6 @@ namespace FirstTerraceSystems.Features
             }
             finally
             {
-                memoryStream.SetLength(0);
             }
         }
     }

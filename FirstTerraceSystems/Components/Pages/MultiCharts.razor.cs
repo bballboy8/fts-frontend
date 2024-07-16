@@ -116,25 +116,24 @@ namespace FirstTerraceSystems.Components.Pages
             Logger.LogInformation($"End InitialChartSymbols");
         }
 
-    private List<MarketFeed> FilterData(List<MarketFeed> data, int numPoints)
+    private List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
     {
       var filteredData = data;
 
 
-      if (numPoints > 0 && numPoints < filteredData.Count)
+      if (numPoints > 0 && numPoints < filteredData.Count())
       {
-        var step = Math.Max(1, filteredData.Count / numPoints);
+        var step = Math.Max(1, filteredData.Count() / numPoints);
         return filteredData.Where((_, index) => index % step == 0).Take(numPoints).ToList();
       }
 
-      return filteredData;
+      return filteredData.ToList();
     }
 
     private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
     {
-      datasets[symbol] = marketFeeds.ToList();
-      
-      var chunks = FilterData(marketFeeds.ToList(),500).Chunk(MarketFeedChunkSize); 
+      //datasets[symbol] = marketFeeds.ToList();
+      var chunks = FilterData(marketFeeds,500).Chunk(MarketFeedChunkSize); 
 
       foreach (var chunk in chunks)
       {
@@ -180,13 +179,31 @@ namespace FirstTerraceSystems.Components.Pages
   .ConvertTimeFromUtc(
     RangeDate,
     TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-      var last = datasets[symbol][datasets[symbol].Count - 1];
-      var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+      var filtered = await MarketFeedRepository.GetChartDataBySymbol(symbol, eastern).ConfigureAwait(false); ;
       filtered = FilterData(filtered, 500);
       return filtered;
     }
 
-      private async Task InitializedDataBaseAsync()
+    private async Task UpdateChartWithUpdatedPoints(string symbol, IEnumerable<MarketFeed> UpdatedFeeds)
+    {
+     List<MarketFeed> filtered = datasets[symbol];
+      if (Ranges.ContainsKey(symbol) && Ranges[symbol] != 0)
+      {
+        var RangeDate = DateTime.UtcNow.AddMilliseconds(Ranges[symbol]);
+        DateTime eastern = TimeZoneInfo
+    .ConvertTimeFromUtc(
+RangeDate,
+TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+         filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+      }
+        filtered = FilterData(filtered, 500);
+      filtered = filtered.Concat(UpdatedFeeds).ToList();
+      datasets[symbol] = datasets[symbol].Concat(UpdatedFeeds).ToList();
+      await JSRuntime.InvokeVoidAsync("setNewDataToChartBySymbol", symbol, filtered);
+    
+    }
+
+private async Task InitializedDataBaseAsync()
         {
             if (!TickerRepository.IsTickerTableExists())
             {
@@ -211,24 +228,6 @@ namespace FirstTerraceSystems.Components.Pages
             await JSRuntime.InvokeVoidAsync("refreshCharts");
         }
 
-    private async Task UpdateChartWithUpdatedPoints(string symbol, IEnumerable<MarketFeed> UpdatedFeeds)
-    {
-      List<MarketFeed> filtered = datasets[symbol];
-      if (Ranges.ContainsKey(symbol) && Ranges[symbol] != 0)
-      {
-        var RangeDate = DateTime.UtcNow.AddMilliseconds(-Ranges[symbol]);
-        DateTime eastern = TimeZoneInfo
-    .ConvertTimeFromUtc(
-      RangeDate,
-      TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-         filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
-      }
-        filtered = FilterData(filtered, 500);
-      filtered = filtered.Concat(UpdatedFeeds).ToList();
-      datasets[symbol] = datasets[symbol].Concat(UpdatedFeeds).ToList();
-      await JSRuntime.InvokeVoidAsync("setNewDataToChartBySymbol",symbol,filtered);
-    
-    }
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
@@ -245,7 +244,7 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey).ConfigureAwait(false);
         
-        UpdateChartWithUpdatedPoints(symbol,marketFeeds);
+        //UpdateChartWithUpdatedPoints(symbol,marketFeeds);
         return marketFeeds;
             }
         }

@@ -425,23 +425,28 @@ function processDataPoint(data, previousPrice) {
     };
 }
 
-function setDataToChart(series, seriesData) {
+function setDataToChart(chart, seriesData) {
     if (seriesData.length < 2) return;
-
+    let series = chart.series[0];
     const dataPoints = seriesData.slice(1).map((data, index) =>
         processDataPoint(data, seriesData[index].price)
     );
 
     series.setData(dataPoints, true, true);
+    chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
 }
 
-function addPointToChart(series, seriesData, redraw = false, animateOnUpdate = false) {
+function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false) {
     if (seriesData.length < 2) return;
-
+    let lastPoint = null;
+    let series = chart.series[0];
     seriesData.slice(1).forEach((data, index) => {
         const point = processDataPoint(data, seriesData[index].price);
         series.addPoint(point, redraw, animateOnUpdate);
+        lastPoint = point;
     });
+    var extreme = series.getExtremes();
+    chart.xAxis[0].setExtremes(extreme.min, lastPoint.x);
 }
 
 function removeOldPoints(chart, daysToKeep) {
@@ -467,7 +472,7 @@ async function RefreshChartBySymbol() {
         await ChatAppInterop.dotnetReference.invokeMethodAsync("RefreshChartBySymbol", chart.series[0].name);
     }
 }
-
+let debounceTimer;
 async function refreshCharts() {
     for (let chart of Highcharts.charts) {
         if (!chart) continue;
@@ -475,7 +480,8 @@ async function refreshCharts() {
         let series = chart.series[0];
         let lastPoint = series.options.data[series.options.data.length - 1];
         let seriesData = await getChartDataBySymbol(series.name, lastPoint);
-        //setTimeout(addPointToChart(series, seriesData, false, false), 0);
+       
+        setTimeout(addPointToChart(chart, seriesData, false, false), 0);
         //removeOldPoints(chart, 3);
         //chart.redraw();
     }
@@ -647,7 +653,7 @@ async function popoutChartWindow(dotNetObject, element, chartIndx, minPoint, max
         chart.series[0].setData(dataPoints, true, true)
     } else {
         getChartDataBySymbol(symbol).then((seriesData) => {
-            setDataToChart(chart.series[0], seriesData);
+            setDataToChart(chart, seriesData);
             if (minPoint && maxPoint) {
                 chart.xAxis[0].setExtremes(minPoint, maxPoint);
             }
@@ -727,7 +733,7 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
     addWindowControlButtonsToChart();
 
     getChartDataBySymbol(symbol).then((seriesData) => {
-        setDataToChart(chart.series[0], seriesData);
+        setDataToChart(chart, seriesData);
     });
 
     if (minPoint && maxPoint) {
@@ -757,7 +763,7 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
             return;
         }
         
-        setTimeout(addPointToChart(series, seriesData, false, false), 0);
+        setTimeout(addPointToChart(chart, seriesData, false, false), 0);
 
 
         if (isAllLoaded) {
@@ -771,7 +777,12 @@ function setNewDataToChartBySymbol(symbol, seriesData) {
     let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
         let series = chart.series[0];
-        setTimeout(setDataToChart(series, seriesData),0);
+        const dataPoints = seriesData.slice(1).map((data, index) =>
+            processDataPoint(data, seriesData[index].price)
+        );
+
+        setTimeout(series.setData(dataPoints, false, false), 0);
+        //chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
         chart.redraw();
     }
 }
@@ -782,7 +793,7 @@ async function setRange(symbol, range) {
     if (chart) {
 
         let filtereddata = await getFilteredDataBySymbol(symbol, range);
-        setDataToChart(chart.series[0], filtereddata);
+        setDataToChart(chart, filtereddata);
         chart.redraw();
     }
 }
