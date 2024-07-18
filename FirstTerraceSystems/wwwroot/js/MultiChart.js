@@ -74,8 +74,168 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             events: {
                 load: function () {
                     var chart = this;
-
+                    let chartWidth = chart.chartWidth;
                     chart.showLoading();
+                    chart.ButtonNamespace = {};
+                    chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
+                        text: truncateText(`XNYS: ${symbol}`, 11, ''),
+                        x: 0,
+                        y:10,
+                        width: 85,
+                        height: 10,
+                        title: `XNYS: ${symbol}`,
+                        callback: function (e) {
+                            $("#dvSymbolInput").remove();
+
+                            var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${e.y}px;left:${e.x}px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
+
+                            var btn = divInput.find('#btnUpdateChartSymbol');
+                            var cancelBtn = divInput.find('#btnCancelChartSymbol');
+                            cancelBtn.on("click", function () {
+                                var dvInput = $(this).closest("#dvSymbolInput");
+                                $("#dvSymbolInput").remove();
+                            });
+                            btn.on("click", function () {
+
+                                var dvInput = $(this).closest("#dvSymbolInput")
+                                symbol = $("#txtSymboleName", dvInput).val();
+                                symbol = symbol.toUpperCase();
+
+                                if (symbol == chart.series[0].name || symbol == '') {
+                                    $("#dvSymbolInput").remove();
+                                    return;
+                                }
+
+                                let existingChart = getChartInstanceBySeriesName(symbol)
+
+                                if (existingChart) {
+                                    symbol = existingChart.series[0].name;
+                                    chart.series[0].setData(existingChart.series[0].options.data);
+
+                                    chart.series[0].update({
+                                        name: symbol,
+                                    })
+                                    chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
+                                    chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
+
+                                    if (ChatAppInterop.dotnetReference) {
+                                        ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
+                                    }
+
+                                } else {
+                                    updateChartSymbol(chart.renderTo.id, symbol).then((seriesData) => {
+
+                                        if (seriesData) {
+                                            setDataToChart(chart.series[0], seriesData);
+
+                                            chart.series[0].update({
+                                                name: symbol,
+                                            })
+                                            chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
+                                            chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
+
+                                            if (ChatAppInterop.dotnetReference) {
+                                                ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
+                                            }
+                                        }
+                                    });
+
+                                }
+
+                                $("#dvSymbolInput").remove();
+                            });
+
+                            $("body").append(divInput);
+                        }
+                    });
+
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 120, y: 10});
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol,3* 60 * 1000) }, x: 155, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol,30* 60 * 1000) }, x: 190, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol,60* 60 * 1000) }, x: 230, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setRange(symbol,24*60* 60 * 1000) }, x: 265, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 300, y: 10 });
+                       
+                    chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
+                        text: '<i class="bi bi-zoom-in"></i>',
+                        x: 360,
+                        y:10,
+                        callback: function () {
+                            zoomChart(true, chart, dotNetObject);
+                        }
+                    });
+
+                    chart.ButtonNamespace.zoomOutButton = addHtmlButtonToChart(chart, {
+                        text: '<i class="bi bi-zoom-out"></i>',
+                        x: 400,
+                        y:10,
+                        callback: function () {
+                            zoomChart(false, chart, dotNetObject);
+                        }
+                    });
+
+                    var customComponents = {
+                        symbolButton: new ButtonComponent(chart, chart.ButtonNamespace.symbolButton),
+                        zoomInButton: new ButtonComponent(chart, chart.ButtonNamespace.zoomInButton),
+                        zoomOutButton: new ButtonComponent(chart, chart.ButtonNamespace.zoomOutButton),
+                    };
+
+                    if (!isPopoutChartWindow) {
+                        
+                        chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(chart, {
+                            text: '<i class="bi bi-x-lg"></i>',
+                            hoverColor: '#FF0000',
+                            x: chartWidth-40,
+                            y:10,
+                            callback: function () {
+                                removeChart(chart);
+                            }
+                        });
+
+                        chart.ButtonNamespace.maximizeButton = addHtmlButtonToChart(chart, {
+                            text: '<i class="bi bi-window"></i>',
+                            x: chartWidth - 70,
+                            y: 10,
+                            callback: async function (e) {
+                                removeUnusedElement();
+                                var jsObjectReference = DotNet.createJSObjectReference(window);
+                                var chartId = $(chart.renderTo).data("chart-id");
+                                var extremes = chart.xAxis[0].getExtremes();
+                                var data = chart.options.series[0].data;
+                                removeChart(chart);
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, extremes.min, extremes.max, symbol, data);
+                            }
+                        });
+
+                        chart.ButtonNamespace.minimizeButton = addHtmlButtonToChart(chart, {
+                            text: '<i class="bi bi-dash-lg"></i>',
+                            x: chartWidth - 100,
+                            y: 10,
+                            callback: async function () {
+                                removeUnusedElement();
+                                var jsObjectReference = DotNet.createJSObjectReference(window);
+                                var chartId = $(chart.renderTo).data("chart-id");
+                                var extremes = chart.xAxis[0].getExtremes();
+                                var data = chart.options.series[0].data;
+                                removeChart(chart);
+                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, extremes.min, extremes.max, symbol, data)
+                            }
+                        });
+
+                        customComponents.minimizeButton = new ButtonComponent(chart, chart.ButtonNamespace.minimizeButton);
+                        customComponents.maximizeButton = new ButtonComponent(chart, chart.ButtonNamespace.maximizeButton);
+                        customComponents.closeChartButton = new ButtonComponent(chart, chart.ButtonNamespace.closeChartButton);
+                    }
+
+                    chart.update({
+                        accessibility: {
+                            customComponents: customComponents,
+                            keyboardNavigation: {
+                                order: !isPopoutChartWindow ? defaultkeyboardNavigationOrder : singleChartkeyboardNavigationOrder
+                            }
+                        }
+                    });
+                    
 
 
                 },
@@ -192,20 +352,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             }
         ],
         exporting: {
-            buttons: {
-                symbolButton: createButtonConfig(`XNYS: ${symbol}`, () => SymbolClicked(symbol), 0,false),
-                customButton1: createButtonConfig('1m', () => setRange(symbol, 60 * 1000), 110, false),
-                customButton2: createButtonConfig('3m', () => setRange(symbol, 3 * 60 * 1000), 145, false),
-                customButton3: createButtonConfig('30m', () => setRange(symbol, 30 * 60 * 1000), 180, false),
-                customButton4: createButtonConfig('1h', () => setRange(symbol, 60 * 60 * 1000), 220, false),
-                customButton5: createButtonConfig('1D', () => setRange(symbol, 24 * 60 * 60 * 1000), 255, false),
-                customButton6: createButtonConfig('3D', () => setRange(symbol, 3 * 24 * 60 * 60 * 1000), 290, false),
-                zoomInButton: createButtonConfig('<i class="bi bi-zoom-in"></i>', () => zoomChart(true, getChartInstanceBySeriesName(symbol), dotNetObject), 360, false),
-                zoomOutButton: createButtonConfig('<i class="bi bi-zoom-out"></i>', () => zoomChart(false, getChartInstanceBySeriesName(symbol), dotNetObject), 400, false),
-                minimizeButton: createButtonConfig('<i class="bi bi-dash-lg"></i>', () => { }, -80, true),
-                maximizeButton: createButtonConfig('<i class="bi bi-window"></i>', () => { }, -40, true),
-                closeChartButton: createButtonConfig('<i class="bi bi-x-lg"></i>', () => { removeChart(getChartInstanceBySeriesName(symbol)) }, 0, true),
-            }
+            
         },
         navigation: {
             buttonOptions: {

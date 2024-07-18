@@ -74,6 +74,7 @@ class ButtonComponent extends Highcharts.AccessibilityComponent {
     }
 }
 
+
 // Functions
 function addHtmlButtonToChart(chart, options) {
     const {
@@ -119,7 +120,8 @@ function addHtmlButtonToChart(chart, options) {
     ).attr({
         width: 12,
         height: 5,
-        'text-anchor': 'middle'
+        'text-anchor': 'middle',
+        zIndex:3
     });
 
     //button.addClass('btn btn-sm')
@@ -137,7 +139,8 @@ function addButtonToChart(chart, options) {
         callback = () => { },
         height = undefined,
         width = undefined,
-        title = ''
+        title = '',
+        isRight = false
         //theme = {},
         //hoverState = {},
         //selectState = {},
@@ -171,11 +174,11 @@ function addButtonToChart(chart, options) {
             stroke: 'darkgray'
         }, // disabledState
         'rect', //shape
-        true // useHTML
+        false // useHTML
     ).attr({
-        title: title
-    }).css({
-    });
+        title: title,
+        zIndex:3
+    })
 
     //button.addClass('btn btn-sm')
     button.add();

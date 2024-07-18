@@ -41,7 +41,6 @@ namespace FirstTerraceSystems.Components.Pages
                 WebSocketClient.ActionReferenceChart += RefreshCharts;
                 Logger.LogInformation($"Listening WebSocketClient");
                 await WebSocketClient.ListenAsync();
-                Logger.LogInformation($"WebSocketClient Close");
             }
         }
 

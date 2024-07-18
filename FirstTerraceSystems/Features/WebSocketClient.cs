@@ -98,15 +98,8 @@ namespace FirstTerraceSystems.Features
           if (messageBuilder.Length > 0)
           {
             string message = messageBuilder.ToString();
-
-            if (!isStarted)
-            {
-              isStarted = IsStarted(message);
-            }
-            else
-            {
-              ProcessMessage(message);
-            }
+            ProcessMessage(message);
+            
           }
         }
       }
