@@ -63,7 +63,7 @@ function filterData(data, numPoints, startDate, endDate) {
 function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
 
 
-
+    updatingCharts[symbol] = false;
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
@@ -244,7 +244,43 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 //},
                 render: function () {
                     var chart = this;
+                    chart.ButtonNamespace.symbolButton.align({
+                        align: 'left',
+                        x: 0,
+                        y: -2
+                    }, true, 'spacingBox');
 
+                    chart.ButtonNamespace.zoomInButton.align({
+                        align: 'left',
+                        x: 360, //360
+                        y: 0
+                    }, false, 'spacingBox');
+
+                    chart.ButtonNamespace.zoomOutButton.align({
+                        align: 'left',
+                        x: 400, //400
+                        y: 0
+                    }, false, 'spacingBox');
+
+                    if (!isPopoutChartWindow) {
+                        chart.ButtonNamespace.closeChartButton.align({
+                            align: 'right',
+                            x: -30,
+                            y: 0
+                        }, false, 'spacingBox');
+
+                        chart.ButtonNamespace.maximizeButton.align({
+                            align: 'right',
+                            x: -70,
+                            y: 0
+                        }, false, 'spacingBox');
+
+                        chart.ButtonNamespace.minimizeButton.align({
+                            align: 'right',
+                            x: -110,
+                            y: 0
+                        }, false, 'spacingBox');
+                    }
 
                 }
             },
@@ -253,7 +289,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             }
         },
         rangeSelector: {
-            enabled: false
+            enabled:false
         },
         tooltip: {
             split: true,
@@ -289,6 +325,21 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
         },
         xAxis: [
             {
+                events: {
+                    afterSetExtremes: function (e) {
+                       // if (!updatingCharts[symbol])
+                        //handleExtremesChange(symbol,this.chart, e.min, e.max);
+                        // Remove points that are outside the new extremes
+                        /*series.data.forEach(function (point) {
+                            if (point.x >= e.min && point.x <= e.max) {
+                                point.remove(false);
+                            }
+                        });*/
+
+                        
+                    }
+                },
+                minRange: 60 * 1000,
                 type: 'datetime',
                 //offset: 0,
                 labels: {
@@ -379,7 +430,22 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
         }
     });
 }
-
+const updatingCharts = {};
+function handleExtremesChange(symbol,chart, min, max) {
+    setTimeout(async function () {
+        updatingCharts[symbol] = true;
+        for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
+            let point = chart.series[0].data[i];
+            if (point.x >= min && point.x <= max) {
+                console.log("point to be remove");
+                point.remove();
+            }
+        }
+        let filterData = await getExtremeDataBySymbol(chart.series[0].name, min, max);
+        addPointToChart(chart, filterData, false, false);
+        updatingCharts[symbol] = false;
+    }, 0);
+}
 function createButtonConfig(text, action, x, isRight) {
     const useHtml = text.includes('<i');
 
@@ -555,7 +621,8 @@ async function getChartDataBySymbol(symbol, lastPoint = undefined) {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataBySymbol", symbol, lastPoint);
 }
 
-async function getFilteredDataBySymbol(symbol, range = undefined) {
+async function getFilteredDataBySymbol(symbol,  range = undefined) {
+    
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetFilteredDataBySymbol", symbol, range);
 }
 
@@ -624,14 +691,20 @@ async function refreshCharts() {
     for (let chart of Highcharts.charts) {
         if (!chart) continue;
 
-        let series = chart.series[0];
-        let lastPoint = series.options.data[series.options.data.length - 1];
-        let seriesData = await getChartDataBySymbol(series.name, lastPoint);
-       
-        setTimeout(addPointToChart(chart, seriesData, false, false), 0);
+        handleChartRefresh(chart);
         //removeOldPoints(chart, 3);
         //chart.redraw();
     }
+}
+
+function handleChartRefresh(chart) {
+    setTimeout(async function () {
+        let series = chart.series[0];
+        let lastPoint = series.options.data[series.options.data.length - 1];
+        let seriesData = await getChartDataBySymbol(series.name, lastPoint);
+
+        addPointToChart(chart, seriesData, false, false);
+    }, 0);
 }
 
 
@@ -929,7 +1002,7 @@ function setNewDataToChartBySymbol(symbol, seriesData) {
         );
 
         setTimeout(series.setData(dataPoints, false, false), 0);
-        //chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
+        chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
         chart.redraw();
     }
 }

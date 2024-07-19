@@ -6,6 +6,7 @@ using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+using Microsoft.Maui;
 using Microsoft.VisualBasic;
 
 namespace FirstTerraceSystems.Components.Pages
@@ -36,12 +37,14 @@ namespace FirstTerraceSystems.Components.Pages
 
                 Logger.LogInformation($"Connecting WebSocketClient");
                 await WebSocketClient.ConnectAsync();
-                Logger.LogInformation($"Connected WebSocketClient");
+        await WebSocketClient.ConnectctaAsync();
+        Logger.LogInformation($"Connected WebSocketClient");
                 WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
                 WebSocketClient.ActionReferenceChart += RefreshCharts;
                 Logger.LogInformation($"Listening WebSocketClient");
-                await WebSocketClient.ListenAsync();
-            }
+                 await WebSocketClient.ListenAsync();
+         await WebSocketClient.ListenctaAsync();
+      }
         }
 
         private async Task UpdateAndRenderChartsAsync()
@@ -169,6 +172,15 @@ namespace FirstTerraceSystems.Components.Pages
       }
     }
 
+    private DateTime UnixTimeStampToDateTime(double unixTimeStamp)
+    {
+      // Convert Unix timestamp to UTC DateTime
+      DateTime utcDateTime = DateTimeOffset.FromUnixTimeMilliseconds(Convert.ToInt64(unixTimeStamp)).LocalDateTime;
+
+      return utcDateTime;
+    }
+
+
     [JSInvokable]
     public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
     {
@@ -178,7 +190,7 @@ namespace FirstTerraceSystems.Components.Pages
   .ConvertTimeFromUtc(
     RangeDate,
     TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-      var filtered = await MarketFeedRepository.GetChartDataBySymbol(symbol, eastern).ConfigureAwait(false); ;
+      var filtered = await MarketFeedRepository.GetChartDataBySymbol( symbol,eastern).ConfigureAwait(false);
       filtered = FilterData(filtered, 500);
       return filtered;
     }
