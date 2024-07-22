@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json;
+using System.Xml.Linq;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
@@ -14,6 +15,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
+    private const int PointSize = 100;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
     Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
     Dictionary<string, double> Ranges = new Dictionary<string, double>();
@@ -134,8 +136,8 @@ namespace FirstTerraceSystems.Components.Pages
 
     private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
     {
-      //datasets[symbol] = marketFeeds.ToList();
-      var chunks = FilterData(marketFeeds,500).Chunk(MarketFeedChunkSize); 
+      datasets[symbol] = marketFeeds.ToList();
+      var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize); 
 
       foreach (var chunk in chunks)
       {
@@ -180,6 +182,19 @@ namespace FirstTerraceSystems.Components.Pages
       return utcDateTime;
     }
 
+    [JSInvokable]
+    public async Task<IEnumerable<MarketFeed>?> GetExtremeDataBySymbol(string symbol, JsonElement? minElement, JsonElement? maxElement)
+    {
+      if (minElement == null || maxElement == null)
+        return [];
+      long? min = minElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(minElement?.GetDouble()) : (long?)null;
+      long? max = maxElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(maxElement?.GetDouble()) : (long?)null;
+      var startDate = UnixTimeStampToDateTime((long)min);
+      var endDate = UnixTimeStampToDateTime((long)max);
+      var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
+      var filteredData = FilterData(extremeData, 100);
+      return filteredData;
+    }
 
     [JSInvokable]
     public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
@@ -190,8 +205,9 @@ namespace FirstTerraceSystems.Components.Pages
   .ConvertTimeFromUtc(
     RangeDate,
     TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-      var filtered = await MarketFeedRepository.GetChartDataBySymbol( symbol,eastern).ConfigureAwait(false);
-      filtered = FilterData(filtered, 500);
+      var last = datasets[symbol][datasets[symbol].Count - 1];
+      var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+      filtered = FilterData(filtered, PointSize);
       return filtered;
     }
 
@@ -207,7 +223,7 @@ RangeDate,
 TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
          filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
       }
-        filtered = FilterData(filtered, 500);
+        filtered = FilterData(filtered, PointSize);
       filtered = filtered.Concat(UpdatedFeeds).ToList();
       datasets[symbol] = datasets[symbol].Concat(UpdatedFeeds).ToList();
       await JSRuntime.InvokeVoidAsync("setNewDataToChartBySymbol", symbol, filtered);
@@ -221,7 +237,7 @@ private async Task InitializedDataBaseAsync()
                 Logger.LogInformation($"Starting API call for GetTickers");
                 IEnumerable<NasdaqTicker>? tickers = await NasdaqService.NasdaqGetTickersAsync();
                 Logger.LogInformation($"Got Response from API GetTickers");
-
+        var ticker = tickers.FirstOrDefault((x) => x.Symbol == "DE");
                 Logger.LogInformation($"Inserting Tickers To  SQLite DB");
                 TickerRepository.InsertRecords(tickers);
                 Logger.LogInformation($"Inserted Tickers To  SQLite DB");
@@ -231,13 +247,25 @@ private async Task InitializedDataBaseAsync()
 
         private async Task OnRealDataReceived(NasdaqResponse? response)
         {
-            await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response).ConfigureAwait(false);
-    }
-
-        private async Task RefreshCharts()
-        {
-            await JSRuntime.InvokeVoidAsync("refreshCharts");
+            //await Task.Run(async() => { 
+            await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
+           // }).ConfigureAwait(true);
         }
+
+    private async Task RefreshCharts(NasdaqResponse? response)
+    {
+      foreach (var data in datasets)
+      {
+        IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data.Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
+
+        var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
+                if (dataGot != null)
+                {
+                    datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
+                    await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
+                }
+      }
+    }
 
 
         [JSInvokable]
@@ -254,7 +282,7 @@ private async Task InitializedDataBaseAsync()
             else
             {
                 IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey).ConfigureAwait(false);
-        
+        datasets[symbol] = datasets[symbol].Concat(marketFeeds).ToList();
         //UpdateChartWithUpdatedPoints(symbol,marketFeeds);
         return marketFeeds;
             }

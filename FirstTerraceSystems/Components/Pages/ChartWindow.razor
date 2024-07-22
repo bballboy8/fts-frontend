@@ -56,7 +56,7 @@
         }
     }
 
-    private async Task RefreshCharts()
+    private async Task RefreshCharts(NasdaqResponse? response)
     {
         await JSRuntime.InvokeVoidAsync("refreshCharts");
     }

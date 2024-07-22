@@ -66,7 +66,21 @@ namespace FirstTerraceSystems.Repositories
             }
         }
 
-        public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, long lastId)
+    public async Task<IEnumerable<MarketFeed>> GetChartDataByMinMax(string symbol, DateTime startDateTime, DateTime endDateTime)
+    {
+      try
+      {
+        string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDateTime and Date <= @EndDateTime ORDER BY Date";
+        return await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite), EndDateTime = endDateTime.ToString(AppSettings.DFormat_SQLite) });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+        return [];
+      }
+    }
+
+    public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, long lastId)
         {
             try
             {
@@ -100,7 +114,8 @@ namespace FirstTerraceSystems.Repositories
             if (marketFeeds == null) return;
 
             CreateTableAndIndexes(symbol);
-            var feedsList = marketFeeds.ToList(); // Materialize enumerable to list
+
+      var feedsList = marketFeeds.ToList(); // Materialize enumerable to list
             for (int i = 0; i < feedsList.Count; i += InsertBatchSize)
             {
                 var batch = feedsList.Skip(i).Take(InsertBatchSize).ToList();
@@ -117,20 +132,20 @@ namespace FirstTerraceSystems.Repositories
 
             foreach (var groupedMarketFeeds in groupedData)
             {
-                foreach (var batch in groupedMarketFeeds.Chunk(InsertBatchSize))
+        CreateTableAndIndexes(groupedMarketFeeds.Key!);
+        foreach (var batch in groupedMarketFeeds.Chunk(InsertBatchSize))
                 {
-                    CreateTableAndIndexes(groupedMarketFeeds.Key!);
-
+                    
                     await InsertRecordsBatchAsync(groupedMarketFeeds.Key!, batch).ConfigureAwait(false);
                 }
 
             }
         }
-        private void InsertRecordsBatch(string symbol, IEnumerable<MarketFeed> records)
+
+    
+    private void InsertRecordsBatch(string symbol, IEnumerable<MarketFeed> records)
         {
-            lock (_databaseLock)
-            {
-                try
+             try
                 {
                     using (IDbConnection? connection = _databaseService.GetNewConnection())
                     {
@@ -151,14 +166,11 @@ namespace FirstTerraceSystems.Repositories
           }
           Console.WriteLine($"Error inserting records: {ex.Message}");
                 }
-            }
+            
         }
 
         private async Task InsertRecordsBatchAsync(string symbol, IEnumerable<MarketFeed> records)
         {
-            await Task.Run(() => { 
-            lock (_databaseLock)
-            {
                 try
                 {
                     using (IDbConnection? connection = _databaseService.GetNewConnection())
@@ -174,16 +186,18 @@ namespace FirstTerraceSystems.Repositories
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error inserting records: {ex.Message}");
+                if (ex.Message.Contains("database is locked"))
+                {
+                    Thread.Sleep(100);
+                    await InsertRecordsBatchAsync(symbol, records);
                 }
             }
-            });
+            
         }
 
         private void CreateTableAndIndexes(string symbol)
         {
-            lock (_databaseLock)
-            {
-                try
+            try
                 {
                     using (var connection = _databaseService.GetNewConnection())
                     {
@@ -211,6 +225,10 @@ namespace FirstTerraceSystems.Repositories
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error in Create Table And Indexes: {ex.Message}");
+                if (ex.Message.Contains("database is locked"))
+                {
+                    Thread.Sleep(100);
+                    CreateTableAndIndexes(symbol);
                 }
             }
         }

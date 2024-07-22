@@ -12,7 +12,7 @@ namespace FirstTerraceSystems.Features
     static ClientWebSocket _webSocketcta = new();
     public delegate Task OnRealDataReceived(NasdaqResponse? response);
 
-        public delegate Task ReferenceChartAsync();
+        public delegate Task ReferenceChartAsync(NasdaqResponse? response);
 
         public static event OnRealDataReceived? ActionRealDataReceived;
 
@@ -126,8 +126,6 @@ namespace FirstTerraceSystems.Features
     public static async Task ListenAsync()
     {
         byte[] buffer = new byte[1024 * 10];
-
-        bool isStarted = false;
         try
         {
           while (_webSocket.State == WebSocketState.Open)
@@ -162,15 +160,11 @@ namespace FirstTerraceSystems.Features
           await ConnectAsync();
           Log.Information($"Reconnected WebSocket");
           Log.Information($"Listening WebSocket");
-          ListenAsync(); // Restart listening on reconnection
+          await ListenAsync(); // Restart listening on reconnection
         }
         catch (Exception ex)
         {
           Log.Error($"Unexpected error: {ex.Message}");
-        }
-        finally
-        {
-          isStarted = false;
         }
     }
 
@@ -178,7 +172,6 @@ namespace FirstTerraceSystems.Features
     {
       byte[] buffer = new byte[1024 * 10];
 
-        bool isStarted = false;
         try
         {
           while (_webSocketcta.State == WebSocketState.Open)
@@ -213,34 +206,28 @@ namespace FirstTerraceSystems.Features
           await ConnectAsync();
           Log.Information($"Reconnected WebSocket");
           Log.Information($"Listening WebSocket");
-          ListenAsync(); // Restart listening on reconnection
+          await ListenAsync(); // Restart listening on reconnection
         }
         catch (Exception ex)
         {
           Log.Error($"Unexpected error: {ex.Message}");
         }
-        finally
-        {
-          isStarted = false;
-        }
     }
 
-    static bool IsStarted(string message)
-        {
-                return message.Contains("start");
-            
-        }
 
         static void ProcessMessage(string message)
         {
             try
             {
+        if (message.Contains("start"))
+          return;
                 NasdaqResponse? response = JsonSerializer.Deserialize<NasdaqResponse>(message);
                 Log.Information($"Real Data Received: {response?.Data.Length}");
                 if (response?.Data.Length > 0)
                 {
-                   ActionRealDataReceived?.Invoke(response);
-                   ActionReferenceChart?.Invoke();
+          ActionReferenceChart?.Invoke(response);
+          ActionRealDataReceived?.Invoke(response);
+                   
         }
             }
             catch (Exception ex)

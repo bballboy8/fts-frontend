@@ -327,8 +327,8 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             {
                 events: {
                     afterSetExtremes: function (e) {
-                       // if (!updatingCharts[symbol])
-                        //handleExtremesChange(symbol,this.chart, e.min, e.max);
+                        //if (!updatingCharts[symbol])
+                        handleExtremesChange(symbol,this.chart, e.min, e.max);
                         // Remove points that are outside the new extremes
                         /*series.data.forEach(function (point) {
                             if (point.x >= e.min && point.x <= e.max) {
@@ -434,13 +434,13 @@ const updatingCharts = {};
 function handleExtremesChange(symbol,chart, min, max) {
     setTimeout(async function () {
         updatingCharts[symbol] = true;
-        for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
+        /*for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
             let point = chart.series[0].data[i];
             if (point.x >= min && point.x <= max) {
                 console.log("point to be remove");
                 point.remove();
             }
-        }
+        }*/
         let filterData = await getExtremeDataBySymbol(chart.series[0].name, min, max);
         addPointToChart(chart, filterData, false, false);
         updatingCharts[symbol] = false;
@@ -626,6 +626,11 @@ async function getFilteredDataBySymbol(symbol,  range = undefined) {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetFilteredDataBySymbol", symbol, range);
 }
 
+async function getExtremeDataBySymbol(symbol, min = undefined, max = undefined) {
+
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetExtremeDataBySymbol", symbol, min,max);
+}
+
 async function updateChartSymbol(chartId, symbol) {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("UpdateChartSymbol", chartId, symbol);
 }
@@ -640,13 +645,15 @@ function processDataPoint(data, previousPrice) {
 }
 
 function setDataToChart(chart, seriesData) {
-    if (seriesData.length < 2) return;
+    //if (seriesData.length < 2) return;
     let series = chart.series[0];
     const dataPoints = seriesData.slice(1).map((data, index) =>
         processDataPoint(data, seriesData[index].price)
     );
 
-    series.setData(dataPoints, true, true);
+    series.setData(dataPoints, false, false);
+    chart.redraw();
+    if (seriesData.length>1)
     chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
 }
 
@@ -660,7 +667,7 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
         lastPoint = point;
     });
     var extreme = series.getExtremes();
-    chart.xAxis[0].setExtremes(extreme.min, lastPoint.x);
+    //chart.xAxis[0].setExtremes(extreme.min, lastPoint.x);
 }
 
 function removeOldPoints(chart, daysToKeep) {
@@ -687,14 +694,16 @@ async function RefreshChartBySymbol() {
     }
 }
 let debounceTimer;
-async function refreshCharts() {
-    for (let chart of Highcharts.charts) {
-        if (!chart) continue;
-
-        handleChartRefresh(chart);
+async function refreshCharts(symbol, seriesData) {
+    
+        let chart = getChartInstanceBySeriesName(symbol);
+    if (chart) {
+        addPointToChart(chart, seriesData, false, false);
+        chart.redraw();
+    }
         //removeOldPoints(chart, 3);
         //chart.redraw();
-    }
+    
 }
 
 function handleChartRefresh(chart) {
@@ -1014,6 +1023,6 @@ async function setRange(symbol, range) {
 
         let filtereddata = await getFilteredDataBySymbol(symbol, range);
         setDataToChart(chart, filtereddata);
-        chart.redraw();
+        //chart.redraw();
     }
 }
