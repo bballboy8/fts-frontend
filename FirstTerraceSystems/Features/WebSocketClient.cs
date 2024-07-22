@@ -30,13 +30,14 @@ namespace FirstTerraceSystems.Features
                 {
                     _webSocket = new ClientWebSocket();
                     await _webSocket.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data_utp"), CancellationToken.None);
-                    var buffer = Encoding.UTF8.GetBytes("start");
-                    await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
                     connectionTrial = 0;
                     while (_webSocket.State == WebSocketState.Connecting)
                     {
                         await Task.Delay(50); // Small delay to avoid busy waiting
                     }
+                    var buffer = Encoding.UTF8.GetBytes("start");
+                    await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+
                 }
                 catch (Exception ex)
                 {
@@ -60,13 +61,13 @@ namespace FirstTerraceSystems.Features
         {
           _webSocketcta = new ClientWebSocket();
           await _webSocketcta.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data_cta"), CancellationToken.None);
-          var buffer = Encoding.UTF8.GetBytes("start");
-          await _webSocketcta.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
           connectionTrial = 0;
           while (_webSocketcta.State == WebSocketState.Connecting)
           {
             await Task.Delay(50); // Small delay to avoid busy waiting
           }
+          var buffer = Encoding.UTF8.GetBytes("start");
+          await _webSocketcta.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -128,10 +129,11 @@ namespace FirstTerraceSystems.Features
         byte[] buffer = new byte[1024 * 10];
         try
         {
-          while (_webSocket.State == WebSocketState.Open)
+                StringBuilder messageBuilder = new StringBuilder();
+                while (_webSocket.State == WebSocketState.Open)
           {
             WebSocketReceiveResult result;
-            StringBuilder messageBuilder = new StringBuilder();
+            
 
             do
             {
@@ -148,12 +150,13 @@ namespace FirstTerraceSystems.Features
             if (messageBuilder.Length > 0)
             {
               string message = messageBuilder.ToString();
+             messageBuilder.Clear();
               ProcessMessage(message);
 
             }
           }
         }
-        catch (WebSocketException ex)
+        catch (Exception ex)
         {
           Log.Error($"WebSocket error: {ex.Message}");
           Log.Information($"Reconnecting WebSocket");
@@ -162,10 +165,6 @@ namespace FirstTerraceSystems.Features
           Log.Information($"Listening WebSocket");
           await ListenAsync(); // Restart listening on reconnection
         }
-        catch (Exception ex)
-        {
-          Log.Error($"Unexpected error: {ex.Message}");
-        }
     }
 
     public static async Task ListenctaAsync()
@@ -173,11 +172,11 @@ namespace FirstTerraceSystems.Features
       byte[] buffer = new byte[1024 * 10];
 
         try
-        {
-          while (_webSocketcta.State == WebSocketState.Open)
+            {
+                StringBuilder messageBuilder = new StringBuilder();
+                while (_webSocketcta.State == WebSocketState.Open)
           {
             WebSocketReceiveResult result;
-            StringBuilder messageBuilder = new StringBuilder();
 
             do
             {
@@ -194,12 +193,13 @@ namespace FirstTerraceSystems.Features
             if (messageBuilder.Length > 0)
             {
               string message = messageBuilder.ToString();
+              messageBuilder.Clear();
               ProcessMessage(message);
 
             }
           }
         }
-        catch (WebSocketException ex)
+        catch (Exception ex)
         {
           Log.Error($"WebSocket error: {ex.Message}");
           Log.Information($"Reconnecting WebSocket");
@@ -207,10 +207,6 @@ namespace FirstTerraceSystems.Features
           Log.Information($"Reconnected WebSocket");
           Log.Information($"Listening WebSocket");
           await ListenAsync(); // Restart listening on reconnection
-        }
-        catch (Exception ex)
-        {
-          Log.Error($"Unexpected error: {ex.Message}");
         }
     }
 

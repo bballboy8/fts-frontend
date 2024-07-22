@@ -123,10 +123,11 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                     }
 
                                 } else {
+                                    chart.showLoading();
                                     updateChartSymbol(chart.renderTo.id, symbol).then((seriesData) => {
 
                                         if (seriesData) {
-                                            setDataToChart(chart.series[0], seriesData);
+                                            setDataToChart(chart, seriesData);
 
                                             chart.series[0].update({
                                                 name: symbol,
@@ -138,6 +139,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                                 ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
                                             }
                                         }
+                                        chart.hideLoading();
                                     });
 
                                 }
@@ -339,7 +341,6 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                         
                     }
                 },
-                minRange: 60 * 1000,
                 type: 'datetime',
                 //offset: 0,
                 labels: {

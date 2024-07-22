@@ -38,14 +38,17 @@ namespace FirstTerraceSystems.Components.Pages
                 await UpdateAndRenderChartsAsync();
 
                 Logger.LogInformation($"Connecting WebSocketClient");
+
                 await WebSocketClient.ConnectAsync();
         await WebSocketClient.ConnectctaAsync();
         Logger.LogInformation($"Connected WebSocketClient");
                 WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
                 WebSocketClient.ActionReferenceChart += RefreshCharts;
                 Logger.LogInformation($"Listening WebSocketClient");
-                 await WebSocketClient.ListenAsync();
-         await WebSocketClient.ListenctaAsync();
+                var listenTask = WebSocketClient.ListenAsync();
+                var listenCtaTask = WebSocketClient.ListenctaAsync();
+
+                await Task.WhenAll(listenTask, listenCtaTask);
       }
         }
 
@@ -248,7 +251,7 @@ private async Task InitializedDataBaseAsync()
         private async Task OnRealDataReceived(NasdaqResponse? response)
         {
             //await Task.Run(async() => { 
-            await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
+           // await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
            // }).ConfigureAwait(true);
         }
 
@@ -297,6 +300,7 @@ private async Task InitializedDataBaseAsync()
         [JSInvokable]
         public async Task RefreshChartBySymbol(string symbol)
         {
+
             IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
             await SendChartDataInChunks(symbol, marketFeeds).ConfigureAwait(false);
             marketFeeds = null;
@@ -312,18 +316,30 @@ private async Task InitializedDataBaseAsync()
                 Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
                 return null;
             }
+            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(symbol);
+            DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
-            IEnumerable<MarketFeed>? symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
-            IEnumerable<MarketFeed>? data = await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol).ConfigureAwait(false);
-            return symbolics;
+            Logger.LogInformation($"Starting API call for symbol: {symbol}");
+            IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, symbol).ConfigureAwait(false);
+            Logger.LogInformation($"Got Response from API for symbol: {symbol}");
 
-            //if (DatabaseService.IsTableExists($"symbol_{symbol}"))
-            //{
-            //}
-            //else
-            //{
-            //    return data.OrderBy(mf => mf.Date);
-            //}
+            if (marketFeeds != null && marketFeeds.Any())
+            {
+                Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {symbol}");
+
+                MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, marketFeeds);
+                Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {symbol} total: {marketFeeds.Count()}");
+                marketFeeds = null;
+            }
+
+            Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {symbol}");
+            marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
+
+            datasets[symbol] = marketFeeds.ToList();
+            var filtered = FilterData(marketFeeds, PointSize);
+
+            return filtered;
         }
 
         [JSInvokable]
