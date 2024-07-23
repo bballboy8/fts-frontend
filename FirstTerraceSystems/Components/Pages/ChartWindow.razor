@@ -11,6 +11,8 @@
 <div @ref="ER_ChartWindow"></div>
 
 @code {
+    private const int MarketFeedChunkSize = 20000;
+
     [Parameter]
     public object? ChartIndx { get; set; }
 
@@ -22,9 +24,6 @@
 
     [Parameter]
     public string Symbol { get; set; } = "AAPL";
-
-    [Parameter]
-    public IEnumerable<DataPoint>? DataPoints { get; set; }
 
     private ElementReference ER_ChartWindow { get; set; }
 
@@ -52,7 +51,13 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
-            await JSRuntime.InvokeVoidAsync("popoutChartWindow", _dotChartWindowRef, ER_ChartWindow, ChartIndx, MinPoint, MaxPoint, Symbol, DataPoints);
+            await JSRuntime.InvokeVoidAsync("popoutChartWindow", _dotChartWindowRef, ER_ChartWindow, ChartIndx, Symbol);
+
+            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(Symbol, DateTime.Now.GetPastBusinessDay(3));
+
+            await SendChartDataInChunks(Symbol, marketFeeds);
+
+            await JSRuntime.InvokeVoidAsync("setMinMaxPointToPopoutChart", MinPoint, MaxPoint);
         }
     }
 
@@ -72,42 +77,50 @@
     public void SymbolChanged(string symbol)
     {
         Symbol = symbol;
+
         ChartPageModal.Symbol = symbol;
-    } 
-    
-    [JSInvokable]
-    public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
-    {
-        if (lastPoint == null)
-        {
-            var symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now);
-            return symbolics;
-        }
-        else
-        {
-            var symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
-            return symbolics;
-        }
     }
 
     [JSInvokable]
-    public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
+    public async Task<IEnumerable<MarketFeed>> GetChartDataByLastFeedPoint(string symbol, DataPoint lastPoint)
+    {
+        IEnumerable<MarketFeed> marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey);
+        return marketFeeds;
+    }
+
+    [JSInvokable]
+    public async Task<bool> UpdateChartSymbol(string chartId, string symbol)
     {
         if (!TickerRepository.IsTickerExists(symbol))
         {
             Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
-            return null;
+            return false;
         }
-        else
+
+        Symbol = symbol;
+
+        ChartPageModal.Symbol = symbol;
+
+        ChartService.UpdateSymbol(chartId, symbol);
+
+        IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
+
+        await SendChartDataInChunks(symbol, marketFeeds);
+
+        //IEnumerable<MarketFeed>? data = await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol);
+
+        return true;
+    }
+
+    private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
+    {
+        int totalCount = marketFeeds.Count();
+        int processedCount = 0;
+        foreach (MarketFeed[] chunk in marketFeeds.Chunk(MarketFeedChunkSize))
         {
-            ChartService.UpdateSymbol(chartId, symbol);
+            processedCount += chunk.Count();
+            await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, processedCount == totalCount);
         }
-
-        await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol);
-
-        var symbolics = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now);
-
-        return symbolics;
     }
 
     public void Dispose()

@@ -1,4 +1,5 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.Authorization
+@inherits LayoutComponentBase
 
 @inject NavigationManager NavigationManager
 @inject IAuthenticationService AuthenticationService
@@ -8,13 +9,14 @@
 @inject WindowsSerivce WindowsSerivce
 @inject ChartService ChartService
 
+@* @attribute [Authorize] *@
 @implements IDisposable
 
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
 
 <div class="page">
     <main>
-        @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register"))
+        @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register") && !NavigationManager.Uri.Contains("loading"))
         {
             <div id="headbar" class="top-row px-4">
 
@@ -111,10 +113,10 @@
             }
             else
             {
-
                 WindowsSerivce.UnlockWindowResize();
                 await JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
-                NavigationManager.NavigateTo("/multiChats");
+                NavigationManager.NavigateTo("/loading");
+                // NavigationManager.NavigateTo("/multiChats");
                 // NavigationManager.NavigateTo("/stockchart");
             }
         }

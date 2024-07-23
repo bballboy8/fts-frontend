@@ -23,7 +23,6 @@ namespace FirstTerraceSystems.Services
 
         public void LoadChartSettings()
         {
-            ClearAll();
             string savedSymbolsJson = Preferences.Get(PKey_ChartSymbols, string.Empty);
             InitialChartLayout = Preferences.Get(PKey_SavedChartLayout, 5);
 

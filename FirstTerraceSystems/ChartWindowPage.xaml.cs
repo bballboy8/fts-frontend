@@ -13,7 +13,6 @@ public partial class ChartWindowPage : ContentPage
 {
 
     private readonly object _chartIndx;
-    private readonly IEnumerable<DataPoint> _dataPoints;
     private readonly object _min;
     private readonly object _max;
     private readonly string _symbol;
@@ -22,7 +21,7 @@ public partial class ChartWindowPage : ContentPage
     public delegate void RefreshChart();
 
 
-    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object min, object max, string symbol, IEnumerable<DataPoint> dataPoints)
+    public ChartWindowPage(IJSObjectReference jsObjectReference, object chartIndx, object min, object max, string symbol)
     {
         InitializeComponent();
         _chartIndx = chartIndx;
@@ -30,7 +29,6 @@ public partial class ChartWindowPage : ContentPage
         _min = min;
         _max = max;
         _symbol = symbol;
-        _dataPoints = dataPoints;
     }
 
     protected override void OnAppearing()
@@ -44,36 +42,7 @@ public partial class ChartWindowPage : ContentPage
             { "MinPoint", _min },
             { "MaxPoint", _max },
             { "Symbol", _symbol },
-            { "DataPoints", _dataPoints }
         };
-
-        //#if WINDOWS
-
-        //if (BlazorWebView?.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.WebView2 webView2)
-        //{
-        //    await webView2.EnsureCoreWebView2Async();
-
-        //    webView2.IsTabStop = true;
-        //    webView2.IsDoubleTapEnabled = false;
-        //    webView2.HighContrastAdjustment = Microsoft.UI.Xaml.ElementHighContrastAdjustment.None;
-
-        //    CoreWebView2Settings settings = webView2.CoreWebView2.Settings;
-
-        //    settings.IsZoomControlEnabled = false;
-        //    settings.AreBrowserAcceleratorKeysEnabled = false;
-        //    settings.AreDefaultContextMenusEnabled = false;
-        //    settings.AreDefaultScriptDialogsEnabled = false;
-        //    settings.AreDevToolsEnabled = false;
-        //    settings.AreHostObjectsAllowed = false;
-        //    settings.HiddenPdfToolbarItems = Microsoft.Web.WebView2.Core.CoreWebView2PdfToolbarItems.None;
-        //    settings.IsBuiltInErrorPageEnabled = false;
-        //    settings.IsGeneralAutofillEnabled = false;
-        //    settings.IsPasswordAutosaveEnabled = false;
-        //    settings.IsPinchZoomEnabled = false;
-        //    settings.IsStatusBarEnabled = false;
-        //}
-        //#endif
-
     }
 
     protected override void OnDisappearing()
@@ -82,6 +51,7 @@ public partial class ChartWindowPage : ContentPage
         {
             var chartPage = StateContainerService.ChartPages.FirstOrDefault(a => a.ChartId == _chartIndx?.ToString());
             _jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme, chartPage?.Symbol);
+            //_jsObjectReference.InvokeVoidAsync("popinChartWindow", _chartIndx, chartPage?.UpdatedMinExtreme, chartPage?.UpdatedMaxExtreme, chartPage?.Symbol);
         }
 
         StateContainerService.RemoveChartPage(_chartIndx.ToString());
