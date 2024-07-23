@@ -214,25 +214,6 @@ namespace FirstTerraceSystems.Components.Pages
       return filtered;
     }
 
-    private async Task UpdateChartWithUpdatedPoints(string symbol, IEnumerable<MarketFeed> UpdatedFeeds)
-    {
-     List<MarketFeed> filtered = datasets[symbol];
-      if (Ranges.ContainsKey(symbol) && Ranges[symbol] != 0)
-      {
-        var RangeDate = DateTime.UtcNow.AddMilliseconds(Ranges[symbol]);
-        DateTime eastern = TimeZoneInfo
-    .ConvertTimeFromUtc(
-RangeDate,
-TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-         filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
-      }
-        filtered = FilterData(filtered, PointSize);
-      filtered = filtered.Concat(UpdatedFeeds).ToList();
-      datasets[symbol] = datasets[symbol].Concat(UpdatedFeeds).ToList();
-      await JSRuntime.InvokeVoidAsync("setNewDataToChartBySymbol", symbol, filtered);
-    
-    }
-
 private async Task InitializedDataBaseAsync()
         {
             if (!TickerRepository.IsTickerTableExists())
@@ -240,7 +221,6 @@ private async Task InitializedDataBaseAsync()
                 Logger.LogInformation($"Starting API call for GetTickers");
                 IEnumerable<NasdaqTicker>? tickers = await NasdaqService.NasdaqGetTickersAsync();
                 Logger.LogInformation($"Got Response from API GetTickers");
-        var ticker = tickers.FirstOrDefault((x) => x.Symbol == "DE");
                 Logger.LogInformation($"Inserting Tickers To  SQLite DB");
                 TickerRepository.InsertRecords(tickers);
                 Logger.LogInformation($"Inserted Tickers To  SQLite DB");
@@ -286,7 +266,6 @@ private async Task InitializedDataBaseAsync()
             {
                 IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey).ConfigureAwait(false);
         datasets[symbol] = datasets[symbol].Concat(marketFeeds).ToList();
-        //UpdateChartWithUpdatedPoints(symbol,marketFeeds);
         return marketFeeds;
             }
         }

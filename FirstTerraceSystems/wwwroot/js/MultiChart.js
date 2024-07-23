@@ -1003,21 +1003,6 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
     }
 }
 
-function setNewDataToChartBySymbol(symbol, seriesData) {
-    let chart = getChartInstanceBySeriesName(symbol);
-    if (chart) {
-        let series = chart.series[0];
-        const dataPoints = seriesData.slice(1).map((data, index) =>
-            processDataPoint(data, seriesData[index].price)
-        );
-
-        setTimeout(series.setData(dataPoints, false, false), 0);
-        chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
-        chart.redraw();
-    }
-}
-
-
 async function setRange(symbol, range) {
     let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
