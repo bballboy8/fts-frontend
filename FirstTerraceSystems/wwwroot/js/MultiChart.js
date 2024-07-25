@@ -90,7 +90,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                             var button = $(e.target);
                             var buttonOffset = button.offset();
                             
-                            var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 26px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
+                            var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 35px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
 
                             var btn = divInput.find('#btnUpdateChartSymbol');
                             var cancelBtn = divInput.find('#btnCancelChartSymbol');
