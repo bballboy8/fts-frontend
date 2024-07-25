@@ -118,10 +118,13 @@ function addHtmlButtonToChart(chart, options) {
         'rect', //shape
         true // useHTML
     ).attr({
-        width: 12,
-        height: 5,
-        'text-anchor': 'middle',
+
         zIndex:3
+    }).css({
+        pointerEvents: 'auto', // Ensure the button can receive pointer events
+        display: 'inline-block', // Ensure button layout is correct
+        textAlign: 'center',
+        lineHeight: `${5}px`, // Vertically center the text
     });
 
     //button.addClass('btn btn-sm')
@@ -177,8 +180,8 @@ function addButtonToChart(chart, options) {
         false // useHTML
     ).attr({
         title: title,
-        zIndex:3
-    })
+        zIndex: 3
+    });
 
     //button.addClass('btn btn-sm')
     button.add();
