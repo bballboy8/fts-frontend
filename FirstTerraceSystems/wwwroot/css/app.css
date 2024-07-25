@@ -660,3 +660,20 @@ h1:focus {
     right: 10px;
     z-index: 1000;
 }
+
+.highcharts-button{
+    margin:0 5px;
+    padding: 5px 10px;
+    border-radius:5px;
+    border:none;
+    font-size:18px;
+}
+
+.highcharts-contextbutton{
+    display:none;
+}
+
+.highcharts-exporting-button{
+    top:10px;
+    left:80px
+}
