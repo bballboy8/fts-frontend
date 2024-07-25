@@ -391,7 +391,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 lineWidth: 0,
                 marker: {
                     enabled: true,
-                    radius: 2
+                    radius: 1
                 },
                 tooltip: {
                     valueDecimals: 2
