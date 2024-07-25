@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json;
 using System.Xml.Linq;
+using BlazorBootstrap;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
@@ -33,10 +34,12 @@ namespace FirstTerraceSystems.Components.Pages
         {
             if (firstRender)
             {
-                await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef).ConfigureAwait(false);
-                await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols).ConfigureAwait(false);
+                await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
+                preloadService.Show(SpinnerColor.Light, "Loading data...");
+                await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
                 await UpdateAndRenderChartsAsync();
 
+                preloadService.Hide();
                 Logger.LogInformation($"Connecting WebSocketClient");
 
                 await WebSocketClient.ConnectAsync();

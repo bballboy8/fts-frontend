@@ -8,12 +8,11 @@
 @inject BsToastService Toast
 @inject WindowsSerivce WindowsSerivce
 @inject ChartService ChartService
-
 @* @attribute [Authorize] *@
 @implements IDisposable
 
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
-
+<Preload/>
 <div class="page">
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register") && !NavigationManager.Uri.Contains("loading"))
