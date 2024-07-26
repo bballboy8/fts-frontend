@@ -12,9 +12,12 @@
 @inject PreloadService preloadService
 @implements IAsyncDisposable
 
-<div class="d-flex justify-content-center">
-    <Spinner Type="SpinnerType.Border" Size="SpinnerSize.ExtraLarge" />
-</div>
+@if (IsLoading)
+{
+    <div class="d-flex justify-content-center">
+        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.ExtraLarge" />
+    </div>
+}
 <style>
     #popup {
         display: none;
@@ -24,7 +27,8 @@
         padding: 10px;
         z-index: 10000;
     }
-    .spinner-border{
+
+    .spinner-border {
         padding: 33px;
     }
 </style>
