@@ -17,8 +17,8 @@ namespace FirstTerraceSystems.Components.Pages
         private const int MarketFeedChunkSize = 5000;
         private const int PointSize = 100;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
-        Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
-        Dictionary<string, double> Ranges = new Dictionary<string, double>();
+        public static Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
+        public static Dictionary<string, double> Ranges = new Dictionary<string, double>();
         protected override void OnInitialized()
         {
             _dotNetMualtiChatsRef = DotNetObjectReference.Create(this);
@@ -111,7 +111,7 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
-        private List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
+        public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
         {
             var filteredData = data;
 
@@ -125,7 +125,7 @@ namespace FirstTerraceSystems.Components.Pages
             return filteredData.ToList();
         }
 
-        private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
+        public  async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
         {
             datasets[symbol] = marketFeeds.ToList();
             var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
@@ -165,7 +165,7 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
-        private DateTime UnixTimeStampToDateTime(double unixTimeStamp)
+        public static DateTime UnixTimeStampToDateTime(double unixTimeStamp)
         {
             // Convert Unix timestamp to UTC DateTime
             DateTime utcDateTime = DateTimeOffset.FromUnixTimeMilliseconds(Convert.ToInt64(unixTimeStamp)).LocalDateTime;
@@ -232,7 +232,6 @@ namespace FirstTerraceSystems.Components.Pages
                 var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
                 if (dataGot != null)
                 {
-                    datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
                     await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
                 }
             }
@@ -242,20 +241,9 @@ namespace FirstTerraceSystems.Components.Pages
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
         {
-            if (lastPoint == null)
-            {
-
-                IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
-                //await SendChartDataInChunks(symbol, marketFeeds);
-
-                return marketFeeds;
-            }
-            else
-            {
-                IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, lastPoint.PrimaryKey).ConfigureAwait(false);
-                datasets[symbol] = datasets[symbol].Concat(marketFeeds).ToList();
-                return marketFeeds;
-            }
+            var filtered = FilterData(datasets[symbol],PointSize);
+            return filtered;
+            
         }
 
         [JSInvokable]

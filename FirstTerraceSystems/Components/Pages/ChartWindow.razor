@@ -1,11 +1,12 @@
-﻿@inject StateContainerService StateContainer
+﻿@using System.Text.Json
+@inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
 @inject Repositories.MarketFeedRepository MarketFeedRepository
 @inject Repositories.TickerRepository TickerRepository
 @inject BsToastService Toast
 @inject ChartService ChartService
 @inject NasdaqHistoricalDataService HistoricalDataService
-
+@inject NasdaqService NasdaqService
 @implements IDisposable
 
 <div @ref="ER_ChartWindow"></div>
@@ -30,7 +31,7 @@
     private Models.ChartModal ChartPageModal { get; set; } = new();
 
     private DotNetObjectReference<ChartWindow>? _dotChartWindowRef;
-
+    private const int PointSize = 100;
     protected override void OnInitialized()
     {
         base.OnInitialized();
@@ -39,6 +40,12 @@
         StateContainerService.AddChartPage(ChartPageModal);
         _dotChartWindowRef = DotNetObjectReference.Create(this);
         WebSocketClient.ActionReferenceChart += RefreshCharts;
+    }
+
+    public void RemoveRefresh()
+    {
+
+        WebSocketClient.ActionReferenceChart -= RefreshCharts;
     }
 
     protected override async Task OnInitializedAsync()
@@ -53,8 +60,7 @@
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
             await JSRuntime.InvokeVoidAsync("popoutChartWindow", _dotChartWindowRef, ER_ChartWindow, ChartIndx, Symbol);
 
-            IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(Symbol, DateTime.Now.GetPastBusinessDay(3));
-
+            IEnumerable<MarketFeed>? marketFeeds = MultiCharts.datasets[Symbol];
             await SendChartDataInChunks(Symbol, marketFeeds);
 
             await JSRuntime.InvokeVoidAsync("setMinMaxPointToPopoutChart", MinPoint, MaxPoint);
@@ -63,7 +69,14 @@
 
     private async Task RefreshCharts(NasdaqResponse? response)
     {
-        await JSRuntime.InvokeVoidAsync("refreshCharts");
+        IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data.Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
+
+        var dataGot = groupedData.FirstOrDefault((x) => x.Key == Symbol)?.ToList();
+        if (dataGot != null)
+        {
+            MultiCharts.datasets[Symbol] = MultiCharts.datasets[Symbol].Concat(dataGot).ToList();
+            await JSRuntime.InvokeVoidAsync("refreshCharts", Symbol, dataGot);
+        }
     }
 
     [JSInvokable]
@@ -74,11 +87,9 @@
     }
 
     [JSInvokable]
-    public void SymbolChanged(string symbol)
+    public void SymbolChanged(string chartId, string symbol)
     {
-        Symbol = symbol;
-
-        ChartPageModal.Symbol = symbol;
+        ChartService.UpdateSymbol(chartId, symbol);
     }
 
     [JSInvokable]
@@ -89,42 +100,103 @@
     }
 
     [JSInvokable]
-    public async Task<bool> UpdateChartSymbol(string chartId, string symbol)
+    public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
     {
         if (!TickerRepository.IsTickerExists(symbol))
         {
             Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
-            return false;
+            return null;
+        }
+        var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+        MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(symbol);
+        DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
+
+        IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, symbol).ConfigureAwait(false);
+
+        if (marketFeeds != null && marketFeeds.Any())
+        {
+
+            MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, marketFeeds);
+            marketFeeds = null;
         }
 
-        Symbol = symbol;
+        marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
 
-        ChartPageModal.Symbol = symbol;
+        MultiCharts.datasets[symbol] = marketFeeds.ToList();
+        var filtered = MultiCharts.FilterData(marketFeeds, PointSize);
+        SymbolChanged(chartId, symbol);
+        return filtered;
 
-        ChartService.UpdateSymbol(chartId, symbol);
-
-        IEnumerable<MarketFeed>? marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3));
-
-        await SendChartDataInChunks(symbol, marketFeeds);
-
-        //IEnumerable<MarketFeed>? data = await HistoricalDataService.ProcessHistoricalNasdaqMarketFeedAsync(symbol);
-
-        return true;
     }
 
-    private async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
+    public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
     {
-        int totalCount = marketFeeds.Count();
-        int processedCount = 0;
-        foreach (MarketFeed[] chunk in marketFeeds.Chunk(MarketFeedChunkSize))
+        MultiCharts.datasets[symbol] = marketFeeds.ToList();
+        var chunks = MultiCharts.FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
+
+        foreach (var chunk in chunks)
         {
-            processedCount += chunk.Count();
-            await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, processedCount == totalCount);
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, false);
+                var tempChunk = chunk;
+                tempChunk = null;
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+            catch (Exception ex){
+            }
         }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, null, true);
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+
+    [JSInvokable]
+    public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
+    {
+        var filtered = MultiCharts.FilterData(MultiCharts.datasets[symbol], PointSize);
+        return filtered;
+    }
+
+    [JSInvokable]
+    public IEnumerable<MarketFeed>? GetExtremeDataBySymbol(string symbol, JsonElement? minElement, JsonElement? maxElement)
+    {
+        if (minElement == null || maxElement == null)
+            return [];
+        long? min = minElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(minElement?.GetDouble()) : (long?)null;
+        long? max = maxElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(maxElement?.GetDouble()) : (long?)null;
+        var startDate = MultiCharts.UnixTimeStampToDateTime((long)min);
+        var endDate = MultiCharts.UnixTimeStampToDateTime((long)max);
+        var extremeData = MultiCharts.datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
+        var filteredData = MultiCharts.FilterData(extremeData, 100);
+        return filteredData;
+    }
+
+    [JSInvokable]
+    public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
+    {
+        MultiCharts.Ranges[symbol] = range;
+        var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+        DateTime eastern = TimeZoneInfo
+    .ConvertTimeFromUtc(
+      RangeDate,
+      TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+        var last = MultiCharts.datasets[symbol][MultiCharts.datasets[symbol].Count - 1];
+        var filtered = MultiCharts.datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+        filtered = MultiCharts.FilterData(filtered, PointSize);
+        return filtered;
     }
 
     public void Dispose()
     {
+        RemoveRefresh();
         _dotChartWindowRef?.Dispose();
     }
 

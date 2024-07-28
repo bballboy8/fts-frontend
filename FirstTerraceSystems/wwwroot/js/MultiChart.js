@@ -325,7 +325,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             split: true,
             formatter: function () {
                 return [
-                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S', this.x, false)}</b>`,
+                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S.%L', this.x, false)}</b>`,
                     ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
                 ]
             },
@@ -372,15 +372,10 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 type: 'datetime',
                 //offset: 0,
                 labels: {
-                    align: 'left',
-                    x: 5,
-                    style: { color: fontColor },
-                    formatter: function () {
-                        return Highcharts.dateFormat('%H:%M:%S', this.value, false);
-                    }
+                    style: { color: fontColor }
                 },
                 dateTimeLabelFormats: {
-                    second: '%H:%M:%S',
+                    second: '%H:%M:%S.%L',
                     minute: '%H:%M',
                     hour: '%H:%M',
                     day: '%e. %b',
@@ -474,35 +469,6 @@ function handleExtremesChange(symbol,chart, min, max) {
         updatingCharts[symbol] = false;
     }, 0);
 }
-function createButtonConfig(text, action, x, isRight) {
-    const useHtml = text.includes('<i');
-
-    return {
-        text: text,
-        onclick: action,
-        useHTML: useHtml,
-        theme: {
-            fill: '#272C2F',
-            stroke: useHtml ? 'none' : 'white',
-            //r: 5,
-            style: {
-                color: '#FFFFFF',
-            }
-        },
-        align: isRight?'right': 'left',
-        verticalAlign: 'top',
-        x: x,
-        y: 0
-    };
-}
-
-function SymbolClicked(symbol) {
-
-    var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${0}px;left:${0}px;"><input id="txtSymboleName" type="text" value="${symbol}"/><button id="btnUpdateChartSymbol" type="button">Ok</button></div>`);
-
-    $("body").append(divInput);
-}
-
 
 function removeChart(chart) {
 
@@ -654,6 +620,11 @@ async function getFilteredDataBySymbol(symbol,  range = undefined) {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetFilteredDataBySymbol", symbol, range);
 }
 
+async function getChartDataBySymbol(symbol, lastPoint = undefined) {
+
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataBySymbol", symbol, lastPoint);
+}
+
 async function getExtremeDataBySymbol(symbol, min = undefined, max = undefined) {
 
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetExtremeDataBySymbol", symbol, min,max);
@@ -743,17 +714,6 @@ async function refreshCharts(symbol, seriesData) {
     
 }
 
-function handleChartRefresh(chart) {
-    setTimeout(async function () {
-        let series = chart.series[0];
-        let lastPoint = series.options.data[series.options.data.length - 1];
-        let seriesData = await getChartDataBySymbol(series.name, lastPoint);
-
-        addPointToChart(chart, seriesData, false, false);
-    }, 0);
-        //removeOldPoints(chart, 3);
-        //chart.redraw();
- }
 
 
 
@@ -1001,14 +961,10 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
     let chart = addChart(1, chartContainerId, [], symbol);
 
     addWindowControlButtonsToChart();
-
-    getChartDataBySymbol(symbol).then((seriesData) => {
-        setDataToChart(chart, seriesData);
-    });
-
-    if (minPoint && maxPoint) {
-        chart.xAxis[0].setExtremes(minPoint, maxPoint);
-    }
+    var data = await getChartDataBySymbol(symbol, null);
+    setDataToChart(chart, data);
+    chart.hideLoading();
+    
 }
 
 
