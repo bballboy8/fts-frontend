@@ -662,18 +662,11 @@ h1:focus {
 }
 
 .highcharts-button{
-    margin:0 5px;
-    padding: 5px 10px;
-    border-radius:5px;
     border:none;
-    font-size:18px;
+    font-size:12px;
 }
 
 .highcharts-contextbutton{
     display:none;
 }
 
-.highcharts-exporting-button{
-    top:10px;
-    left:80px
-}

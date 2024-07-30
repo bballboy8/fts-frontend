@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.IO.Compression;
 using System.IO.Pipelines;
 using System.Net.Http.Headers;
 using System.Text;
@@ -50,9 +51,12 @@ namespace FirstTerraceSystems.Services
       var result = new List<MarketFeed>();
       var serializer = new Newtonsoft.Json.JsonSerializer();
 
-      using (var sr = new StreamReader(stream))
+      using (var gzipStream = new GZipStream(stream, CompressionMode.Decompress))
+      using (var sr = new StreamReader(gzipStream))
       using (var jr = new JsonTextReader(sr))
       {
+        jr.SupportMultipleContent = true; // Allow reading multiple JSON objects
+
         while (await jr.ReadAsync())
         {
           if (jr.TokenType == JsonToken.StartObject)
