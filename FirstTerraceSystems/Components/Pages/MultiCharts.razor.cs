@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json;
 using System.Xml.Linq;
+using BlazorBootstrap;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
@@ -16,6 +17,7 @@ namespace FirstTerraceSystems.Components.Pages
     {
         private const int MarketFeedChunkSize = 5000;
         private const int PointSize = 100;
+        private bool IsLoading { get; set; } = false;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
         public static Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
         public static Dictionary<string, double> Ranges = new Dictionary<string, double>();
@@ -33,10 +35,13 @@ namespace FirstTerraceSystems.Components.Pages
         {
             if (firstRender)
             {
-                await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef).ConfigureAwait(false);
-                await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols).ConfigureAwait(false);
+                await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
+                IsLoading = true;
+                preloadService.Show(SpinnerColor.Light, "Loading data...");
+                await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
                 await UpdateAndRenderChartsAsync();
-
+                preloadService.Hide();
+                IsLoading = false;
                 Logger.LogInformation($"Connecting WebSocketClient");
 
                 await WebSocketClient.ConnectAsync();

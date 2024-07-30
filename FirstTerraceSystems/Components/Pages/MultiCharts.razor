@@ -9,8 +9,15 @@
 @inject BsToastService Toast
 @inject ILogger<MultiCharts> Logger
 
+@inject PreloadService preloadService
 @implements IAsyncDisposable
 
+@if (IsLoading)
+{
+    <div class="d-flex justify-content-center">
+        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.ExtraLarge" />
+    </div>
+}
 <style>
     #popup {
         display: none;
@@ -19,6 +26,10 @@
         background-color: #fff;
         padding: 10px;
         z-index: 10000;
+    }
+
+    .spinner-border {
+        padding: 33px;
     }
 </style>
 
