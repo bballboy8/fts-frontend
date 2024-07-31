@@ -196,18 +196,35 @@ function removeUnusedElement() {
 
 function loadTemplates(e) {
     let showDropDownClass = 'show';
+    const themeValue = document.documentElement.getAttribute('data-sidebar');
     let templateDropDown = document.getElementById("load-template-dropdown");
     if (templateDropDown.classList.contains(showDropDownClass)) {
         templateDropDown.classList.remove(showDropDownClass);
-        e.currentTarget.classList.remove("display-Option-clicked-color");
+        if (themeValue == 'light') {
+            e.currentTarget.classList.remove('display-Option-clicked-color-light')
+        } else {
+            e.currentTarget.classList.remove("display-Option-clicked-color");
+        }        
         templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
-            ct.classList.remove('display-Option-clicked-color');
+            if (themeValue == 'light') {
+                ct.classList.remove('display-Option-clicked-color-light');
+            } else {
+                ct.classList.remove('display-Option-clicked-color');
+            }
         });
     } else {
         templateDropDown.classList.add(showDropDownClass);
-        e.currentTarget.classList.add("display-Option-clicked-color");
+        if (themeValue == 'light') {
+            e.currentTarget.classList.add("display-Option-clicked-color-light");
+        } else {
+            e.currentTarget.classList.add("display-Option-clicked-color");
+        }
         templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
-            ct.classList.add('display-Option-clicked-color');
+            if (themeValue == 'light') {
+                ct.classList.add('display-Option-clicked-color-light');
+            } else {
+                ct.classList.add('display-Option-clicked-color');
+            }
         });
     }
     e.stopPropagation();
@@ -234,6 +251,7 @@ window.changeBackgroundColor = (mode) => {
     // Change HTML body background color based on the isDarkMode parameter
     fontColor = isDarkMode ? '#ffffff' : '#202527';
     backgroundColor = isDarkMode ? '#202527' : '#ffffff';
+    dropdownButtonColor = isDarkMode ? '#5B6970' : '#ffffff';
     document.body.style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
     //document.getElementById("headbar").style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
     document.documentElement.setAttribute('data-sidebar', isDarkMode ? 'dark' : 'light');
@@ -246,9 +264,38 @@ window.changeBackgroundColor = (mode) => {
         document.body.classList.add("light-body");
     }
 
+    
+    // Update properties for dropdownMenuButton
+    const dropdownButton = document.getElementById('dropdownMenuButton');
+ 
+    dropdownButton.style.background = dropdownButtonColor;
+    dropdownButton.style.color = fontColor;
+
+    document.querySelectorAll('.dropdown-item').forEach(button => {
+        button.style.color = fontColor;
+        button.style.backgroundColor = dropdownButtonColor;
+    });
+
+
     // Update text color for all axes labels
     document.querySelectorAll('.highcharts-xaxis-labels text, .highcharts-yaxis-labels text').forEach(label => {
         label.style.fill = fontColor;
+    });
+
+    // Update color for the buttons.
+    document.querySelectorAll('.highcharts-button-box').forEach(button => {
+        button.style.fill = backgroundColor;
+        button.style.stroke = fontColor;        
+    });
+
+    // Update text color for the buttons.
+    document.querySelectorAll('.highcharts-button text').forEach(text => {
+        text.style.fill = fontColor;
+    });
+
+    // Update symbol color for the buttons.
+    document.querySelectorAll('.highcharts-button i').forEach(i => {
+        i.style.setProperty('color', fontColor, 'important');
     });
 
     // Update chart backgrounds and series colors for all Highcharts charts
@@ -293,8 +340,7 @@ window.changeBackgroundColor = (mode) => {
                     upColor: isDarkMode ? '#16C05A' : '#C01620' // Rise or fall color
                 }))
             });
-        }
-
+        }   
     });
 };
 

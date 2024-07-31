@@ -190,6 +190,10 @@ main {
     background-color: #272C2F !important;
 }
 
+.display-Option-clicked-color-light {
+    background-color: #FFFFFF !important;
+}
+
 .market-time {
     width: 100px;
     height: 30px;
