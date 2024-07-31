@@ -29,7 +29,7 @@
                         @* <a role="button" class="dropdown-item">Load layout</a> *@
 
                         <div class="dropdown dropend">
-                            <a class="dropdown-item sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load Layout</a>
+                            <a id="loadLayoutButton" class="dropdown-item sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load Layout</a>
                             <div class="dropdown-menu" id="load-template-dropdown">
                                 <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="5" tabindex="2" @onclick="() => LoadTemplate(5)">
                                     <span style="margin-top: -7px;"><span class="default-chart-2-grid"> <span class="default-chart-2"></span> <span class="default-chart-2"></span></span> <span class="default-chart-3-grid"><span class="default-chart-3"></span> <span class="default-chart-3"></span> <span class="default-chart-3"></span> </span></span> Default Layout
@@ -145,6 +145,7 @@
     {
         ChartService.UpdateChartLayout(totalCharts);
         await JSRuntime.InvokeVoidAsync("createDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
+        await JSRuntime.InvokeVoidAsync("updateButtonColour");
         StateContainerService.IsAllowCloseAllWindows = true;
         WindowsSerivce.CloseAllOpenedWindows();
         await JSRuntime.InvokeVoidAsync("RefreshChartBySymbol");

@@ -832,7 +832,7 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
-
+    debugger;
     removeUnusedElement();
 
     let charts = Highcharts.charts.filter(hc => hc)
@@ -857,6 +857,23 @@ function createDashboard(totalCharts, initialChartSymbols) {
 
         let chart = addChartBox(totalCharts, indx, symbolInfo.symbol);
     }
+}
+
+function updateButtonColour() {
+    document.querySelectorAll('.highcharts-button-box').forEach(button => {
+        button.style.fill = backgroundColor;
+        button.style.stroke = fontColor;
+    });
+
+    // Update text color for the buttons.
+    document.querySelectorAll('.highcharts-button text').forEach(text => {
+        text.style.fill = fontColor;
+    });
+
+    // Update symbol color for the buttons.
+    document.querySelectorAll('.highcharts-button i').forEach(i => {
+        i.style.setProperty('color', fontColor, 'important');
+    });
 }
 
 function loadDashboard(totalCharts, initialChartSymbols) {
