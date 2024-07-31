@@ -200,13 +200,13 @@ function loadTemplates(e) {
     let templateDropDown = document.getElementById("load-template-dropdown");
     if (templateDropDown.classList.contains(showDropDownClass)) {
         templateDropDown.classList.remove(showDropDownClass);
-        if (themeValue == 'light') {
+        if (e.currentTarget.classList.contains('display-Option-clicked-color-light')) {
             e.currentTarget.classList.remove('display-Option-clicked-color-light')
         } else {
             e.currentTarget.classList.remove("display-Option-clicked-color");
         }        
         templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
-            if (themeValue == 'light') {
+            if (ct.classList.contains('display-Option-clicked-color-light')) {
                 ct.classList.remove('display-Option-clicked-color-light');
             } else {
                 ct.classList.remove('display-Option-clicked-color');
@@ -264,7 +264,19 @@ window.changeBackgroundColor = (mode) => {
         document.body.classList.add("light-body");
     }
 
-    
+    let showDropDownClass = 'show';    
+    let templateDropDown = document.getElementById("load-template-dropdown");
+    if (templateDropDown.classList.contains(showDropDownClass)) {
+        templateDropDown.classList.remove(showDropDownClass);    
+        templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
+            if (ct.classList.contains('display-Option-clicked-color-light')) {
+                ct.classList.remove('display-Option-clicked-color-light');
+            } else {
+                ct.classList.remove('display-Option-clicked-color');
+            }
+        });
+    }
+
     // Update properties for dropdownMenuButton
     const dropdownButton = document.getElementById('dropdownMenuButton');
  
@@ -275,6 +287,13 @@ window.changeBackgroundColor = (mode) => {
         button.style.color = fontColor;
         button.style.backgroundColor = dropdownButtonColor;
     });
+
+    const loadLayoutdropdownButton = document.getElementById('loadLayoutButton');
+    if (loadLayoutdropdownButton.classList.contains('display-Option-clicked-color')) {
+        loadLayoutdropdownButton.classList.remove('display-Option-clicked-color');
+    } else if (loadLayoutdropdownButton.classList.contains('display-Option-clicked-color-light')) {
+        loadLayoutdropdownButton.classList.remove('display-Option-clicked-color-light');
+    }
 
 
     // Update text color for all axes labels
