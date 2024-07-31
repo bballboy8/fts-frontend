@@ -85,12 +85,18 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         height: 10,
                         title: `XNYS: ${symbol}`,
                         callback: function (e) {
+
                             $("#dvSymbolInput").remove();
 
                             var button = $(e.target);
                             var buttonOffset = button.offset();
-                            
-                            var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 35px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
+                            if (totalCharts != 8) {
+                                var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 35px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
+                            }
+                            else {
+                                var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 55px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
+
+                            }
 
                             var btn = divInput.find('#btnUpdateChartSymbol');
                             var cancelBtn = divInput.find('#btnCancelChartSymbol');
