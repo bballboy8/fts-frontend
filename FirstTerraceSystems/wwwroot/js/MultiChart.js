@@ -41,7 +41,7 @@ ChatAppInterop.setDotNetReference = function (dotnetReference) {
     ChatAppInterop.dotnetReference = dotnetReference;
 };
 
-
+var symbolData = {};
 function filterData(data, numPoints, startDate, endDate) {
     let filteredData = data;
     if (startDate && endDate) {
@@ -60,7 +60,7 @@ function filterData(data, numPoints, startDate, endDate) {
     return result;
 }
 
-function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
+function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
 
 
     updatingCharts[symbol] = false;
@@ -143,9 +143,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                                             chart.hideLoading();
                                         }
 
-                                        if (ChatAppInterop.dotnetReference) {
-                                            ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
-                                        }
+                                        
                                         chart.hideLoading();
                                     });
 
@@ -158,12 +156,12 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                         }
                     });
 
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 120, y: 10});
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol,3* 60 * 1000) }, x: 155, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol,30* 60 * 1000) }, x: 190, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol,60* 60 * 1000) }, x: 230, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setRange(symbol,24*60* 60 * 1000) }, x: 265, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 300, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 90, y: 10});
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol,3* 60 * 1000) }, x: 120, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setRange(symbol,24*60* 60 * 1000) }, x: 215, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
                        
                     chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-in"></i>',
@@ -256,38 +254,61 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                     chart.ButtonNamespace.symbolButton.align({
                         align: 'left',
                         x: 0,
-                        y: -2
+                        y: 0
                     }, true, 'spacingBox');
 
-                    chart.ButtonNamespace.zoomInButton.align({
-                        align: 'left',
-                        x: 360, //360
-                        y: 0
-                    }, false, 'spacingBox');
+                    if (totalCharts == 8) {
+                        chart.ButtonNamespace.zoomInButton.align({
+                            align: 'left',
+                            x: 0,
+                            y: 30
+                        }, true, 'spacingBox');
 
-                    chart.ButtonNamespace.zoomOutButton.align({
-                        align: 'left',
-                        x: 400, //400
-                        y: 0
-                    }, false, 'spacingBox');
+                        chart.ButtonNamespace.zoomOutButton.align({
+                            align: 'left',
+                            x: 25,
+                            y: 30
+                        }, false, 'spacingBox');
+                    }
+                    else {
+                        chart.ButtonNamespace.zoomInButton.align({
+                            align: 'left',
+                            x: 290,
+                            y: 2
+                        }, true, 'spacingBox');
 
+                        chart.ButtonNamespace.zoomOutButton.align({
+                            align: 'left',
+                            x: 315,
+                            y: 2
+                        }, false, 'spacingBox');
+                    }
                     if (!isPopoutChartWindow) {
+
+                        var closeX = -30;
+                        var minX = -60;
+                        var maxX = -90;
+                        if (totalCharts == 8) {
+                            closeX = -25;
+                            minX = -50;
+                                maxX = -75;
+                        }
                         chart.ButtonNamespace.closeChartButton.align({
                             align: 'right',
-                            x: -30,
-                            y: 0
+                            x: closeX,
+                            y: 2
                         }, false, 'spacingBox');
 
                         chart.ButtonNamespace.maximizeButton.align({
                             align: 'right',
-                            x: -70,
-                            y: 0
+                            x: minX,
+                            y: 2
                         }, false, 'spacingBox');
 
                         chart.ButtonNamespace.minimizeButton.align({
                             align: 'right',
-                            x: -110,
-                            y: 0
+                            x: maxX,
+                            y: 2
                         }, false, 'spacingBox');
                     }
 
@@ -297,6 +318,9 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 type: 'x'
             }
         },
+        scrollbar: {
+            liveRedraw: true
+        },
         rangeSelector: {
             enabled:false
         },
@@ -304,7 +328,7 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
             split: true,
             formatter: function () {
                 return [
-                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S', this.x, false)}</b>`,
+                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S.%L', this.x, false)}</b>`,
                     ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
                 ]
             },
@@ -351,15 +375,10 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                 type: 'datetime',
                 //offset: 0,
                 labels: {
-                    align: 'left',
-                    x: 5,
-                    style: { color: fontColor },
-                    formatter: function () {
-                        return Highcharts.dateFormat('%H:%M:%S', this.value, false);
-                    }
+                    style: { color: fontColor }
                 },
                 dateTimeLabelFormats: {
-                    second: '%H:%M:%S',
+                    second: '%H:%M:%S.%L',
                     minute: '%H:%M',
                     hour: '%H:%M',
                     day: '%e. %b',
@@ -384,7 +403,6 @@ function addChart(charContainerId, data, symbol, isPopoutChartWindow = false, do
                     }
                 },
                 //height: '65%',
-                lineWidth: 2,
                 resize: { enabled: true },
             }
         ],
@@ -454,35 +472,6 @@ function handleExtremesChange(symbol,chart, min, max) {
         updatingCharts[symbol] = false;
     }, 0);
 }
-function createButtonConfig(text, action, x, isRight) {
-    const useHtml = text.includes('<i');
-
-    return {
-        text: text,
-        onclick: action,
-        useHTML: useHtml,
-        theme: {
-            fill: '#272C2F',
-            stroke: useHtml ? 'none' : 'white',
-            //r: 5,
-            style: {
-                color: '#FFFFFF',
-            }
-        },
-        align: isRight?'right': 'left',
-        verticalAlign: 'top',
-        x: x,
-        y: 0
-    };
-}
-
-function SymbolClicked(symbol) {
-
-    var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${0}px;left:${0}px;"><input id="txtSymboleName" type="text" value="${symbol}"/><button id="btnUpdateChartSymbol" type="button">Ok</button></div>`);
-
-    $("body").append(divInput);
-}
-
 
 function removeChart(chart) {
 
@@ -634,6 +623,11 @@ async function getFilteredDataBySymbol(symbol,  range = undefined) {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetFilteredDataBySymbol", symbol, range);
 }
 
+async function getChartDataBySymbol(symbol, lastPoint = undefined) {
+
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataBySymbol", symbol, lastPoint);
+}
+
 async function getExtremeDataBySymbol(symbol, min = undefined, max = undefined) {
 
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetExtremeDataBySymbol", symbol, min,max);
@@ -658,7 +652,7 @@ function setDataToChart(chart, seriesData) {
     const dataPoints = seriesData.slice(1).map((data, index) =>
         processDataPoint(data, seriesData[index].price)
     );
-
+    symbolData[chart.series[0].name] = dataPoints;
     series.setData(dataPoints, false, false);
     chart.redraw();
     if (seriesData.length>1)
@@ -671,7 +665,16 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
     let series = chart.series[0];
     seriesData.slice(1).forEach((data, index) => {
         const point = processDataPoint(data, seriesData[index].price);
-        series.addPoint(point, redraw, animateOnUpdate);
+        if (!symbolData[chart.series[0].name])
+            symbolData[chart.series[0].name] = [];
+        /*var alreadyPoint = symbolData[chart.series[0].name].some(function (item) {
+            return item.x === point.x && item.y === point.y;
+        });
+        if (!alreadyPoint)
+        {*/
+            //symbolData[chart.series[0].name].push(point);
+            series.addPoint(point, redraw, animateOnUpdate);
+        //}
         lastPoint = point;
     });
     var extreme = series.getExtremes();
@@ -714,17 +717,6 @@ async function refreshCharts(symbol, seriesData) {
     
 }
 
-function handleChartRefresh(chart) {
-    setTimeout(async function () {
-        let series = chart.series[0];
-        let lastPoint = series.options.data[series.options.data.length - 1];
-        let seriesData = await getChartDataBySymbol(series.name, lastPoint);
-
-        addPointToChart(chart, seriesData, false, false);
-    }, 0);
-        //removeOldPoints(chart, 3);
-        //chart.redraw();
- }
 
 
 
@@ -824,7 +816,7 @@ function addChartBox(totalCharts, chartIndx, symbol) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    var chart = addChart(chartContainerId, [], symbol);
+    var chart = addChart(totalCharts , chartContainerId, [], symbol);
 
     if (totalCharts == 1) {
         removeWindowControlButtonsFromChart();
@@ -885,7 +877,7 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
     $(element).append(chartBox);
 
-    addChart(chartContainerId, [], symbol, false, dotNetObject);
+    addChart(1, chartContainerId, [], symbol, false, dotNetObject);
 
     removeWindowControlButtonsFromChart();
 
@@ -969,17 +961,13 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
 
     let existingChart = getChartInstanceBySeriesName(symbol)
 
-    let chart = addChart(chartContainerId, [], symbol);
+    let chart = addChart(1, chartContainerId, [], symbol);
 
     addWindowControlButtonsToChart();
-
-    getChartDataBySymbol(symbol).then((seriesData) => {
-        setDataToChart(chart, seriesData);
-    });
-
-    if (minPoint && maxPoint) {
-        chart.xAxis[0].setExtremes(minPoint, maxPoint);
-    }
+    var data = await getChartDataBySymbol(symbol, null);
+    setDataToChart(chart, data);
+    chart.hideLoading();
+    
 }
 
 
