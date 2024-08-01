@@ -38,7 +38,7 @@ namespace FirstTerraceSystems.Components.Pages
                 await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
                 IsLoading = true;
                 preloadService.Show(SpinnerColor.Light, "Loading data...");
-                await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
+                await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols.Where(x=>x.IsVisible == true));
                 await UpdateAndRenderChartsAsync();
                 preloadService.Hide();
                 IsLoading = false;
@@ -67,10 +67,20 @@ namespace FirstTerraceSystems.Components.Pages
                 //    symbolicDatas = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
                 //    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolicDatas);
                 //});
-                foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
+                //foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
+                //{
+                //    tasks.Add(ChartTask(symbol, defaultStartDate));
+                //}
+
+                var options = new ParallelOptions()
+                {
+                    MaxDegreeOfParallelism = 20
+                };
+
+                Parallel.ForEach(ChartService.InitialChartSymbols.Where(a => a.IsVisible), options, async (symbol, ct) =>
                 {
                     tasks.Add(ChartTask(symbol, defaultStartDate));
-                }
+                });
 
                 Logger.LogInformation("Starting InitialChartSymbols");
                 while (tasks.Any())
