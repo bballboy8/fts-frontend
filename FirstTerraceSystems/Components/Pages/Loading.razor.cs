@@ -19,7 +19,7 @@ namespace FirstTerraceSystems.Components.Pages
             DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
             await ChartService.ChartModals();
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
-            //IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false);
+            IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(500);
 
             foreach (ChartModal chart in recordsToFetch)
             {
@@ -39,23 +39,24 @@ namespace FirstTerraceSystems.Components.Pages
 
             await Task.Delay(1000);
 
-            //_ = Task.Run(async () =>
-            //     {
-            //         // Start all chart tasks
-            //         foreach (ChartModal chart in recordsToFetchInBackGround)
-            //         {
-            //             Task chartTask = ChartTask(chart, defaultStartDate);
-            //             nonAwaitableTasks.Add(chartTask);
-            //         }
-                 
-            //         // Monitor the completion of tasks
-            //         while (nonAwaitableTasks.Any())
-            //         {
-            //             Task completedTask = await Task.WhenAny(nonAwaitableTasks);
-            //             intCompletedTasks++;
-            //             nonAwaitableTasks.Remove(completedTask);
-            //         }
-            //     });
+            _ = Task.Run(async () =>
+                 {
+                     await Task.Delay(60000);
+                     // Start all chart tasks
+                     foreach (ChartModal chart in recordsToFetchInBackGround)
+                     {
+                         Task chartTask = ChartTask(chart, defaultStartDate);
+                         nonAwaitableTasks.Add(chartTask);
+                     }
+
+                     // Monitor the completion of tasks
+                     while (nonAwaitableTasks.Any())
+                     {
+                         Task completedTask = await Task.WhenAny(nonAwaitableTasks);
+                         intCompletedTasks++;
+                         nonAwaitableTasks.Remove(completedTask);
+                     }
+                 });
 
 
             WindowsSerivce.UnlockWindowResize();
