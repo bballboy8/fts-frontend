@@ -188,7 +188,7 @@ namespace FirstTerraceSystems.Components.Pages
             var startDate = UnixTimeStampToDateTime((long)min);
             var endDate = UnixTimeStampToDateTime((long)max);
             var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
-            var filteredData = FilterData(extremeData, 100);
+            var filteredData = FilterData(extremeData, 200);
             return filteredData;
         }
 
