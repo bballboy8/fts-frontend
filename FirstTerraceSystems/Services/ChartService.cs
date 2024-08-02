@@ -35,26 +35,32 @@ namespace FirstTerraceSystems.Services
         //};
 
         public async Task ChartModals()
-        {
+        {   
             List<ChartModal> chartModals = new List<ChartModal>();
             IEnumerable<NasdaqTicker> data = await nasdaqService.NasdaqGetTickersAsync();
-            var options = new ParallelOptions()
-            {
-                MaxDegreeOfParallelism = 20
-            };
 
-            Parallel.ForEach(data, options, async (chart, ct, index) =>
+            var tasks = data.Select(async (chart, index) =>
             {
-                chartModals.Add(
-                new ChartModal
+                int adjustedIndex = (int)index + 1;
+                var chartModal = new ChartModal
                 {
-                    ChartOrderIndx = (int)index,
-                    ChartId = "chart-" + index,
+                    ChartOrderIndx = adjustedIndex,
+                    ChartId = "chart-" + adjustedIndex,
                     Symbol = chart.Symbol,
-                    IsVisible = index <= InitialChartLayout-1 ? true : false
+                    IsVisible = adjustedIndex <= InitialChartLayout
+                };
+
+                // Ensure thread-safe addition to the list
+                lock (chartModals)
+                {
+                    chartModals.Add(chartModal);
                 }
-                );
             });
+
+            // Await all tasks to complete
+            await Task.WhenAll(tasks);
+
+            // Assign the populated list to the property
             InitialChartSymbols = chartModals;
         }
 

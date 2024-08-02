@@ -77,7 +77,7 @@ namespace FirstTerraceSystems.Components.Pages
                     MaxDegreeOfParallelism = 20
                 };
 
-                Parallel.ForEach(ChartService.InitialChartSymbols.Where(a => a.IsVisible), options, async (symbol, ct) =>
+                await Parallel.ForEachAsync(ChartService.InitialChartSymbols.Where(a => a.IsVisible), options, async (symbol, ct) =>
                 {
                     tasks.Add(ChartTask(symbol, defaultStartDate));
                 });
