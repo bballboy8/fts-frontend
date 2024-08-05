@@ -264,19 +264,25 @@ window.changeBackgroundColor = (mode) => {
         document.body.classList.add("light-body");
     }
 
-    let showDropDownClass = 'show';    
+    debugger
+    let showDropDownClass = 'show';
     let templateDropDown = document.getElementById("load-template-dropdown");
     if (templateDropDown.classList.contains(showDropDownClass)) {
-        templateDropDown.classList.remove(showDropDownClass);    
+        templateDropDown.classList.remove(showDropDownClass);
+        if (!isDarkMode) {
+            templateDropDown.classList.remove('display-Option-clicked-color')
+        } else {
+            templateDropDown.classList.remove("display-Option-clicked-color-light");
+        }
         templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
-            if (ct.classList.contains('display-Option-clicked-color-light')) {
-                ct.classList.remove('display-Option-clicked-color-light');
-            } else {
+            if (!isDarkMode) {
                 ct.classList.remove('display-Option-clicked-color');
+            } else {
+                ct.classList.remove('display-Option-clicked-color-light');
             }
         });
     }
-
+    
     // Update properties for dropdownMenuButton
     const dropdownButton = document.getElementById('dropdownMenuButton');
  
