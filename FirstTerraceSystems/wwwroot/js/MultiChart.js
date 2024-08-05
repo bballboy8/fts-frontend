@@ -67,6 +67,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
+            marginTop:40,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
             borderWidth: 1,
@@ -832,7 +833,6 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
-    debugger;
     removeUnusedElement();
 
     let charts = Highcharts.charts.filter(hc => hc)
