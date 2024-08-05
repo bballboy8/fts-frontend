@@ -832,7 +832,6 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
-    debugger;
     removeUnusedElement();
 
     let charts = Highcharts.charts.filter(hc => hc)
