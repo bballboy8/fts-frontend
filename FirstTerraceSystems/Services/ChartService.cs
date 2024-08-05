@@ -1,25 +1,92 @@
-﻿using System.Text.Json;
+﻿using System.Data;
+using System.Text.Json;
+using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
+using FirstTerraceSystems.Repositories;
 
 namespace FirstTerraceSystems.Services
 {
     public class ChartService
     {
+        public NasdaqService nasdaqService { get; }
+        private readonly TickerRepository _tickerRepository;
         private const string PKey_ChartSymbols = "ChartSymbols";
         private const string PKey_SavedChartLayout = "SavedChartLayout";
 
-        public int InitialChartLayout { get; private set; } = 5;
-        public List<ChartModal> InitialChartSymbols { get; private set; } = new List<ChartModal>
+        public ChartService(TickerRepository tickerRepository)
         {
-            new ChartModal { ChartOrderIndx = 1, ChartId = "chart-1", Symbol = "AAPL" , IsVisible = true},
-            new ChartModal { ChartOrderIndx = 2, ChartId = "chart-2", Symbol = "GOOGL" , IsVisible = true},
-            new ChartModal { ChartOrderIndx = 3, ChartId = "chart-3", Symbol = "MSFT" , IsVisible = true},
-            new ChartModal { ChartOrderIndx = 4, ChartId = "chart-4", Symbol = "TSLA" , IsVisible = true},
-            new ChartModal { ChartOrderIndx = 5, ChartId = "chart-5", Symbol = "AMD" , IsVisible = true},
-            new ChartModal { ChartOrderIndx = 6, ChartId = "chart-6", Symbol = "AMZN" , IsVisible = false},
-            new ChartModal { ChartOrderIndx = 7, ChartId = "chart-7", Symbol = "META" , IsVisible = false},
-            new ChartModal { ChartOrderIndx = 8, ChartId = "chart-8", Symbol = "GOOG" , IsVisible = false}
-        };
+            var client = new HttpClient()
+            {
+                BaseAddress = new Uri(ApiEndpoints.RestAPIUri),
+                Timeout = TimeSpan.FromSeconds(3600)
+            };
+            nasdaqService = new NasdaqService(client);
+            _tickerRepository = tickerRepository;
+        }
+
+        public int InitialChartLayout { get; private set; } = 5;
+        public List<ChartModal> InitialChartSymbols { get; private set; }
+      
+
+        public async Task ChartModals()
+        {   
+            List<ChartModal> chartModals = new List<ChartModal>();
+            try
+            {
+                IEnumerable<NasdaqTicker>? data = await nasdaqService.NasdaqGetTickersAsync();
+                var tasks = data.Select(async (chart, index) =>
+                {
+                    int adjustedIndex = (int)index + 1;
+                    var chartModal = new ChartModal
+                    {
+                        ChartOrderIndx = adjustedIndex,
+                        ChartId = "chart-" + adjustedIndex,
+                        Symbol = chart.Symbol,
+                        IsVisible = adjustedIndex <= InitialChartLayout
+                    };
+
+                    // Ensure thread-safe addition to the list
+                    lock (chartModals)
+                    {
+                        chartModals.Add(chartModal);
+                    }
+                });
+
+                // Await all tasks to complete
+                await Task.WhenAll(tasks);
+
+                // Assign the populated list to the property
+                InitialChartSymbols = chartModals;
+            }
+            catch (Exception)
+            {
+
+                IEnumerable<NasdaqTicker> data = await _tickerRepository.GetTicker();
+                var tasks = data.Select(async (chart, index) =>
+                {
+                    int adjustedIndex = (int)index + 1;
+                    var chartModal = new ChartModal
+                    {
+                        ChartOrderIndx = adjustedIndex,
+                        ChartId = "chart-" + adjustedIndex,
+                        Symbol = chart.Symbol,
+                        IsVisible = adjustedIndex <= InitialChartLayout
+                    };
+
+                    // Ensure thread-safe addition to the list
+                    lock (chartModals)
+                    {
+                        chartModals.Add(chartModal);
+                    }
+                });
+
+                // Await all tasks to complete
+                await Task.WhenAll(tasks);
+
+                // Assign the populated list to the property
+                InitialChartSymbols = chartModals;
+            }
+        }
 
         public void LoadChartSettings()
         {
