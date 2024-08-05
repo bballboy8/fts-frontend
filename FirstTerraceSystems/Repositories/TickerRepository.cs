@@ -86,5 +86,11 @@ namespace FirstTerraceSystems.Repositories
                 return false;
             }
         }
+
+        public async Task<IEnumerable<NasdaqTicker>> GetTicker()
+        {
+            string sql = $"SELECT * FROM {currentTableName}";
+            return await _connection.QueryAsync<NasdaqTicker>(sql); 
+        }
     }
 }

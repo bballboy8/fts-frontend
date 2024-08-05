@@ -266,7 +266,7 @@ window.changeBackgroundColor = (mode) => {
 
     let showDropDownClass = 'show';    
     let templateDropDown = document.getElementById("load-template-dropdown");
-    if (templateDropDown.classList.contains(showDropDownClass)) {
+    if (templateDropDown && templateDropDown.classList && Array.isArray(templateDropDown.classList) && templateDropDown.classList.contains(showDropDownClass)) {
         templateDropDown.classList.remove(showDropDownClass);    
         templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
             if (ct.classList.contains('display-Option-clicked-color-light')) {
@@ -279,7 +279,6 @@ window.changeBackgroundColor = (mode) => {
 
     // Update properties for dropdownMenuButton
     const dropdownButton = document.getElementById('dropdownMenuButton');
- 
     dropdownButton.style.background = dropdownButtonColor;
     dropdownButton.style.color = fontColor;
 
