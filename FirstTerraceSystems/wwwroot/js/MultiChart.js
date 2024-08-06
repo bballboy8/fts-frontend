@@ -379,6 +379,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         
                     }
                 },
+                ordinal: false,
                 type: 'datetime',
                 //offset: 0,
                 labels: {
@@ -667,7 +668,7 @@ function setDataToChart(chart, seriesData) {
 }
 
 function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false) {
-    if (seriesData.length < 2) return;
+    //if (seriesData.length < 2) return;
     let lastPoint = null;
     let series = chart.series[0];
     seriesData.slice(1).forEach((data, index) => {
