@@ -203,10 +203,10 @@ namespace FirstTerraceSystems.Features
         {
           Log.Error($"WebSocket error: {ex.Message}");
           Log.Information($"Reconnecting WebSocket");
-          await ConnectAsync();
+          await ConnectctaAsync();
           Log.Information($"Reconnected WebSocket");
           Log.Information($"Listening WebSocket");
-          await ListenAsync(); // Restart listening on reconnection
+          await ListenctaAsync(); // Restart listening on reconnection
         }
     }
 
