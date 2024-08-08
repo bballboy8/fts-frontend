@@ -198,7 +198,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         
                         chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(chart, {
                             text: '<i class="bi bi-x-lg"></i>',
-                            hoverColor: '#FF0000',
+                            hoverColor: '#5B6970',
                             x: chartWidth-40,
                             y:10,
                             callback: function () {

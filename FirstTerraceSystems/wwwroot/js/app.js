@@ -77,12 +77,35 @@ class ButtonComponent extends Highcharts.AccessibilityComponent {
 
 // Functions
 function addHtmlButtonToChart(chart, options) {
+    let themeValue = document.documentElement.getAttribute('data-sidebar');
+
+    let rangeButton = {
+        fillColor: '',
+        textColor: '',
+        borderColor: '',
+        hoverCol: ''  
+    }
+    debugger
+    if (themeValue == 'dark') {
+        rangeButton.fillColor = '#272C2F';
+        rangeButton.textColor = '#FFFFFF';
+        rangeButton.borderColor = '#5B6970';
+        rangeButton.hoverCol = '#5B6970';
+    }
+    else {
+        rangeButton.fillColor = '#FFFFFF';
+        rangeButton.textColor = '#272C2F';
+        rangeButton.borderColor = '#5B6970';
+        rangeButton.hoverCol = '#272C2F';
+
+    }
+
     const {
         text = 'Button',
         x = 0,
         y = 0,
         callback = () => { },
-        hoverColor = '#5B6970'
+        hoverColor = rangeButton.hoverCol 
         //theme = {},
         //hoverState = {},
         //selectState = {},
@@ -95,12 +118,12 @@ function addHtmlButtonToChart(chart, options) {
         y,
         callback,
         {
-            fill: '#272C2F',
-            stroke: '#272C2F',
+            fill: rangeButton.fillColor ,
+            stroke: rangeButton.borderColor,
             //'stroke-width': 2,
             //r: 5,
             style: {
-                color: '#FFFFFF',
+                color: rangeButton.textColor,
             },
         }, // theme
         {
@@ -133,8 +156,25 @@ function addHtmlButtonToChart(chart, options) {
     return button;
 }
 
-function addButtonToChart(chart, options) {
+function addButtonToChart(chart, options,theme) {
+    let themeValue = document.documentElement.getAttribute('data-sidebar');
 
+    let rangeButton = {
+        fillColor: '',
+        textColor: '',
+        borderColor: ''
+    }
+    debugger
+    if (themeValue == 'dark') {
+        rangeButton.fillColor = '#272C2F';
+        rangeButton.textColor = '#FFFFFF';
+        rangeButton.borderColor = '#5B6970';
+    }
+    else {
+        rangeButton.fillColor = '#FFFFFF'; 
+        rangeButton.textColor = '#272C2F';
+        rangeButton.borderColor = '#5B6970';
+    }
     const {
         text = 'Button',
         x = 0,
@@ -150,22 +190,24 @@ function addButtonToChart(chart, options) {
         //disabledState = {},
     } = options;
 
+     
     const button = chart.renderer.button(
         text,
         x,
         y,
         callback,
         {
-            fill: '#272C2F',
+
+            fill: rangeButton.fillColor,
             //stroke: '#272C2F',
             //'stroke-width': 2,
             //r: 5,
             style: {
-                color: '#FFFFFF',
+                color: rangeButton.textColor,
             },
         }, // theme
         {
-            fill: '#5B6970',
+            fill: rangeButton.borderColor,
             //stroke: 'green'
         }, // hoverState
         {
@@ -246,6 +288,45 @@ function truncateText(text, maxWidth, ellipsis = '...') {
 //Disable context menu
 window.addEventListener('contextmenu', (event) => event.preventDefault())
 
+window.changeDropdownColor = (mode) => {
+    fontColor = isDarkMode ? '#ffffff' : '#202527';
+    dropdownButtonColor = isDarkMode ? '#5B6970' : '#ffffff';
+    let showDropDownClass = 'show';
+
+    debugger;
+
+    let templateDropDown = document.getElementById("load-template-dropdown");
+    if (templateDropDown && templateDropDown.classList && templateDropDown.classList.contains(showDropDownClass)) {
+        templateDropDown.classList.remove(showDropDownClass);
+        templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
+            if (ct.classList.contains('display-Option-clicked-color-light')) {
+                ct.classList.remove('display-Option-clicked-color-light');
+            } else {
+                ct.classList.remove('display-Option-clicked-color');
+            }
+        });
+    }
+
+    // Update properties for dropdownMenuButton
+    const dropdownButton = document.getElementById('dropdownMenuButton');
+    if (dropdownButton) {
+        dropdownButton.style.background = dropdownButtonColor;
+        dropdownButton.style.color = fontColor;
+    }
+
+    document.querySelectorAll('.dropdown-item').forEach(button => {
+        button.style.color = fontColor;
+        button.style.backgroundColor = dropdownButtonColor;
+    });
+
+    const loadLayoutdropdownButton = document.getElementById('loadLayoutButton');
+    if (loadLayoutdropdownButton.classList.contains('display-Option-clicked-color')) {
+        loadLayoutdropdownButton.classList.remove('display-Option-clicked-color');
+    } else if (loadLayoutdropdownButton.classList.contains('display-Option-clicked-color-light')) {
+        loadLayoutdropdownButton.classList.remove('display-Option-clicked-color-light');
+    }
+}
+
 window.changeBackgroundColor = (mode) => {
     isDarkMode = mode;
     // Change HTML body background color based on the isDarkMode parameter
@@ -262,36 +343,6 @@ window.changeBackgroundColor = (mode) => {
     else {
         document.body.className = '';
         document.body.classList.add("light-body");
-    }
-
-    let showDropDownClass = 'show';    
-    let templateDropDown = document.getElementById("load-template-dropdown");
-    if (templateDropDown && templateDropDown.classList && Array.isArray(templateDropDown.classList) && templateDropDown.classList.contains(showDropDownClass)) {
-        templateDropDown.classList.remove(showDropDownClass);    
-        templateDropDown.querySelectorAll('.dropdown-item.load-template').forEach(ct => {
-            if (ct.classList.contains('display-Option-clicked-color-light')) {
-                ct.classList.remove('display-Option-clicked-color-light');
-            } else {
-                ct.classList.remove('display-Option-clicked-color');
-            }
-        });
-    }
-
-    // Update properties for dropdownMenuButton
-    const dropdownButton = document.getElementById('dropdownMenuButton');
-    dropdownButton.style.background = dropdownButtonColor;
-    dropdownButton.style.color = fontColor;
-
-    document.querySelectorAll('.dropdown-item').forEach(button => {
-        button.style.color = fontColor;
-        button.style.backgroundColor = dropdownButtonColor;
-    });
-
-    const loadLayoutdropdownButton = document.getElementById('loadLayoutButton');
-    if (loadLayoutdropdownButton.classList.contains('display-Option-clicked-color')) {
-        loadLayoutdropdownButton.classList.remove('display-Option-clicked-color');
-    } else if (loadLayoutdropdownButton.classList.contains('display-Option-clicked-color-light')) {
-        loadLayoutdropdownButton.classList.remove('display-Option-clicked-color-light');
     }
 
 

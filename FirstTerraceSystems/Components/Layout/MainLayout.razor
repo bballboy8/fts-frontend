@@ -83,8 +83,8 @@
         {
             chartPage?.JSRuntime?.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
         }
-
         JSRuntime.InvokeVoidAsync("changeBackgroundColor", IsDarkMode);
+        JSRuntime.InvokeVoidAsync("changeDropdownColor", IsDarkMode);
         StateContainerService.IsDarkMode = IsDarkMode;
     }
 
