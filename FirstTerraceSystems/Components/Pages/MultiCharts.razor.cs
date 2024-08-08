@@ -247,6 +247,7 @@ namespace FirstTerraceSystems.Components.Pages
                 var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
                 if (dataGot != null)
                 {
+          datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
                     await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
                 }
             }
@@ -290,7 +291,7 @@ namespace FirstTerraceSystems.Components.Pages
                 return null;
             }
             var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-            MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(symbol);
+            /*MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(symbol);
             DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
             Logger.LogInformation($"Starting API call for symbol: {symbol}");
@@ -301,16 +302,16 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {symbol}");
 
-                MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, marketFeeds);
+               // MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, marketFeeds);
                 Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {symbol} total: {marketFeeds.Count()}");
                 marketFeeds = null;
             }
-
+            */
             Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {symbol}");
-            marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
-
-            datasets[symbol] = marketFeeds.ToList();
-            var filtered = FilterData(marketFeeds, PointSize);
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
+     // marketFeeds = marketFeeds == null ?  dbmarketFeeds : marketFeeds.Concat(dbmarketFeeds);
+            datasets[symbol] = dbmarketFeeds.ToList();
+            var filtered = FilterData(dbmarketFeeds, PointSize);
             SymbolChanged(chartId, symbol);
             return filtered;
         }
