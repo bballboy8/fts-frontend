@@ -281,7 +281,6 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
 
-
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
         {
@@ -290,30 +289,81 @@ namespace FirstTerraceSystems.Components.Pages
                 Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
                 return null;
             }
-            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-            /*MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(symbol);
-            DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
-            Logger.LogInformation($"Starting API call for symbol: {symbol}");
-            IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, symbol).ConfigureAwait(false);
-            Logger.LogInformation($"Got Response from API for symbol: {symbol}");
+            // Check if the symbol is already being loaded in the background
+            var findSymbolInHashSet = Loading._symbolSet.FirstOrDefault(a => a == symbol);
 
-            if (marketFeeds != null && marketFeeds.Any())
+            // If the symbol is not found, perform an initial API call for the last hour's data
+            if (findSymbolInHashSet == null)
             {
-                Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {symbol}");
+                var oneHourAgo = DateTime.Now.AddHours(-1); 
+                var defaultStartDateFor3Days = DateTime.Now.GetPastBusinessDay(3);
 
-               // MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, marketFeeds);
-                Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {symbol} total: {marketFeeds.Count()}");
-                marketFeeds = null;
+                Logger.LogInformation($"Starting API call for symbol for 1 hour: {symbol}");
+                IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(oneHourAgo, symbol).ConfigureAwait(false);
+                Logger.LogInformation($"Got Response from API for symbol for 1 hour: {symbol}");
+
+                // If no data is returned, start a background task to load data for the last 3 days
+                if (marketFeeds?.Count() == 0 || marketFeeds == null)
+                {
+                    // Start a background task to load the last 3 days of data and store it in SQLite
+                    _ = Task.Run(async () =>
+                    {
+                        Logger.LogInformation($"Starting background task to load 3-day data for symbol: {symbol}");
+                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDateFor3Days, symbol).ConfigureAwait(false);
+                        
+                        // If data is found, add it to the SQLite database
+                        if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
+                        {
+                            Loading._symbolSet.Add(symbol);
+                            Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
+                            MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+
+                        }
+
+                    });
+                    return marketFeeds; // Return the market feeds retrieved from the initial API call
+
+                }
+
+                // If data is returned from the initial API call, update the chart and start the background task
+                if (marketFeeds != null && marketFeeds.Any())
+                {
+                    datasets[symbol] = marketFeeds.ToList();
+                    var filteredData = FilterData(marketFeeds, PointSize);
+                    SymbolChanged(chartId, symbol);
+
+                    // Start a background task to load the last 3 days of data and store it in SQLite
+                    _ = Task.Run(async () =>
+                    {
+                        Logger.LogInformation($"Starting background task to load 3-day data for symbol: {symbol}");
+                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDateFor3Days, symbol).ConfigureAwait(false);
+
+                        if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
+                        {
+                            Loading._symbolSet.Add(symbol);
+                            Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
+                            MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+                        }
+                    });
+
+                    return filteredData;
+                }
+                else return marketFeeds;
+
             }
-            */
-            Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {symbol}");
-            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
-     // marketFeeds = marketFeeds == null ?  dbmarketFeeds : marketFeeds.Concat(dbmarketFeeds);
-            datasets[symbol] = dbmarketFeeds.ToList();
-            var filtered = FilterData(dbmarketFeeds, PointSize);
-            SymbolChanged(chartId, symbol);
-            return filtered;
+            else
+            { 
+                var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+                Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {symbol}");
+                var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
+                // marketFeeds = marketFeeds == null ?  dbmarketFeeds : marketFeeds.Concat(dbmarketFeeds);
+                datasets[symbol] = dbmarketFeeds.ToList();
+                var filtered = FilterData(dbmarketFeeds, PointSize);
+                SymbolChanged(chartId, symbol);
+                return filtered;
+            }
+           
         }
 
         [JSInvokable]
