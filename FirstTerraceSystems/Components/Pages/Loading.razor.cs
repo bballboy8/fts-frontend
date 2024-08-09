@@ -8,6 +8,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class Loading
     {
         private int progress = 0;
+        public static HashSet<string> _symbolSet = new HashSet<string>();
 
         protected override async Task OnInitializedAsync()
         {
@@ -21,10 +22,12 @@ namespace FirstTerraceSystems.Components.Pages
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
             IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(500);
 
+
             foreach (ChartModal chart in recordsToFetch)
             {
                 Task chartTask = ChartTask(chart, defaultStartDate);
                 tasks.Add(chartTask);
+                _symbolSet.Add(chart.Symbol);
             }
 
             int intCompletedTasks = 0, totlalTasks = tasks.Count;
@@ -47,6 +50,7 @@ namespace FirstTerraceSystems.Components.Pages
                      {
                          Task chartTask = ChartTask(chart, defaultStartDate);
                          nonAwaitableTasks.Add(chartTask);
+                         _symbolSet.Add(chart.Symbol);
                      }
 
                      // Monitor the completion of tasks
