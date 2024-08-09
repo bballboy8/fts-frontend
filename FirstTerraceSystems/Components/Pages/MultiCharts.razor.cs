@@ -50,10 +50,10 @@ namespace FirstTerraceSystems.Components.Pages
                 WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
                 WebSocketClient.ActionReferenceChart += RefreshCharts;
                 Logger.LogInformation($"Listening WebSocketClient");
-                var listenTask = WebSocketClient.ListenAsync();
-                var listenCtaTask = WebSocketClient.ListenctaAsync();
+       var Task1 = Task.Run(() => WebSocketClient.ListenAsync());
+       var Task2 = Task.Run(() => WebSocketClient.ListenctaAsync());
 
-                await Task.WhenAll(listenTask, listenCtaTask);
+                await Task.WhenAll(Task1, Task2);
             }
         }
 
@@ -197,9 +197,13 @@ namespace FirstTerraceSystems.Components.Pages
             long? max = maxElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(maxElement?.GetDouble()) : (long?)null;
             var startDate = UnixTimeStampToDateTime((long)min);
             var endDate = UnixTimeStampToDateTime((long)max);
-            var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
-            var filteredData = FilterData(extremeData, 200);
-            return filteredData;
+      if (datasets.ContainsKey(symbol))
+      {
+        var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
+        var filteredData = FilterData(extremeData, 200);
+        return filteredData;
+      }
+      return [];
         }
 
         [JSInvokable]
