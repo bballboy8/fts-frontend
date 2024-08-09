@@ -660,7 +660,7 @@ function setDataToChart(chart, seriesData) {
     const dataPoints = seriesData.slice(1).map((data, index) =>
         processDataPoint(data, seriesData[index].price)
     );
-    symbolData[chart.series[0].name] = dataPoints;
+    //symbolData[chart.series[0].name] = dataPoints;
     series.setData(dataPoints, false, false);
     chart.redraw();
     if (seriesData.length>1)
@@ -673,8 +673,8 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
     let series = chart.series[0];
     seriesData.slice(1).forEach((data, index) => {
         const point = processDataPoint(data, seriesData[index].price);
-        if (!symbolData[chart.series[0].name])
-            symbolData[chart.series[0].name] = [];
+       // if (!symbolData[chart.series[0].name])
+         //   symbolData[chart.series[0].name] = [];
         /*var alreadyPoint = symbolData[chart.series[0].name].some(function (item) {
             return item.x === point.x && item.y === point.y;
         });
@@ -683,9 +683,9 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
             //symbolData[chart.series[0].name].push(point);
             series.addPoint(point, redraw, animateOnUpdate);
         //}
-        lastPoint = point;
+       // lastPoint = point;
     });
-    var extreme = series.getExtremes();
+    //var extreme = series.getExtremes();
     //chart.xAxis[0].setExtremes(extreme.min, lastPoint.x);
 }
 
@@ -717,7 +717,7 @@ async function refreshCharts(symbol, seriesData) {
     
         let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
-        addPointToChart(chart, seriesData, false, false);
+        addPointToChart(chart, seriesData, false, true);
         chart.redraw();
     }
         //removeOldPoints(chart, 3);
