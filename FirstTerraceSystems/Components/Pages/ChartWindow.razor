@@ -79,6 +79,8 @@
         }
     }
 
+
+
     [JSInvokable]
     public void ZoomingChanged(object minPoint, object maxPoint)
     {
@@ -145,7 +147,8 @@
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
             }
-            catch (Exception ex){
+            catch (Exception ex)
+            {
             }
         }
 

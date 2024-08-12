@@ -221,6 +221,12 @@ namespace FirstTerraceSystems.Components.Pages
             return filtered;
         }
 
+        [JSInvokable]
+        public async Task<int> GetChartLayoutAsync()
+        {
+            return await Task.FromResult(ChartService.InitialChartLayout);
+        }
+
         private async Task InitializedDataBaseAsync()
         {
             if (!TickerRepository.IsTickerTableExists())

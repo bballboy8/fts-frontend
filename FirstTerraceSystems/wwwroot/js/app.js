@@ -78,14 +78,12 @@ class ButtonComponent extends Highcharts.AccessibilityComponent {
 // Functions
 function addHtmlButtonToChart(chart, options) {
     let themeValue = document.documentElement.getAttribute('data-sidebar');
-
     let rangeButton = {
         fillColor: '',
         textColor: '',
         borderColor: '',
         hoverCol: ''  
     }
-    debugger
     if (themeValue == 'dark') {
         rangeButton.fillColor = '#272C2F';
         rangeButton.textColor = '#FFFFFF';
@@ -164,7 +162,6 @@ function addButtonToChart(chart, options,theme) {
         textColor: '',
         borderColor: ''
     }
-    debugger
     if (themeValue == 'dark') {
         rangeButton.fillColor = '#272C2F';
         rangeButton.textColor = '#FFFFFF';
@@ -292,8 +289,6 @@ window.changeDropdownColor = (mode) => {
     fontColor = isDarkMode ? '#ffffff' : '#202527';
     dropdownButtonColor = isDarkMode ? '#5B6970' : '#ffffff';
     let showDropDownClass = 'show';
-
-    debugger;
 
     let templateDropDown = document.getElementById("load-template-dropdown");
     if (templateDropDown && templateDropDown.classList && templateDropDown.classList.contains(showDropDownClass)) {

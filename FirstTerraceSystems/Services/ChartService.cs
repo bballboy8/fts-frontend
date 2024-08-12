@@ -3,6 +3,7 @@ using System.Text.Json;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Repositories;
+using Microsoft.JSInterop;
 
 namespace FirstTerraceSystems.Services
 {
@@ -131,6 +132,9 @@ namespace FirstTerraceSystems.Services
             });
             InitialChartLayout = numberOfLayout;
         }
+
+
+
 
         public void ClearAll()
         {
