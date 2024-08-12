@@ -180,11 +180,9 @@ function filterData(data, numPoints, startDate, endDate) {
                         y: '30'
                     };
                     let chartCount = 8;
-                    debugger
                     var data =  getChartCount();
                         console.log(data, "data");
                         if (data == 8) {
-                            debugger
                             chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                                 text: '<i class="bi bi-zoom-in"></i>',
                                 x: zoomIn.x,
@@ -305,13 +303,11 @@ function filterData(data, numPoints, startDate, endDate) {
                     }, true, 'spacingBox');
 
                     if (totalCharts == 8) {
-                        debugger
                         chart.ButtonNamespace.zoomInButton.align({
                             align: 'left',
                             x: 0,
                             y: 30
                         }, true, 'spacingBox');
-                        debugger
                         chart.ButtonNamespace.zoomOutButton.align({
                             align: 'left',
                             x: 25,
@@ -319,7 +315,6 @@ function filterData(data, numPoints, startDate, endDate) {
                         }, false, 'spacingBox');
                     }
                     else {
-                        debugger
                         chart.ButtonNamespace.zoomInButton.align({
                             align: 'left',
                             x: 290,
@@ -333,7 +328,6 @@ function filterData(data, numPoints, startDate, endDate) {
                         }, false, 'spacingBox');
                     }
                     if (!isPopoutChartWindow) {
-                        debugger
                         var closeX = -30;
                         var minX = -60;
                         var maxX = -90;
