@@ -83,21 +83,19 @@ function addHtmlButtonToChart(chart, options) {
         fillColor: '',
         textColor: '',
         borderColor: '',
-        hoverCol: ''  
+        hoverCol: ''
     }
-    debugger
-    if (themeValue == 'dark') {
-        rangeButton.fillColor = '#272C2F';
-        rangeButton.textColor = '#FFFFFF';
-        rangeButton.borderColor = '#5B6970';
-        rangeButton.hoverCol = '#5B6970';
-    }
-    else {
+
+    if (themeValue == 'light') {
         rangeButton.fillColor = '#FFFFFF';
         rangeButton.textColor = '#272C2F';
         rangeButton.borderColor = '#5B6970';
         rangeButton.hoverCol = '#272C2F';
-
+    } else {
+        rangeButton.fillColor = '#272C2F';
+        rangeButton.textColor = '#FFFFFF';
+        rangeButton.borderColor = '#5B6970';
+        rangeButton.hoverCol = '#5B6970';
     }
 
     const {
@@ -164,15 +162,14 @@ function addButtonToChart(chart, options,theme) {
         textColor: '',
         borderColor: ''
     }
-    debugger
-    if (themeValue == 'dark') {
-        rangeButton.fillColor = '#272C2F';
-        rangeButton.textColor = '#FFFFFF';
+    if (themeValue == 'light') {
+        rangeButton.fillColor = '#FFFFFF';
+        rangeButton.textColor = '#272C2F';
         rangeButton.borderColor = '#5B6970';
     }
     else {
-        rangeButton.fillColor = '#FFFFFF'; 
-        rangeButton.textColor = '#272C2F';
+        rangeButton.fillColor = '#272C2F';
+        rangeButton.textColor = '#FFFFFF';
         rangeButton.borderColor = '#5B6970';
     }
     const {
@@ -292,8 +289,6 @@ window.changeDropdownColor = (mode) => {
     fontColor = isDarkMode ? '#ffffff' : '#202527';
     dropdownButtonColor = isDarkMode ? '#5B6970' : '#ffffff';
     let showDropDownClass = 'show';
-
-    debugger;
 
     let templateDropDown = document.getElementById("load-template-dropdown");
     if (templateDropDown && templateDropDown.classList && templateDropDown.classList.contains(showDropDownClass)) {
