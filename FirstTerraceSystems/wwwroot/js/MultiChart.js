@@ -117,7 +117,6 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                                 }
 
                                 let existingChart = getChartInstanceBySeriesName(symbol)
-
                                 if (existingChart) {
                                     chart.showLoading();
                                     symbol = existingChart.series[0].name;
@@ -138,7 +137,6 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                                 } else {
                                     chart.showLoading();
                                     updateChartSymbol(chart.renderTo.id, symbol).then((seriesData) => {
-
                                         if (seriesData) {
                                             setDataToChart(chart, seriesData);
 
@@ -150,7 +148,6 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                                             chart.hideLoading();
                                         }
 
-                                        
                                         chart.hideLoading();
                                     });
 
@@ -714,7 +711,6 @@ async function RefreshChartBySymbol() {
 }
 let debounceTimer;
 async function refreshCharts(symbol, seriesData) {
-    
         let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
         addPointToChart(chart, seriesData, false, true);
@@ -1027,6 +1023,11 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
 
         if (isAllLoaded) {
             chart.redraw();
+            chart.series[0].update({
+                name: symbol,
+            })
+            chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
+            chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
             chart.hideLoading();
         }
     }

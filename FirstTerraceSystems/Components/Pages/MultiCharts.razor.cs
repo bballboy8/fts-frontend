@@ -318,6 +318,7 @@ namespace FirstTerraceSystems.Components.Pages
                             Loading._symbolSet.Add(symbol);
                             Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
                             MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+                           await SendChartDataInChunks(symbol, threeDayMarketFeeds).ConfigureAwait(false);
 
                         }
 
