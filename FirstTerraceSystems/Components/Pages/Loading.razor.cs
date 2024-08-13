@@ -17,7 +17,7 @@ namespace FirstTerraceSystems.Components.Pages
             List<Task> tasks = [tickerTask];
             List<Task> nonAwaitableTasks = [tickerTask];
 
-            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(1);
             await ChartService.ChartModals();
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
             IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(500);
@@ -42,26 +42,41 @@ namespace FirstTerraceSystems.Components.Pages
 
             await Task.Delay(1000);
 
+
+
             _ = Task.Run(async () =>
-                 {
-                     await Task.Delay(60000);
-                     // Start all chart tasks
-                     foreach (ChartModal chart in recordsToFetchInBackGround)
-                     {
-                         Task chartTask = ChartTask(chart, defaultStartDate);
-                         nonAwaitableTasks.Add(chartTask);
-                         _symbolSet.Add(chart.Symbol);
-                     }
+            {
+                await Task.Delay(60000);
+                var batchSize = 250;
+                var batches = recordsToFetchInBackGround
+                    .Select((chart, index) => new { chart, index })
+                    .GroupBy(x => x.index / batchSize)
+                    .Select(group => group.Select(x => x.chart).ToList())
+                    .ToList();
+                foreach (var batch in batches)
+                {
+                    var nonAwaitableTasks = new List<Task>();
+                    var options = new ParallelOptions()
+                    {
+                        MaxDegreeOfParallelism = 20
+                    };
 
-                     // Monitor the completion of tasks
-                     while (nonAwaitableTasks.Any())
-                     {
-                         Task completedTask = await Task.WhenAny(nonAwaitableTasks);
-                         intCompletedTasks++;
-                         nonAwaitableTasks.Remove(completedTask);
-                     }
-                 });
+                    await Parallel.ForEachAsync(batch, options, async (chart, ct) =>
+                    {
+                        Task chartTask = ChartTask(chart, defaultStartDate);
+                        nonAwaitableTasks.Add(chartTask);
+                        _symbolSet.Add(chart.Symbol);
+                    });
 
+                    // Monitor the completion of tasks in the current batch
+                    while (nonAwaitableTasks.Any())
+                    {
+                        Task completedTask = await Task.WhenAny(nonAwaitableTasks);
+                        intCompletedTasks++;
+                        nonAwaitableTasks.Remove(completedTask);
+                    }
+                }
+            });
 
             WindowsSerivce.UnlockWindowResize();
 
