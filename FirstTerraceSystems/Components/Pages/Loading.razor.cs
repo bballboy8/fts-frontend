@@ -44,27 +44,6 @@ namespace FirstTerraceSystems.Components.Pages
             await Task.Delay(1000);
 
 
-            //_ = Task.Run(async () =>
-            //{
-            //    await Task.Delay(60000);
-            //    // Start all chart tasks
-            //    foreach (ChartModal chart in recordsToFetchInBackGround)
-            //    {
-            //        Task chartTask = ChartTask(chart, defaultStartDate);
-            //        nonAwaitableTasks.Add(chartTask);
-            //        _symbolSet.Add(chart.Symbol);
-            //    }
-
-            //    // Monitor the completion of tasks
-            //    while (nonAwaitableTasks.Any())
-            //    {
-            //        Task completedTask = await Task.WhenAny(nonAwaitableTasks);
-            //        intCompletedTasks++;
-            //        nonAwaitableTasks.Remove(completedTask);
-            //    }
-            //});
-
-
             _ = Task.Run(async () =>
             {
                 await Task.Delay(60000);
@@ -74,20 +53,47 @@ namespace FirstTerraceSystems.Components.Pages
                     .GroupBy(x => x.index / batchSize)
                     .Select(group => group.Select(x => x.chart).ToList())
                     .ToList();
-
-                foreach (var batch in batches)
+                // Start all chart tasks
+                foreach (ChartModal chart in recordsToFetchInBackGround)
                 {
-                    // Start tasks for the current batch
-                    var tasks = batch.Select(async chart =>
-                    {
-                        await ChartTask(chart, defaultStartDate);
-                        _symbolSet.Add(chart.Symbol);
-                    });
+                    Task chartTask = ChartTask(chart, defaultStartDate);
+                    nonAwaitableTasks.Add(chartTask);
+                    _symbolSet.Add(chart.Symbol);
+                }
 
-                    // Await the completion of all tasks in the current batch
-                    await Task.WhenAll(tasks);
+                // Monitor the completion of tasks
+                while (nonAwaitableTasks.Any())
+                {
+                    Task completedTask = await Task.WhenAny(nonAwaitableTasks);
+                    intCompletedTasks++;
+                    nonAwaitableTasks.Remove(completedTask);
                 }
             });
+
+            #region Parallel Call
+            //_ = Task.Run(async () =>
+            //{
+            //    await Task.Delay(60000);
+            //    var batchSize = 250;
+            //    var batches = recordsToFetchInBackGround
+            //        .Select((chart, index) => new { chart, index })
+            //        .GroupBy(x => x.index / batchSize)
+            //        .Select(group => group.Select(x => x.chart).ToList())
+            //        .ToList();
+
+            //    foreach (var batch in batches)
+            //    {
+            //         Start tasks for the current batch
+            //        var tasks = batch.Select(async chart =>
+            //        {
+            //            await ChartTask(chart, defaultStartDate);
+            //            _symbolSet.Add(chart.Symbol);
+            //        });
+
+            //         Await the completion of all tasks in the current batch
+            //        await Task.WhenAll(tasks);
+            //    }
+            //});
 
 
 
@@ -124,6 +130,9 @@ namespace FirstTerraceSystems.Components.Pages
             //        }
             //    }
             //});
+
+            #endregion
+
 
             WindowsSerivce.UnlockWindowResize();
 
