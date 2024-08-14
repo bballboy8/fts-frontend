@@ -5,7 +5,10 @@
     boost: {
         useGPUTranslations: true,
         usePreAllocated: true
-    }
+    },
+    credits: {
+        enabled: false
+    },
 });
 
 const defaultkeyboardNavigationOrder = [
@@ -67,7 +70,8 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
-            marginTop:40,
+            marginTop: 40,
+            Animation:false,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
             borderWidth: 1,
@@ -325,9 +329,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 type: 'x'
             }
         },
-        scrollbar: {
-            liveRedraw: true
-        },
+        
         rangeSelector: {
             enabled:false
         },
@@ -345,16 +347,8 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             series: {
                 turboThreshold: 0,
                 marker: {
-                    enabled: true,
-                    radius: 2,
-                    lineWidthPlus: 0,
-                    lineWidth: 0,
-                    states: {
-                        hover: {
-                            enabled: true
-
-                        }
-                    }
+                    enabled: false,
+                    
                 }
             }
         },
@@ -396,6 +390,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 },
                 lineWidth: 0,
                 opposite: false,
+                tickPixelInterval: 150
             },
         ],
         yAxis: [
@@ -714,12 +709,13 @@ async function RefreshChartBySymbol() {
 }
 let debounceTimer;
 async function refreshCharts(symbol, seriesData) {
-    
+    //setTimeout(async function () {
         let chart = getChartInstanceBySeriesName(symbol);
-    if (chart) {
-        addPointToChart(chart, seriesData, false, true);
-        chart.redraw();
-    }
+        if (chart) {
+            addPointToChart(chart, seriesData, false, false);
+            chart.redraw();
+        }
+    //}, 0);
         //removeOldPoints(chart, 3);
         //chart.redraw();
     

@@ -50,10 +50,10 @@ namespace FirstTerraceSystems.Components.Pages
                 WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
                 WebSocketClient.ActionReferenceChart += RefreshCharts;
                 Logger.LogInformation($"Listening WebSocketClient");
-       var Task1 = Task.Run(() => WebSocketClient.ListenAsync());
-       var Task2 = Task.Run(() => WebSocketClient.ListenctaAsync());
+        WebSocketClient.ListenAsync();
+        WebSocketClient.ListenctaAsync();
 
-                await Task.WhenAll(Task1, Task2);
+                //await Task.WhenAll(Task1, Task2);
             }
         }
 
@@ -286,33 +286,44 @@ namespace FirstTerraceSystems.Components.Pages
                 return null;
             }
 
-            // Check if the symbol is already being loaded in the background
-            var findSymbolInHashSet = Loading._symbolSet.FirstOrDefault(a => a == symbol);
-
-            // If the symbol is not found, perform an initial API call for the last hour's data
-            if (findSymbolInHashSet == null)
+            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {symbol}");
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
+            if(dbmarketFeeds!=null && dbmarketFeeds.Count()>0)
             {
-                var oneHourAgo = DateTime.Now.AddHours(-1); 
-                var defaultStartDateFor3Days = DateTime.Now.GetPastBusinessDay(3);
+              datasets[symbol] = dbmarketFeeds.ToList();
+              var filtered = FilterData(dbmarketFeeds, PointSize);
+              SymbolChanged(chartId, symbol);
+              return filtered;
+            }
+            else
+            {
+              var UTCDate = DateTime.UtcNow.AddHours(-1);
+              DateTime easternOneHour = TimeZoneInfo
+          .ConvertTimeFromUtc(
+            UTCDate,
+            TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
                 Logger.LogInformation($"Starting API call for symbol for 1 hour: {symbol}");
-                IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(oneHourAgo, symbol).ConfigureAwait(false);
+                IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(easternOneHour, symbol).ConfigureAwait(false);
                 Logger.LogInformation($"Got Response from API for symbol for 1 hour: {symbol}");
 
                 // If no data is returned, start a background task to load data for the last 3 days
-                if (marketFeeds?.Count() == 0 || marketFeeds == null)
+                if (marketFeeds == null || marketFeeds.Count() == 0)
                 {
                     // Start a background task to load the last 3 days of data and store it in SQLite
                     _ = Task.Run(async () =>
                     {
                         Logger.LogInformation($"Starting background task to load 3-day data for symbol: {symbol}");
-                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDateFor3Days, symbol).ConfigureAwait(false);
+                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, symbol).ConfigureAwait(false);
                         
                         // If data is found, add it to the SQLite database
                         if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
                         {
                             Loading._symbolSet.Add(symbol);
-                            Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
+                        datasets[symbol] = threeDayMarketFeeds.ToList();
+                        await SendChartDataInChunks(symbol, FilterData(threeDayMarketFeeds, PointSize));
+                        Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
                             MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
 
                         }
@@ -321,9 +332,7 @@ namespace FirstTerraceSystems.Components.Pages
                     return marketFeeds; // Return the market feeds retrieved from the initial API call
 
                 }
-
-                // If data is returned from the initial API call, update the chart and start the background task
-                if (marketFeeds != null && marketFeeds.Any())
+                else
                 {
                     datasets[symbol] = marketFeeds.ToList();
                     var filteredData = FilterData(marketFeeds, PointSize);
@@ -333,32 +342,23 @@ namespace FirstTerraceSystems.Components.Pages
                     _ = Task.Run(async () =>
                     {
                         Logger.LogInformation($"Starting background task to load 3-day data for symbol: {symbol}");
-                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDateFor3Days, symbol).ConfigureAwait(false);
+                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, symbol).ConfigureAwait(false);
 
                         if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
                         {
                             Loading._symbolSet.Add(symbol);
-                            Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
+                        datasets[symbol] = threeDayMarketFeeds.ToList();
+                        await SendChartDataInChunks(symbol, FilterData(threeDayMarketFeeds, PointSize));
+                        Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
                             MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
                         }
                     });
 
                     return filteredData;
                 }
-                else return marketFeeds;
 
             }
-            else
-            { 
-                var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-                Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {symbol}");
-                var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
-                // marketFeeds = marketFeeds == null ?  dbmarketFeeds : marketFeeds.Concat(dbmarketFeeds);
-                datasets[symbol] = dbmarketFeeds.ToList();
-                var filtered = FilterData(dbmarketFeeds, PointSize);
-                SymbolChanged(chartId, symbol);
-                return filtered;
-            }
+            
            
         }
 
