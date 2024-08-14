@@ -59,7 +59,8 @@ namespace FirstTerraceSystems.Components.Pages
 
         private async Task UpdateAndRenderChartsAsync()
         {
-            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            //DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(1);
             try
             {
                 List<Task> tasks = new();
@@ -67,27 +68,18 @@ namespace FirstTerraceSystems.Components.Pages
                 //    symbolicDatas = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
                 //    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolicDatas);
                 //});
-                //foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
-                //{
-                //    tasks.Add(ChartTask(symbol, defaultStartDate));
-                //}
-
-                var options = new ParallelOptions()
-                {
-                    MaxDegreeOfParallelism = 20
-                };
-
-                await Parallel.ForEachAsync(ChartService.InitialChartSymbols.Where(a => a.IsVisible), options, async (symbol, ct) =>
+                Logger.LogInformation("Starting InitialChartSymbols");
+                foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
                 {
                     tasks.Add(ChartTask(symbol, defaultStartDate));
-                });
+                }
 
-                Logger.LogInformation("Starting InitialChartSymbols");
                 while (tasks.Any())
                 {
                     Task completedTask = await Task.WhenAny(tasks);
                     tasks.Remove(completedTask);
                 }
+
             }
             catch (Exception ex)
             {
