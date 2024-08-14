@@ -5,7 +5,10 @@
     boost: {
         useGPUTranslations: true,
         usePreAllocated: true
-    }
+    },
+    credits: {
+        enabled: false
+    },
 });
 
 const defaultkeyboardNavigationOrder = [
