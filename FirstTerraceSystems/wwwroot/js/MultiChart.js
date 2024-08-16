@@ -71,7 +71,6 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
 
         chart: {
             marginTop: 40,
-            Animation:false,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
             borderWidth: 1,
@@ -396,6 +395,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
         ],
         yAxis: [
             {
+                gridLineWidth: 0,
                 labels: {
                     align: 'left',
                     x: 5,
@@ -442,7 +442,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             }
         },
         navigator: {
-            enabled: false
+            enabled:false
         },
         boost: {
             enabled: true,
@@ -664,7 +664,7 @@ function setDataToChart(chart, seriesData) {
 }
 
 function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false) {
-    //if (seriesData.length < 2) return;
+    if (seriesData.length < 1) return;
     let lastPoint = null;
     let series = chart.series[0];
     seriesData.slice(1).forEach((data, index) => {
@@ -710,13 +710,13 @@ async function RefreshChartBySymbol() {
 }
 let debounceTimer;
 async function refreshCharts(symbol, seriesData) {
-    //setTimeout(async function () {
+    setTimeout(async function () {
         let chart = getChartInstanceBySeriesName(symbol);
         if (chart) {
-            addPointToChart(chart, seriesData, false, false);
+            addPointToChart(chart, seriesData, false, true);
             chart.redraw();
         }
-    //}, 0);
+    }, 50);
         //removeOldPoints(chart, 3);
         //chart.redraw();
     

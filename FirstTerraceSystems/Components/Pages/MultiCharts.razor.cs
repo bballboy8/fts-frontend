@@ -122,6 +122,8 @@ namespace FirstTerraceSystems.Components.Pages
 
         public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
         {
+      var currentTime = DateTime.Now.TimeOfDay;
+      data = data.Where((x) => x.Date.TimeOfDay < currentTime);
             var filteredData = data;
 
 
@@ -130,7 +132,7 @@ namespace FirstTerraceSystems.Components.Pages
                 var step = Math.Max(1, filteredData.Count() / numPoints);
                 return filteredData.Where((_, index) => index % step == 0).Take(numPoints).ToList();
             }
-
+            
             return filteredData.ToList();
         }
 
@@ -245,7 +247,7 @@ namespace FirstTerraceSystems.Components.Pages
                 var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
                 if (dataGot != null)
                 {
-          datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
+                    datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
                     await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
                 }
             }
