@@ -878,8 +878,6 @@ function updateButtonColour() {
 function loadDashboard(totalCharts, initialChartSymbols) {
 
     localStorage.setItem("chartCount", null);
-    console.log(localStorage.setItem("chartCount", null), "initial");
-    console.log(localStorage.getItem("chartCount"), "initialValue");
     let chartList = $("#chartList");
 
     if (totalCharts == 5) {
