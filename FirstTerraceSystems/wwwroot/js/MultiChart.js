@@ -267,7 +267,8 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         y: 0
                     }, true, 'spacingBox');
 
-                    if (totalCharts == 8) {
+                    var totalChartsCount = localStorage.getItem('chartCount');
+                    if (totalCharts == 8 || totalChartsCount == 8) {
                         chart.ButtonNamespace.zoomInButton.align({
                             align: 'left',
                             x: 0,
@@ -830,6 +831,7 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
+    localStorage.setItem("chartCount", totalCharts);
     removeUnusedElement();
 
     let charts = Highcharts.charts.filter(hc => hc)
@@ -875,6 +877,7 @@ function updateButtonColour() {
 
 function loadDashboard(totalCharts, initialChartSymbols) {
 
+    localStorage.setItem("chartCount", null);
     let chartList = $("#chartList");
 
     if (totalCharts == 5) {
