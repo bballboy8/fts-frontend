@@ -346,7 +346,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             series: {
                 turboThreshold: 0,
                 marker: {
-                    enabled: false,
+                    enabled: false
                     
                 }
             }
@@ -405,10 +405,24 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         return Highcharts.numberFormat(this.value / 10000, 2);
                     }
                 },
-                //height: '65%',
+                height: '65%',
                 resize: { enabled: true },
+            }, {
+                labels: {
+                    align: 'right',
+                    x: -3
+                },
+                title: {
+                    text: 'Volume'
+                },
+                top: '65%',
+                height: '35%',
+                offset: 0,
+                lineWidth: 2
             }
-        ],
+        ], tooltip: {
+            split: true
+        },
         series: [
             {
                 name: symbol,
@@ -428,7 +442,12 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 data: [],
                 boostThreshold: 10000,
                 turboThreshold: 0
-
+            }, {
+                type: 'column',
+                name: 'Volume',
+                //data: [[1724028395447, 100]],
+                data: [],
+                yAxis: 1
             }
         ],
         exporting: {
@@ -649,6 +668,13 @@ function processDataPoint(data, previousPrice) {
     };
 }
 
+function processDataChart(data) {
+    return [[
+        new Date(data.date).getTime(),
+        Number(data.size),
+    ], ]
+};
+
 function setDataToChart(chart, seriesData) {
     //if (seriesData.length < 2) return;
     let series = chart.series[0];
@@ -658,28 +684,59 @@ function setDataToChart(chart, seriesData) {
     //symbolData[chart.series[0].name] = dataPoints;
     series.setData(dataPoints, false, false);
     chart.redraw();
-    if (seriesData.length>1)
-    chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
+    if (seriesData.length > 1)
+        chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
 }
 
 function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false) {
+    console.log(seriesData, "seriesData");
     if (seriesData.length < 1) return;
     let lastPoint = null;
     let series = chart.series[0];
+    let volumeSeries = chart.series[1];
+    //chart.series[1].data=[
+    //    new Date(seriesData[0].date).getTime(),
+    //    Number(seriesData[0].size)];
     seriesData.slice(1).forEach((data, index) => {
         const point = processDataPoint(data, seriesData[index].price);
-       // if (!symbolData[chart.series[0].name])
-         //   symbolData[chart.series[0].name] = [];
+        //const graph = processDataChart(data);
+        // if (!symbolData[chart.series[0].name])
+        //   symbolData[chart.series[0].name] = [];
         /*var alreadyPoint = symbolData[chart.series[0].name].some(function (item) {
             return item.x === point.x && item.y === point.y;
         });
         if (!alreadyPoint)
         {*/
-            //symbolData[chart.series[0].name].push(point);
-            series.addPoint(point, redraw, animateOnUpdate);
+        //symbolData[chart.series[0].name].push(point);
+        //if (data.size != null) {
+        //    //series1.data.push(data.size);
+        //    series1.setData(graph);
+        //    //series1.addPoint(graph, redraw, animateOnUpdate);
+        //    //series1.data.push();
+        //    console.log(series1.data, "API Data");
+
         //}
-       // lastPoint = point;
+        //console.log(series1, "series1");
+        series.addPoint(point, redraw, animateOnUpdate);
+        // Add the volume data to the volume series
+        if (data.size) {
+            const volumePoint = [
+                new Date(data.date).getTime(),
+                Number(data.size)
+            ];
+            volumeSeries.addPoint(volumePoint, false, false);
+        }
+
+        //series1.data.push([
+        //    new Date(data.date).getTime(),
+        //    Number(data.size),
+        //]);
+        //series1.push(graph);
+        //}
+        // lastPoint = point;
     });
+    chart.redraw();
+
     //var extreme = series.getExtremes();
     //chart.xAxis[0].setExtremes(extreme.min, lastPoint.x);
 }
@@ -715,7 +772,7 @@ async function refreshCharts(symbol, seriesData) {
             addPointToChart(chart, seriesData, false, true);
             chart.redraw();
         }
-    }, 50);
+    }, 100);
         //removeOldPoints(chart, 3);
         //chart.redraw();
     
