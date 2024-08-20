@@ -695,29 +695,8 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
     let lastPoint = null;
     let series = chart.series[0];
     let volumeSeries = chart.series[1];
-    //chart.series[1].data=[
-    //    new Date(seriesData[0].date).getTime(),
-    //    Number(seriesData[0].size)];
     seriesData.slice(1).forEach((data, index) => {
         const point = processDataPoint(data, seriesData[index].price);
-        //const graph = processDataChart(data);
-        // if (!symbolData[chart.series[0].name])
-        //   symbolData[chart.series[0].name] = [];
-        /*var alreadyPoint = symbolData[chart.series[0].name].some(function (item) {
-            return item.x === point.x && item.y === point.y;
-        });
-        if (!alreadyPoint)
-        {*/
-        //symbolData[chart.series[0].name].push(point);
-        //if (data.size != null) {
-        //    //series1.data.push(data.size);
-        //    series1.setData(graph);
-        //    //series1.addPoint(graph, redraw, animateOnUpdate);
-        //    //series1.data.push();
-        //    console.log(series1.data, "API Data");
-
-        //}
-        //console.log(series1, "series1");
         series.addPoint(point, redraw, animateOnUpdate);
         // Add the volume data to the volume series
         if (data.size) {
@@ -727,14 +706,6 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
             ];
             volumeSeries.addPoint(volumePoint, false, false);
         }
-
-        //series1.data.push([
-        //    new Date(data.date).getTime(),
-        //    Number(data.size),
-        //]);
-        //series1.push(graph);
-        //}
-        // lastPoint = point;
     });
     chart.redraw();
 
