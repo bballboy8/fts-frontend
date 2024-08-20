@@ -498,5 +498,5 @@ $(document).ready(function () {
     
 async function  saveLayout() {
     await MainLayoutInterop.dotnetReference.invokeMethodAsync('SaveLayout', $("#chartList .chart-box").length);
-    console.log(localStorage.getItem('SavedLayout'));
+    //console.log(localStorage.getItem('SavedLayout'));
 }

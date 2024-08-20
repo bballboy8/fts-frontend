@@ -18,6 +18,7 @@ namespace FirstTerraceSystems.Entities
             TrackingID = data[headers.IndexOf("trackingID")].ToString();
             MsgType = data[headers.IndexOf("msgType")].ToString();
             Symbol = data[headers.IndexOf("symbol")].ToString();
+            Size = data[headers.IndexOf("size")]?.ToString();
             if (double.TryParse(data[headers.IndexOf("price")].ToString(), out double price))
             {
                 Price = price;
@@ -46,5 +47,9 @@ namespace FirstTerraceSystems.Entities
 
         [JsonPropertyName("price")]
         public double Price { get; set; }
+
+        [JsonPropertyName("size")]
+        public string? Size { get; set; }
+
     }
 }
