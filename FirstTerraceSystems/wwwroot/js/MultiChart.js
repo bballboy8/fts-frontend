@@ -375,6 +375,8 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 },
                 ordinal: false,
                 type: 'datetime',
+                plotLines: plotLines,
+                plotBands: plotBands,
                 //offset: 0,
                 labels: {
                     style: { color: fontColor }
@@ -903,8 +905,67 @@ function updateButtonColour() {
     });
 }
 
+var plotLines = [];
+var plotBands = [];
+
+
 function loadDashboard(totalCharts, initialChartSymbols) {
 
+        
+
+        // Assuming your data starts and ends on specific dates
+    var endDate = new Date(); // Current date and time
+
+    // Calculate the start date as 3 days before the current date
+    var startDate = new Date();
+    startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
+
+    // Helper function to convert local EST/EDT time to UTC timestamp
+    function toESTorEDTTimestamp(year, month, day, hour, minute) {
+        var localDate = new Date(year, month, day, hour, minute);
+        var isDST = localDate.getTimezoneOffset() < 240; // Check if DST is in effect
+        var offset = isDST ? -4 * 60 * 60 * 1000 : -5 * 60 * 60 * 1000; // EDT (UTC-4) or EST (UTC-5)
+        var utcOffset = localDate.getTimezoneOffset() * 60000; // Convert minutes to milliseconds
+        return localDate.getTime() + utcOffset + offset;
+    }
+
+
+    // Iterate over each day in the date range
+    for (var date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        if (dayOfWeek === 5) { 
+            // Cover the whole day as a plotBand for weekends
+            plotBands.push({
+                color: 'rgba(68, 170, 213, 0.1)', // Light blue shading
+                from: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0), // Start of the day
+                to: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 3, 4, 0), // End of the day
+                zIndex: 3
+            });
+        } else if (dayOfWeek !== 6 && dayOfWeek!==0) {
+            // 8 PM EST/EDT on the current day
+            plotLines.push({
+                color: 'red',
+                width: 2,
+                value: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0), // 8 PM
+                zIndex: 5
+            });
+
+            // 4 AM EST/EDT on the next day
+            plotLines.push({
+                color: 'green',
+                width: 2,
+                value: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 4, 0), // 4 AM
+                zIndex: 5
+            });
+        }
+    }
+
+    console.log(plotLines); // Debugging - check if plotLines are correctly generated
+    console.log(plotBands); // Debugging - check if plotBands are correctly generated
+
+        
+    
     localStorage.setItem("chartCount", null);
     let chartList = $("#chartList");
 
