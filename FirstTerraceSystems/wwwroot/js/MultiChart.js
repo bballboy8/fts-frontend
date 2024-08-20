@@ -448,7 +448,8 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 name: 'Volume',
                 //data: [[1724028395447, 100]],
                 data: [],
-                yAxis: 1
+                yAxis: 1,
+                color : 'green'
             }
         ],
         exporting: {

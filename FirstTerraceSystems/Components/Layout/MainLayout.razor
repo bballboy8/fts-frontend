@@ -158,7 +158,6 @@
     {
         ChartService.UpdateChartLayout(totalCharts);
         await JSRuntime.InvokeVoidAsync("createDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
-        await JSRuntime.InvokeVoidAsync("updateButtonColour");
         StateContainerService.IsAllowCloseAllWindows = true;
         WindowsSerivce.CloseAllOpenedWindows();
         await JSRuntime.InvokeVoidAsync("RefreshChartBySymbol");
