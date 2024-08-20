@@ -55,7 +55,7 @@
                 </div>
 
                 <div class="market-time">
-                    <span class="market-time-text">4:34 AM EST</span>
+                    <span class="market-time-text">@currentTime</span>
                 </div>
 
                 <div class="market-open">
@@ -75,6 +75,7 @@
 @code {
     private bool IsDarkMode = true;
     private ElementReference Er_DisplayOptions { get; set; }
+    private string currentTime;
     private void ToggleDarkMode(bool value)
     {
         IsDarkMode = value;
@@ -94,6 +95,18 @@
     protected override void OnInitialized()
     {
         _dotNetMainLayoutRef = DotNetObjectReference.Create(this);
+        UpdateTime();
+        // Update the time every minute
+        var timer = new System.Timers.Timer(60000);
+        timer.Elapsed += (sender, e) => UpdateTime();
+        timer.Start();
+    }
+
+     private void UpdateTime()
+    {
+        var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+        currentTime = estTime.ToString("h:mm tt EST");
+        InvokeAsync(StateHasChanged);
     }
 
     // System.Timers.Timer timer;
