@@ -59,7 +59,7 @@
                 </div>
 
                 <div class="market-open">
-                    <span class="market-time-text">MARKET <span style="font-weight: 700;">OPEN</span></span>
+                    <span class="market-time-text">MARKET <span style="font-weight: 700;">@MarketStatus</span></span>
                 </div>
                 <Button ElementId="btn-logout" Class="me-2" Color="ButtonColor.Success" Outline="true" @onclick="Logout">Logout </Button>
                 <Switch Class="w-auto" Value="IsDarkMode" ValueExpression="() => IsDarkMode" ValueChanged="ToggleDarkMode" />
@@ -76,6 +76,7 @@
     private bool IsDarkMode = true;
     private ElementReference Er_DisplayOptions { get; set; }
     private string currentTime;
+    private string MarketStatus="Closed";
     private void ToggleDarkMode(bool value)
     {
         IsDarkMode = value;
@@ -102,9 +103,14 @@
         timer.Start();
     }
 
-     private void UpdateTime()
+    private void UpdateTime()
     {
         var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+        var startTime = new TimeSpan(4, 0, 0);
+        var endTime = new TimeSpan(20, 0, 0);
+        var timeOfDay = estTime.TimeOfDay;
+        bool IsOpen = timeOfDay >= startTime && timeOfDay <= endTime;
+        MarketStatus = IsOpen ? "Open" : "Closed";
         currentTime = estTime.ToString("h:mm tt EST");
         InvokeAsync(StateHasChanged);
     }
