@@ -152,7 +152,7 @@ namespace FirstTerraceSystems.Repositories
                 {
                     using (IDbTransaction? transaction = connection.BeginTransaction())
                     {
-                        connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
+                        connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price,Size) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price, @Size)", records);
 
                         transaction.Commit();
                     }
@@ -178,7 +178,7 @@ namespace FirstTerraceSystems.Repositories
                 {
                     using (IDbTransaction? transaction = connection.BeginTransaction())
                     {
-                        connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price)", records);
+                        connection.Execute($"INSERT INTO {GetSymbolTableName(symbol)} (TrackingID, Date, MsgType, Symbol, Price,Size) VALUES (@TrackingID, @Date, @MsgType, @Symbol, @Price, @Size)", records);
 
                         transaction.Commit();
                     }
@@ -213,7 +213,8 @@ namespace FirstTerraceSystems.Repositories
                             "Date DATETIME," +
                             "MsgType VARCHAR," +
                             "Symbol VARCHAR," +
-                            "Price FLOAT)");
+                            "Price FLOAT," +
+                            "Size VARCHAR)");
 
                             //_connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_symbol ON symbol_{symbol}(Symbol)");
                             connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_date ON symbol_{symbol}(Date)");

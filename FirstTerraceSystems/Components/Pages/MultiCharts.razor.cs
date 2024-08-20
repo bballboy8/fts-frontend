@@ -16,7 +16,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 100;
+        private const int PointSize = 500;
         private bool IsLoading { get; set; } = false;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
         public static Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
@@ -248,7 +248,14 @@ namespace FirstTerraceSystems.Components.Pages
                 if (dataGot != null)
                 {
                     datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
-                    await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
+                    }
+                    catch(Exception ex)
+                    {
+
+                    }
                 }
             }
         }

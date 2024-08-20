@@ -494,7 +494,7 @@ function handleExtremesChange(symbol,chart, min, max) {
             }
         }*/
         let filterData = await getExtremeDataBySymbol(chart.series[0].name, min, max);
-        addPointToChart(chart, filterData, false, false);
+        addPointToChart(chart, filterData, false, false,false);
         updatingCharts[symbol] = false;
     }, 0);
 }
@@ -682,35 +682,59 @@ function processDataChart(data) {
 function setDataToChart(chart, seriesData) {
     //if (seriesData.length < 2) return;
     let series = chart.series[0];
-    const dataPoints = seriesData.slice(1).map((data, index) =>
-        processDataPoint(data, seriesData[index].price)
+    dataMap.clear();
+    const dataPoints = seriesData.slice(1).map((data, index) => {
+        var timeStamp = new Date(data.date).getTime();
+        dataMap.set(timeStamp, null);
+        return processDataPoint(data, seriesData[index].price);
+    }
     );
     //symbolData[chart.series[0].name] = dataPoints;
     series.setData(dataPoints, false, false);
+
+    const volumePoints = seriesData.slice(1).map((data, index) => {
+        var volumePoint = [
+            new Date(data.date).getTime(),
+            Number(data.size)
+        ];
+        return volumePoint;
+    }
+    );
+    chart.series[1].setData(volumePoints, false, false);
     chart.redraw();
     if (seriesData.length > 1)
         chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
 }
 
-function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false) {
+
+let dataMap = new Map();
+function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume= false) {
     console.log(seriesData, "seriesData");
     if (seriesData.length < 1) return;
     let lastPoint = null;
     let series = chart.series[0];
     let volumeSeries = chart.series[1];
     seriesData.slice(1).forEach((data, index) => {
-        const point = processDataPoint(data, seriesData[index].price);
-        series.addPoint(point, redraw, animateOnUpdate);
+       // var timeStamp = new Date(data.date).getTime();
+        //if (!dataMap.has(timeStamp)) {
+          //  dataMap.set(timeStamp, 1);
+            const point = processDataPoint(data, seriesData[index].price);
+            series.addPoint(point, redraw, animateOnUpdate);
         // Add the volume data to the volume series
-        if (data.size) {
-            const volumePoint = [
-                new Date(data.date).getTime(),
-                Number(data.size)
-            ];
-            volumeSeries.addPoint(volumePoint, false, false);
-        }
+        if (isAddVolume && data.size) {
+                
+
+                const volumePoint = [
+                    new Date(data.date).getTime(),
+                    Number(data.size)
+                ];
+
+                volumeSeries.addPoint(volumePoint, false, false);
+
+            }
+        //}
     });
-    chart.redraw();
+
 
     //var extreme = series.getExtremes();
     //chart.xAxis[0].setExtremes(extreme.min, lastPoint.x);
@@ -744,7 +768,7 @@ async function refreshCharts(symbol, seriesData) {
     setTimeout(async function () {
         let chart = getChartInstanceBySeriesName(symbol);
         if (chart) {
-            addPointToChart(chart, seriesData, false, true);
+            addPointToChart(chart, seriesData, false, true,true);
             chart.redraw();
         }
     }, 100);
@@ -1111,7 +1135,7 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
             return;
         }
         
-        setTimeout(addPointToChart(chart, seriesData, false, false), 0);
+        setTimeout(addPointToChart(chart, seriesData, false, false,true), 0);
 
 
         if (isAllLoaded) {
