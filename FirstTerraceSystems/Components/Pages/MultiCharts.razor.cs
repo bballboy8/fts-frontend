@@ -123,7 +123,7 @@ namespace FirstTerraceSystems.Components.Pages
         public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
         {
       var currentTime = DateTime.Now.TimeOfDay;
-      data = data.Where((x) => x.Date.TimeOfDay < currentTime);
+      //data = data.Where((x) => x.Date.TimeOfDay < currentTime);
             var filteredData = data;
 
 
