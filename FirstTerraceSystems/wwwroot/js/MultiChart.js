@@ -344,11 +344,14 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
         },
         plotOptions: {
 
+            candlestick: {
+                color: 'red',    // Color of the downward candles
+                upColor: 'green' // Color of the upward candles
+            },
             series: {
                 turboThreshold: 0,
                 marker: {
                     enabled: false
-                    
                 }
             }
         },
@@ -451,7 +454,6 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 //data: [[1724028395447, 100]],
                 data: [],
                 yAxis: 1,
-                color : 'green'
             }
         ],
         exporting: {
@@ -693,10 +695,14 @@ function setDataToChart(chart, seriesData) {
     series.setData(dataPoints, false, false);
 
     const volumePoints = seriesData.slice(1).map((data, index) => {
-        var volumePoint = [
-            new Date(data.date).getTime(),
-            Number(data.size)
-        ];
+        const currentPrice = data.price; // Get the current price
+        const previousPrice = seriesData[index].price; // Get the previous price
+
+        const volumePoint = {
+            x: new Date(data.date).getTime(),
+            y: Number(data.size),
+            color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
+        };
         return volumePoint;
     }
     );
@@ -708,38 +714,31 @@ function setDataToChart(chart, seriesData) {
 
 
 let dataMap = new Map();
-function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume= false) {
-    console.log(seriesData, "seriesData");
+function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
     if (seriesData.length < 1) return;
     let lastPoint = null;
     let series = chart.series[0];
     let volumeSeries = chart.series[1];
     seriesData.slice(1).forEach((data, index) => {
-       // var timeStamp = new Date(data.date).getTime();
-        //if (!dataMap.has(timeStamp)) {
-          //  dataMap.set(timeStamp, 1);
-            const point = processDataPoint(data, seriesData[index].price);
-            series.addPoint(point, redraw, animateOnUpdate);
-        // Add the volume data to the volume series
+        const previousPrice = seriesData[index].price; // Get the previous price
+        const currentPrice = data.price; // Get the current price
+
+        // Create the point for the main series
+        const point = processDataPoint(data, previousPrice);
+        series.addPoint(point, redraw, animateOnUpdate);
+
+        // Add the volume data to the volume series with color based on the price comparison
         if (isAddVolume && data.size) {
-                
+            const volumePoint = {
+                x: new Date(data.date).getTime(),
+                y: Number(data.size),
+                color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
+            };
 
-                const volumePoint = [
-                    new Date(data.date).getTime(),
-                    Number(data.size)
-                ];
-
-                volumeSeries.addPoint(volumePoint, false, false);
-
-            }
-        //}
+            volumeSeries.addPoint(volumePoint, false, false);
+        }
     });
-
-
-    //var extreme = series.getExtremes();
-    //chart.xAxis[0].setExtremes(extreme.min, lastPoint.x);
 }
-
 function removeOldPoints(chart, daysToKeep) {
     var now = Date.now();
     var cutoffTime = now - daysToKeep * 24 * 60 * 60 * 1000;
