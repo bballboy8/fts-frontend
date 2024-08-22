@@ -22,7 +22,7 @@ namespace FirstTerraceSystems
 
                 var settings = webView2.CoreWebView2.Settings;
 
-                //settings.AreBrowserAcceleratorKeysEnabled = false;
+                settings.AreBrowserAcceleratorKeysEnabled = false;
                 settings.IsZoomControlEnabled = false;
                 settings.AreDefaultContextMenusEnabled = false;
                 settings.AreDefaultScriptDialogsEnabled = false;
