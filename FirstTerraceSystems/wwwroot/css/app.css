@@ -220,6 +220,7 @@ h1:focus {
     padding: 50px;
     text-align: center;
     border-radius: 20px 0 0 20px;
+    height: 720px;
 }
 
 .signIn > * {

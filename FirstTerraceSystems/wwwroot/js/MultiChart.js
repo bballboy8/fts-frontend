@@ -416,7 +416,10 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             }, {
                 labels: {
                     align: 'right',
-                    x: -3
+                    x: -3,
+                    style: {
+                        color: fontColor
+                    },
                 },
                 title: {
                     text: 'Volume'
@@ -985,11 +988,6 @@ function loadDashboard(totalCharts, initialChartSymbols) {
         }
     }
 
-    console.log(plotLines); // Debugging - check if plotLines are correctly generated
-    console.log(plotBands); // Debugging - check if plotBands are correctly generated
-
-        
-    
     localStorage.setItem("chartCount", null);
     let chartList = $("#chartList");
 
