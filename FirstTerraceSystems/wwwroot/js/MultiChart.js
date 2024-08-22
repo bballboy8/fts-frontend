@@ -415,8 +415,8 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 resize: { enabled: true },
             }, {
                 labels: {
-                    align: 'right',
-                    x: -3,
+                    align: 'left',
+                    x: 5,
                     style: {
                         color: fontColor
                     },
