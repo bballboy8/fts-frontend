@@ -413,7 +413,9 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 },
                 height: '65%',
                 resize: { enabled: true },
-            }, {
+            },
+            {
+                gridLineWidth: 0,
                 labels: {
                     align: 'left',
                     x: 5,
@@ -426,8 +428,12 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 },
                 top: '65%',
                 height: '35%',
+                resize: { enabled: true },
                 offset: 0,
-                lineWidth: 2
+                lineWidth: 2,
+                formatter: function () {
+                    return Highcharts.numberFormat(this.value / 10000, 2);
+                }
             }
         ], tooltip: {
             split: true
@@ -454,7 +460,6 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             }, {
                 type: 'column',
                 name: 'Volume',
-                //data: [[1724028395447, 100]],
                 data: [],
                 yAxis: 1,
             }
@@ -728,18 +733,19 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
 
         // Create the point for the main series
         const point = processDataPoint(data, previousPrice);
-        series.addPoint(point, redraw, animateOnUpdate);
-
+       
         // Add the volume data to the volume series with color based on the price comparison
-        if (isAddVolume && data.size) {
+        if (data.size)
+        {
             const volumePoint = {
                 x: new Date(data.date).getTime(),
                 y: Number(data.size),
                 color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
             };
-
-            volumeSeries.addPoint(volumePoint, false, false);
-        }
+            volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
+        }  
+            series.addPoint(point, redraw, animateOnUpdate);
+      
     });
 }
 function removeOldPoints(chart, daysToKeep) {
