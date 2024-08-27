@@ -16,7 +16,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 500;
+        private const int PointSize = 800;
         private bool IsLoading { get; set; } = false;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
         public static Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
@@ -195,7 +195,7 @@ namespace FirstTerraceSystems.Components.Pages
       if (datasets.ContainsKey(symbol))
       {
         var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
-        var filteredData = FilterData(extremeData, 200);
+        var filteredData = FilterData(extremeData, 300);
         return filteredData;
       }
       return [];
