@@ -61,8 +61,7 @@ namespace FirstTerraceSystems.Components.Pages
 
         private async Task UpdateAndRenderChartsAsync()
         {
-            //DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(1);
+            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
             try
             {
                 List<Task> tasks = new();
