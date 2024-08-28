@@ -914,9 +914,25 @@ function createDashboard(totalCharts, initialChartSymbols) {
     }
 
     for (let indx = 1; indx <= totalCharts; indx++) {
-
         let symbolInfo = initialChartSymbols[indx - 1];
+        // Create a Set to keep track of seen symbols
+        let seenSymbols = new Set();
 
+        // Iterate over the first 8 records of initialChartSymbols and remove duplicates (Task 86cw3n1ph)
+        for (let i = 0; i < 8; i++) {
+            let symbolInfo = initialChartSymbols[i];
+
+            // Check if the symbol is already in the set
+            if (seenSymbols.has(symbolInfo.symbol)) {
+                // If a duplicate is found, remove it from initialChartSymbols
+                initialChartSymbols.splice(i, 1);
+                // Decrement i to check the new element at this index
+                i--;
+            } else {
+                // Add the symbol to the set if it's not seen yet
+                seenSymbols.add(symbolInfo.symbol);
+            }
+        }
         let chart = addChartBox(totalCharts, indx, symbolInfo.symbol);
     }
 }
