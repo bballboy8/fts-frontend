@@ -63,7 +63,34 @@ function filterData(data, numPoints, startDate, endDate) {
     return result;
 }
 
-function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
+function addChart(totalCharts, charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
+    // Initial data generation
+    const generateInitialData = () => {
+        const initialData = [];
+        const time = new Date().getTime();
+
+        for (let i = -19; i <= 0; i += 1) {
+            initialData.push({
+                x: time + i * 1000,
+                y: Math.random() * 100  // Scale values as per your requirement
+            });
+        }
+        return initialData;
+    };
+
+    // Simulate live data updates
+    const simulateLiveData = (chart) => {
+        const series = chart.series[0];
+        const series1 = chart.series[1];
+
+        setInterval(() => {
+            const x = (new Date()).getTime(); // Current time
+            const y = Math.random() * 1000;  // Random value, scale appropriately
+
+            series.addPoint([x, y], true, true, false); // Add new point, shift to maintain series length
+            series1.addPoint([x, y], true, true, false); // Add new point, shift to maintain series length
+        }, 100); // Update interval in milliseconds
+    };
 
 
     updatingCharts[symbol] = false;
@@ -78,13 +105,14 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             events: {
                 load: function () {
                     var chart = this;
+
                     let chartWidth = chart.chartWidth;
                     chart.showLoading();
                     chart.ButtonNamespace = {};
                     chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
                         text: truncateText(`XNYS: ${symbol}`, 11, ''),
                         x: 0,
-                        y:10,
+                        y: 10,
                         width: 85,
                         height: 10,
                         title: `XNYS: ${symbol}`,
@@ -153,7 +181,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                                             chart.hideLoading();
                                         }
 
-                                        
+
                                         chart.hideLoading();
                                     });
 
@@ -166,17 +194,17 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         }
                     });
 
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 90, y: 10});
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol,3* 60 * 1000) }, x: 120, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setRange(symbol,24*60* 60 * 1000) }, x: 215, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
-                       
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 90, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol, 3 * 60 * 1000) }, x: 120, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol, 30 * 60 * 1000) }, x: 150, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol, 60 * 60 * 1000) }, x: 185, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setRange(symbol, 24 * 60 * 60 * 1000) }, x: 215, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setRange(symbol, 3 * 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
+
                     chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-in"></i>',
                         x: 360,
-                        y:10,
+                        y: 10,
                         callback: function () {
                             zoomChart(true, chart, dotNetObject);
                         }
@@ -185,7 +213,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     chart.ButtonNamespace.zoomOutButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-out"></i>',
                         x: 400,
-                        y:10,
+                        y: 10,
                         callback: function () {
                             zoomChart(false, chart, dotNetObject);
                         }
@@ -198,12 +226,12 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     };
 
                     if (!isPopoutChartWindow) {
-                        
+
                         chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(chart, {
                             text: '<i class="bi bi-x-lg"></i>',
                             hoverColor: '#5B6970',
-                            x: chartWidth-40,
-                            y:10,
+                            x: chartWidth - 40,
+                            y: 10,
                             callback: function () {
                                 removeChart(chart);
                             }
@@ -252,8 +280,11 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                             }
                         }
                     });
-                    
 
+                    chart.series[0].setData(generateInitialData());
+                    chart.series[1].setData(generateInitialData());
+                    // Simulate live data updates
+                    simulateLiveData(chart);
 
                 },
                 //redraw: function () {
@@ -302,7 +333,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         if (totalCharts == 8) {
                             closeX = -25;
                             minX = -50;
-                                maxX = -75;
+                            maxX = -75;
                         }
                         chart.ButtonNamespace.closeChartButton.align({
                             align: 'right',
@@ -329,9 +360,9 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 type: 'x'
             }
         },
-        
+
         rangeSelector: {
-            enabled:false
+            enabled: false
         },
         tooltip: {
             split: true,
@@ -365,7 +396,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 events: {
                     afterSetExtremes: function (e) {
                         //if (!updatingCharts[symbol])
-                        handleExtremesChange(symbol,this.chart, e.min, e.max);
+                        handleExtremesChange(symbol, this.chart, e.min, e.max);
                         // Remove points that are outside the new extremes
                         /*series.data.forEach(function (point) {
                             if (point.x >= e.min && point.x <= e.max) {
@@ -373,7 +404,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                             }
                         });*/
 
-                        
+
                     }
                 },
                 ordinal: false,
@@ -454,10 +485,11 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         lineWidthPlus: 0
                     }
                 },
-                data: [],
+                data: [],  // Initialize with empty data, will be set in load event
                 boostThreshold: 10000,
                 turboThreshold: 0
-            }, {
+            },
+            {
                 type: 'column',
                 name: 'Volume',
                 data: [],
@@ -465,7 +497,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             }
         ],
         exporting: {
-            
+
         },
         navigation: {
             buttonOptions: {
@@ -474,7 +506,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             }
         },
         navigator: {
-            enabled:false
+            enabled: false
         },
         boost: {
             enabled: true,
@@ -493,7 +525,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
     });
 }
 const updatingCharts = {};
-function handleExtremesChange(symbol,chart, min, max) {
+function handleExtremesChange(symbol, chart, min, max) {
     setTimeout(async function () {
         updatingCharts[symbol] = true;
         /*for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
@@ -504,7 +536,7 @@ function handleExtremesChange(symbol,chart, min, max) {
             }
         }*/
         let filterData = await getExtremeDataBySymbol(chart.series[0].name, min, max);
-        addPointToChart(chart, filterData, false, false,false);
+        addPointToChart(chart, filterData, false, false, false);
         updatingCharts[symbol] = false;
     }, 0);
 }
@@ -654,8 +686,8 @@ async function getChartDataByLastFeedPoint(symbol, lastPoint) {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataByLastFeedPoint", symbol, lastPoint);
 }
 
-async function getFilteredDataBySymbol(symbol,  range = undefined) {
-    
+async function getFilteredDataBySymbol(symbol, range = undefined) {
+
     return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetFilteredDataBySymbol", symbol, range);
 }
 
@@ -666,7 +698,7 @@ async function getChartDataBySymbol(symbol, lastPoint = undefined) {
 
 async function getExtremeDataBySymbol(symbol, min = undefined, max = undefined) {
 
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetExtremeDataBySymbol", symbol, min,max);
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetExtremeDataBySymbol", symbol, min, max);
 }
 
 async function updateChartSymbol(chartId, symbol) {
@@ -686,7 +718,7 @@ function processDataChart(data) {
     return [[
         new Date(data.date).getTime(),
         Number(data.size),
-    ], ]
+    ],]
 };
 
 function setDataToChart(chart, seriesData) {
@@ -733,19 +765,18 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
 
         // Create the point for the main series
         const point = processDataPoint(data, previousPrice);
-       
+
         // Add the volume data to the volume series with color based on the price comparison
-        if (data.size)
-        {
+        if (data.size) {
             const volumePoint = {
                 x: new Date(data.date).getTime(),
                 y: Number(data.size),
                 color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
             };
             volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
-        }  
-            series.addPoint(point, redraw, animateOnUpdate);
-      
+        }
+        series.addPoint(point, redraw, animateOnUpdate);
+
     });
 }
 function removeOldPoints(chart, daysToKeep) {
@@ -776,13 +807,13 @@ async function refreshCharts(symbol, seriesData) {
     setTimeout(async function () {
         let chart = getChartInstanceBySeriesName(symbol);
         if (chart) {
-            addPointToChart(chart, seriesData, false, true,true);
+            addPointToChart(chart, seriesData, false, true, true);
             chart.redraw();
         }
     }, 100);
-        //removeOldPoints(chart, 3);
-        //chart.redraw();
-    
+    //removeOldPoints(chart, 3);
+    //chart.redraw();
+
 }
 
 
@@ -884,7 +915,7 @@ function addChartBox(totalCharts, chartIndx, symbol) {
         $("#chartList .chart-box").addClass('chart-height-100');
     }
 
-    var chart = addChart(totalCharts , chartContainerId, [], symbol);
+    var chart = addChart(totalCharts, chartContainerId, [], symbol);
 
     if (totalCharts == 1) {
         removeWindowControlButtonsFromChart();
@@ -944,9 +975,9 @@ var plotBands = [];
 
 function loadDashboard(totalCharts, initialChartSymbols) {
 
-        
 
-        // Assuming your data starts and ends on specific dates
+
+    // Assuming your data starts and ends on specific dates
     var endDate = new Date(); // Current date and time
 
     // Calculate the start date as 3 days before the current date
@@ -967,7 +998,7 @@ function loadDashboard(totalCharts, initialChartSymbols) {
     for (var date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
         var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-        if (dayOfWeek === 5) { 
+        if (dayOfWeek === 5) {
             // Cover the whole day as a plotBand for weekends
             plotBands.push({
                 color: 'rgba(68, 170, 213, 0.1)', // Light blue shading
@@ -975,7 +1006,7 @@ function loadDashboard(totalCharts, initialChartSymbols) {
                 to: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 3, 4, 0), // End of the day
                 zIndex: 3
             });
-        } else if (dayOfWeek !== 6 && dayOfWeek!==0) {
+        } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
             // 8 PM EST/EDT on the current day
             plotLines.push({
                 color: 'red',
@@ -1107,7 +1138,7 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
     var data = await getChartDataBySymbol(symbol, null);
     setDataToChart(chart, data);
     chart.hideLoading();
-    
+
 }
 
 
@@ -1137,8 +1168,8 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
             chart.hideLoading();
             return;
         }
-        
-        setTimeout(addPointToChart(chart, seriesData, false, false,true), 0);
+
+        setTimeout(addPointToChart(chart, seriesData, false, false, true), 0);
 
 
         if (isAllLoaded) {
