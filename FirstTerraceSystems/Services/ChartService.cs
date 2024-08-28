@@ -24,7 +24,7 @@ namespace FirstTerraceSystems.Services
             _tickerRepository = tickerRepository;
         }
 
-        public int InitialChartLayout { get; private set; } = 5;
+        public int InitialChartLayout { get; private set; } = 8;
         public List<ChartModal> InitialChartSymbols { get; private set; }
       
 
