@@ -727,7 +727,7 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
     let lastPoint = null;
     let series = chart.series[0];
     let volumeSeries = chart.series[1];
-    seriesData.slice(1).forEach((data, index) => {
+    seriesData.slice(0).forEach((data, index) => {
         const previousPrice = seriesData[index].price; // Get the previous price
         const currentPrice = data.price; // Get the current price
 

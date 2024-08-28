@@ -1,6 +1,5 @@
-﻿using System;
+﻿using System.Collections.Concurrent;
 using System.Text.Json;
-using System.Xml.Linq;
 using BlazorBootstrap;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
@@ -8,20 +7,23 @@ using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using Microsoft.Maui;
-using Microsoft.VisualBasic;
 
 namespace FirstTerraceSystems.Components.Pages
 {
+    public record Temp(string key, List<MarketFeed> item);
+
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
         private const int PointSize = 800;
         private bool IsLoading { get; set; } = false;
+        private bool OnWait { get; set; } = false;
+
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
-        public static Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
-        public static Dictionary<string, double> Ranges = new Dictionary<string, double>();
-        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        public static  ConcurrentDictionary<string, List<MarketFeed>> datasets = new ();
+        private ConcurrentDictionary<string, List<MarketFeed>> collection = new();
+        public static ConcurrentDictionary<string, double> Ranges = new ();
+        private CancellationTokenSource _cancellationTokenSource = new ();
         private readonly object _lock = new object();
         protected override void OnInitialized()
         {
@@ -30,7 +32,11 @@ namespace FirstTerraceSystems.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            await InitializedDataBaseAsync();
+            Task.Run( async () =>
+            {
+                await InitializedDataBaseAsync();
+            });
+           
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -40,20 +46,27 @@ namespace FirstTerraceSystems.Components.Pages
                 await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
                 IsLoading = true;
                 preloadService.Show(SpinnerColor.Light, "Loading data...");
-                await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols.Where(x=>x.IsVisible == true));
+                Task.Run( async () => {
+
+                    MainThread.BeginInvokeOnMainThread(async () =>
+                    {
+                        await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols.Where(x => x.IsVisible == true));
+                        // Code to run on the main thread
+                    });
+
+                  
                 await UpdateAndRenderChartsAsync();
-                preloadService.Hide();
+                MainThread.BeginInvokeOnMainThread(() => { preloadService.Hide(); });
                 IsLoading = false;
                 Logger.LogInformation($"Connecting WebSocketClient");
 
-                await WebSocketClient.ConnectAsync();
-                await WebSocketClient.ConnectctaAsync();
+                await WebSocketClient.ConnectAsync().ConfigureAwait(false);
                 Logger.LogInformation($"Connected WebSocketClient");
                 WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
                 WebSocketClient.ActionReferenceChart += RefreshCharts;
                 Logger.LogInformation($"Listening WebSocketClient");
-        WebSocketClient.ListenAsync();
-        WebSocketClient.ListenctaAsync();
+                await WebSocketClient.ListenAsync().ConfigureAwait(false);
+                });
 
                 //await Task.WhenAll(Task1, Task2);
             }
@@ -121,8 +134,8 @@ namespace FirstTerraceSystems.Components.Pages
 
         public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
         {
-      var currentTime = DateTime.Now.TimeOfDay;
-      //data = data.Where((x) => x.Date.TimeOfDay < currentTime);
+            var currentTime = DateTime.Now.TimeOfDay;
+            //data = data.Where((x) => x.Date.TimeOfDay < currentTime);
             var filteredData = data;
 
 
@@ -131,11 +144,11 @@ namespace FirstTerraceSystems.Components.Pages
                 var step = Math.Max(1, filteredData.Count() / numPoints);
                 return filteredData.Where((_, index) => index % step == 0).Take(numPoints).ToList();
             }
-            
+
             return filteredData.ToList();
         }
 
-        public  async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
+        public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
         {
             datasets[symbol] = marketFeeds.ToList();
             var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
@@ -192,13 +205,13 @@ namespace FirstTerraceSystems.Components.Pages
             long? max = maxElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(maxElement?.GetDouble()) : (long?)null;
             var startDate = UnixTimeStampToDateTime((long)min);
             var endDate = UnixTimeStampToDateTime((long)max);
-      if (datasets.ContainsKey(symbol))
-      {
-        var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
-        var filteredData = FilterData(extremeData, 300);
-        return filteredData;
-      }
-      return [];
+            if (datasets.ContainsKey(symbol))
+            {
+                var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
+                var filteredData = FilterData(extremeData, 300);
+                return filteredData;
+            }
+            return [];
         }
 
         [JSInvokable]
@@ -237,35 +250,64 @@ namespace FirstTerraceSystems.Components.Pages
             // }).ConfigureAwait(true);
         }
 
+
         private async Task RefreshCharts(NasdaqResponse? response)
         {
-            foreach (var data in datasets)
+            Task.Run(() =>
             {
-                IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data.Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
-
-                var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
-                if (dataGot != null)
+                Logger.LogInformation($"...............Socket call start...............");
+                Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+                foreach (var data in datasets)
                 {
-                    datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
-                    try
+                    IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data
+                        .Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
+                    var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
+                    if (dataGot != null)
                     {
-                        await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
-                    }
-                    catch(Exception ex)
-                    {
-
+                        if (OnWait)
+                        {
+                            Thread.Sleep(1000);
+                        }
+                        //Task.Run(() =>
+                        //{
+                        //  datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
+                        //}).ConfigureAwait(false);
+                        if (collection.ContainsKey(data.Key))
+                        {
+                            collection[data.Key].AddRange(dataGot);
+                        }
+                        else
+                        {
+                            collection[data.Key] = dataGot;
+                        }
+                        //await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
                     }
                 }
-            }
+
+                Logger.LogInformation($"...............Socket call end...............");
+                Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+
+            });
         }
 
+
+        private async Task UpdateUI()
+        {
+            OnWait = true;
+            foreach (var data in collection)
+            {
+                await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data);
+            }
+            OnWait = false;
+
+        }
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
         {
-            var filtered = FilterData(datasets[symbol],PointSize);
+            var filtered = FilterData(datasets[symbol], PointSize);
             return filtered;
-            
+
         }
 
         [JSInvokable]

@@ -9,17 +9,17 @@ namespace FirstTerraceSystems.Features
     public static class WebSocketClient
     {
         static ClientWebSocket _webSocket = new();
-    static ClientWebSocket _webSocketcta = new();
-    public delegate Task OnRealDataReceived(NasdaqResponse? response);
+        static ClientWebSocket _webSocketcta = new();
+        public delegate Task OnRealDataReceived(NasdaqResponse? response);
 
         public delegate Task ReferenceChartAsync(NasdaqResponse? response);
 
         public static event OnRealDataReceived? ActionRealDataReceived;
 
         public static event ReferenceChartAsync? ActionReferenceChart;
-    
 
-    public async static Task ConnectAsync()
+
+        public static async Task ConnectAsync()
         {
 
             int connectionTrial = 0;
@@ -50,37 +50,8 @@ namespace FirstTerraceSystems.Features
 
         }
 
-    public async static Task ConnectctaAsync()
-    {
 
-      int connectionTrial = 0;
-
-      if (connectionTrial < 3)
-      {
-        try
-        {
-          _webSocketcta = new ClientWebSocket();
-          await _webSocketcta.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data_cta"), CancellationToken.None);
-          connectionTrial = 0;
-          while (_webSocketcta.State == WebSocketState.Connecting)
-          {
-            await Task.Delay(50); // Small delay to avoid busy waiting
-          }
-          var buffer = Encoding.UTF8.GetBytes("start");
-          await _webSocketcta.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-          Log.Error($"WebSocket connection error: {ex.Message}");
-          connectionTrial++;
-          Log.Information($"Retry to connect WebSocket: {connectionTrial}");
-          await ConnectctaAsync();
-        }
-      }
-
-    }
-
-    public static async Task CloseAsync()
+        public static async Task CloseAsync()
         {
             try
             {
@@ -102,129 +73,69 @@ namespace FirstTerraceSystems.Features
             }
         }
 
-    public static async Task ClosectaAsync()
-    {
-      try
-      {
-        if (_webSocketcta.State == WebSocketState.Open || _webSocketcta.State == WebSocketState.CloseSent || _webSocketcta.State == WebSocketState.CloseReceived)
+
+        public static Task ListenAsync()
         {
-          await _webSocketcta.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-          _webSocketcta.Dispose();
-          Log.Information("WebSocket Close");
-        }
-        else if (_webSocketcta.State == WebSocketState.Connecting)
-        {
-          _webSocketcta.Abort();
-          Log.Information("WebSocket is still connecting. Aborting connection.");
-        }
-      }
-      catch (Exception ex)
-      {
-        Log.Error($"WebSocket close error: {ex.Message}");
-      }
-    }
-
-    public static async Task ListenAsync()
-    {
-        byte[] buffer = new byte[1024 * 10];
-        try
-        {
-                StringBuilder messageBuilder = new StringBuilder();
-                while (_webSocket.State == WebSocketState.Open)
-          {
-            WebSocketReceiveResult result;
-            
-
-            do
+            Task.Run(async () =>
             {
-              result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
-              if (result.MessageType == WebSocketMessageType.Text)
-              {
-                string messagePart = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                messageBuilder.Append(messagePart);
-              }
-              // Handle other message types if necessary
-            } while (!result.EndOfMessage);
+                byte[] buffer = new byte[1024 * 10];
+                try
+                {
+                    StringBuilder messageBuilder = new StringBuilder();
+                    while (_webSocket.State == WebSocketState.Open)
+                    {
+                        WebSocketReceiveResult result;
 
-            if (messageBuilder.Length > 0)
-            {
-              string message = messageBuilder.ToString();
-             messageBuilder.Clear();
-              ProcessMessage(message);
 
-            }
-          }
+                        do
+                        {
+                            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                            if (result.MessageType == WebSocketMessageType.Text)
+                            {
+                                string messagePart = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                                messageBuilder.Append(messagePart);
+                            }
+                            // Handle other message types if necessary
+                        } while (!result.EndOfMessage);
+
+                        if (messageBuilder.Length > 0)
+                        {
+                            string message = messageBuilder.ToString();
+                            messageBuilder.Clear();
+                            ProcessMessage(message);
+
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"WebSocket error: {ex.Message}");
+                    Log.Information($"Reconnecting WebSocket");
+                    await ConnectAsync();
+                    Log.Information($"Reconnected WebSocket");
+                    Log.Information($"Listening WebSocket");
+                    await ListenAsync(); // Restart listening on reconnection
+                }
+            });
+            return Task.CompletedTask;
         }
-        catch (Exception ex)
-        {
-          Log.Error($"WebSocket error: {ex.Message}");
-          Log.Information($"Reconnecting WebSocket");
-          await ConnectAsync();
-          Log.Information($"Reconnected WebSocket");
-          Log.Information($"Listening WebSocket");
-          await ListenAsync(); // Restart listening on reconnection
-        }
-    }
-
-    public static async Task ListenctaAsync()
-    {
-      byte[] buffer = new byte[1024 * 10];
-
-        try
-            {
-                StringBuilder messageBuilder = new StringBuilder();
-                while (_webSocketcta.State == WebSocketState.Open)
-          {
-            WebSocketReceiveResult result;
-
-            do
-            {
-              result = await _webSocketcta.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-              if (result.MessageType == WebSocketMessageType.Text)
-              {
-                string messagePart = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                messageBuilder.Append(messagePart);
-              }
-              // Handle other message types if necessary
-            } while (!result.EndOfMessage);
-
-            if (messageBuilder.Length > 0)
-            {
-              string message = messageBuilder.ToString();
-              messageBuilder.Clear();
-              ProcessMessage(message);
-
-            }
-          }
-        }
-        catch (Exception ex)
-        {
-          Log.Error($"WebSocket error: {ex.Message}");
-          Log.Information($"Reconnecting WebSocket");
-          await ConnectctaAsync();
-          Log.Information($"Reconnected WebSocket");
-          Log.Information($"Listening WebSocket");
-          await ListenctaAsync(); // Restart listening on reconnection
-        }
-    }
-
 
         static void ProcessMessage(string message)
         {
             try
             {
-        if (message.Contains("start"))
-          return;
+                if (message.Contains("start"))
+                    return;
                 NasdaqResponse? response = JsonSerializer.Deserialize<NasdaqResponse>(message);
                 Log.Information($"Real Data Received: {response?.Data.Length}");
                 if (response?.Data.Length > 0)
                 {
-          ActionReferenceChart?.Invoke(response);
-          ActionRealDataReceived?.Invoke(response);
-                   
-        }
+                    ActionReferenceChart?.Invoke(response);
+                    ActionRealDataReceived?.Invoke(response);
+
+                }
             }
             catch (Exception ex)
             {
