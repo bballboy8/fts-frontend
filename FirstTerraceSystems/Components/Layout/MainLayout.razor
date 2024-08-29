@@ -13,7 +13,7 @@
 
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
 <Preload/>
-<div class="page">
+<div class="page" style="background: radial-gradient(circle at 50% 8.19%, #1B2934 0%, #000000 100%);">
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register") && !NavigationManager.Uri.Contains("loading"))
         {
@@ -66,7 +66,7 @@
             </div>
         }
 
-        <article class="content px-4">
+        <article class="content px-4" style="background: radial-gradient(circle at 50% 8.19%, #1B2934 0%, #000000 100%);">
             @Body
         </article>
     </main>
