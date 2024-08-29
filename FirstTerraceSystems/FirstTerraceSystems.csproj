@@ -45,8 +45,8 @@
         <GenerateTestArtifacts>True</GenerateTestArtifacts>
         <AppInstallerUri>C:\Program Files</AppInstallerUri>
         <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-        <PackageCertificateKeyFile>FirstTerraceSystems_TemporaryKey.pfx</PackageCertificateKeyFile>
         <DefaultLanguage>en-us</DefaultLanguage>
+        <PackageCertificateThumbprint>68E944B463544D2DBF0F7A9C1D0B0AEF6501D376</PackageCertificateThumbprint>
     </PropertyGroup>
 
     <ItemGroup>
