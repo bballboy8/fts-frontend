@@ -75,11 +75,11 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             backgroundColor: backgroundColor,
             borderWidth: 1,
             borderColor: "#5B6970",
-            animation: {
-                duration: 1000, // Duration of the animation in milliseconds
-                easing: 'easeInQuadeaseOutCubic', // Easing function for the animation
-                defer: 0
-            },// Delay before starting the animation, in milliseconds
+            //animation: {
+            //    duration: 1000, // Duration of the animation in milliseconds
+            //    easing: 'easeInQuadeaseOutCubic', // Easing function for the animation
+            //    defer: 0
+            //},// Delay before starting the animation, in milliseconds
             events: {
                 load: function () {
                     var chart = this;
@@ -455,20 +455,20 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     }
                 },
                 data: [],
-                animation: {
-                    duration: 1000, // Overrides the duration just for this series
-                    easing: 'easeOutCubic' // Overrides the easing just for this series
-                },
+                //animation: {
+                //    duration: 1000, // Overrides the duration just for this series
+                //    easing: 'easeOutCubic' // Overrides the easing just for this series
+                //},
                 boostThreshold: 10000,
                 turboThreshold: 0
             }, {
                 type: 'column',
                 name: 'Volume',
                 data: [],
-                animation: {
-                    duration: 1000, // Overrides the duration just for this series
-                    easing: 'easeOutCubic' // Overrides the easing just for this series
-                },
+                //animation: {
+                //    duration: 1000, // Overrides the duration just for this series
+                //    easing: 'easeOutCubic' // Overrides the easing just for this series
+                //},
                 yAxis: 1,
             }
         ],
