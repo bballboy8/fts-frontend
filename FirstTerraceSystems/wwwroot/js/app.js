@@ -1,4 +1,4 @@
-let backgroundColor = '#202527';
+let backgroundColor = '#1B2934';
 let fontColor = '#ffffff';
 let isDarkMode = true;
 
