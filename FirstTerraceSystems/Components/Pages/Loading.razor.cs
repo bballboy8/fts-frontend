@@ -187,7 +187,7 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
         private void UpdateProgress(int completedTasks, int totalTasks)
-        {
+         {
             progress = (completedTasks * 100) / totalTasks;
             StateHasChanged();
         }

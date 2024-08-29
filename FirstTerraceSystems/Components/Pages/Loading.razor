@@ -12,6 +12,7 @@
 @inject NavigationManager NavigationManager
 @inject ChartService ChartService
 @inject WindowsSerivce WindowsSerivce
+@inject IAuthenticationService AuthenticationService
 
 <div class="position-relative vh-100">
     <div class="position-absolute top-50 start-50 translate-middle">
@@ -19,7 +20,7 @@
             <CardBody>
                 <CardTitle Class="text-center py-3">Loading Platform ...</CardTitle>
                 <Progress Class="my-3 rounded-2 position-relative bg-dark" Height="30">
-                    <ProgressBar Class="rounded-2" Color="ProgressColor.Success" Width="@progress" />
+                    <ProgressBar Class="rounded-2" Style="background-color:#FB5B31 !important" Width="@progress" />
                     <small class="justify-content-center align-self-center text-white d-flex position-absolute w-100">@progress%</small>
                 </Progress>
             </CardBody>

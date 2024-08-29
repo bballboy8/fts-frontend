@@ -106,6 +106,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                                 var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 55px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
 
                             }
+                            
 
                             var btn = divInput.find('#btnUpdateChartSymbol');
                             var cancelBtn = divInput.find('#btnCancelChartSymbol');
@@ -171,7 +172,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         }
                     });
 
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 90, y: 10});
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 90, y: 10 });
                     chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol,3* 60 * 1000) }, x: 120, y: 10 });
                     chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
                     chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });

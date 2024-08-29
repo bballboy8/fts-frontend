@@ -160,7 +160,8 @@ function addButtonToChart(chart, options,theme) {
     let rangeButton = {
         fillColor: '',
         textColor: '',
-        borderColor: ''
+        borderColor: '',
+        hoverColor:'#FB5B31'
     }
     if (themeValue == 'light') {
         rangeButton.fillColor = '#FFFFFF';
@@ -204,7 +205,10 @@ function addButtonToChart(chart, options,theme) {
             },
         }, // theme
         {
-            fill: rangeButton.borderColor,
+            fill: rangeButton.hoverColor,
+            style: {
+                color: rangeButton.textColor,
+            }
             //stroke: 'green'
         }, // hoverState
         {
