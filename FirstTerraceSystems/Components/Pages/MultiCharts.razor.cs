@@ -16,7 +16,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 800;
+        private const int PointSize = 5000;
         private bool IsLoading { get; set; } = false;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
         public static Dictionary<string, List<MarketFeed>> datasets = new Dictionary<string, List<MarketFeed>>();
