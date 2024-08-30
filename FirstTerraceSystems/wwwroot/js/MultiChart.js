@@ -87,7 +87,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     chart.showLoading();
                     chart.ButtonNamespace = {};
                     chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
-                        text: truncateText(`XNYS: ${symbol}`, 11, ''),
+                        text: truncateText(`XNYS: <b>${symbol}</b>`, 11, ''),
                         x: 0,
                         y:10,
                         width: 85,
