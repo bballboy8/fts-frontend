@@ -204,10 +204,19 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     };
 
                     if (!isPopoutChartWindow) {
-                        
+                        let themeValue = document.documentElement.getAttribute('data-sidebar');
+                        let closeButton = {
+                            hoverCol: ''
+                        }
+                        if (themeValue == 'light') {
+                            closeButton.hoverCol = '#272C2F';
+
+                        } else {
+                            closeButton.hoverCol = '#FB5B31';
+                        }
                         chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(chart, {
                             text: '<i class="bi bi-x-lg"></i>',
-                            hoverColor: '#5B6970',
+                            hoverColor: closeButton.hoverColor,
                             x: chartWidth-40,
                             y:10,
                             callback: function () {
