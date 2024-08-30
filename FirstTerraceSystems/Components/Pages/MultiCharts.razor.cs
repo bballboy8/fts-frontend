@@ -10,7 +10,7 @@ using Microsoft.JSInterop;
 
 namespace FirstTerraceSystems.Components.Pages
 {
-    public record Temp(string key, List<MarketFeed> item);
+
 
     public partial class MultiCharts
     {
@@ -25,6 +25,7 @@ namespace FirstTerraceSystems.Components.Pages
         public static ConcurrentDictionary<string, double> Ranges = new ();
         private CancellationTokenSource _cancellationTokenSource = new ();
         private readonly object _lock = new object();
+     
         protected override void OnInitialized()
         {
             _dotNetMualtiChatsRef = DotNetObjectReference.Create(this);
@@ -66,6 +67,10 @@ namespace FirstTerraceSystems.Components.Pages
                 WebSocketClient.ActionReferenceChart += RefreshCharts;
                 Logger.LogInformation($"Listening WebSocketClient");
                 await WebSocketClient.ListenAsync().ConfigureAwait(false);
+                Task.Run(() =>
+                {
+                    UpdateUI();
+                });
                 });
 
                 //await Task.WhenAll(Task1, Task2);
@@ -255,37 +260,45 @@ namespace FirstTerraceSystems.Components.Pages
         {
             Task.Run(() =>
             {
-                Logger.LogInformation($"...............Socket call start...............");
-                Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
-                foreach (var data in datasets)
+                try
                 {
-                    IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data
-                        .Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
-                    var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
-                    if (dataGot != null)
+                    Logger.LogInformation($"...............Socket call start...............");
+                    Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+                    foreach (var data in datasets)
                     {
-                        if (OnWait)
+                        IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data
+                            .Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
+                        var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
+                        if (dataGot != null)
                         {
-                            Thread.Sleep(1000);
+                            if (OnWait)
+                            {
+                                Thread.Sleep(1000);
+                            }
+                            //Task.Run(() =>
+                            //{
+                            //  datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
+                            //}).ConfigureAwait(false);
+                            if (collection.ContainsKey(data.Key))
+                            {
+                                collection[data.Key].AddRange(dataGot);
+                            }
+                            else
+                            {
+                                collection[data.Key] = dataGot;
+                            }
+                            //await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
                         }
-                        //Task.Run(() =>
-                        //{
-                        //  datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
-                        //}).ConfigureAwait(false);
-                        if (collection.ContainsKey(data.Key))
-                        {
-                            collection[data.Key].AddRange(dataGot);
-                        }
-                        else
-                        {
-                            collection[data.Key] = dataGot;
-                        }
-                        //await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
                     }
-                }
 
-                Logger.LogInformation($"...............Socket call end...............");
-                Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+                    Logger.LogInformation($"...............Socket call end...............");
+                    Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+                }
+                catch (Exception ex)
+                {
+
+                    throw;
+                }
 
             });
         }
@@ -293,12 +306,23 @@ namespace FirstTerraceSystems.Components.Pages
 
         private async Task UpdateUI()
         {
-            OnWait = true;
-            foreach (var data in collection)
+            while (true)
             {
-                await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data);
+                Thread.Sleep(1000);
+                OnWait = true;
+                foreach (var data in collection)
+                {
+                    if (data.Value.Count > 0)
+                    {
+                        
+                        JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value);
+                        collection[data.Key].Clear();
+                        Thread.Sleep(50);
+                    }
+                }
+                OnWait = false;
             }
-            OnWait = false;
+           
 
         }
 
