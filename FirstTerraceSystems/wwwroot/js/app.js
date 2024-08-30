@@ -95,7 +95,7 @@ function addHtmlButtonToChart(chart, options) {
         rangeButton.fillColor = '#272C2F';
         rangeButton.textColor = '#FFFFFF';
         rangeButton.borderColor = '#5B6970';
-        rangeButton.hoverCol = '#5B6970';
+        rangeButton.hoverCol = '#FB5B31';
     }
 
     const {
@@ -161,17 +161,19 @@ function addButtonToChart(chart, options,theme) {
         fillColor: '',
         textColor: '',
         borderColor: '',
-        hoverColor:'#FB5B31'
+        hoverColor:''
     }
     if (themeValue == 'light') {
         rangeButton.fillColor = '#FFFFFF';
         rangeButton.textColor = '#272C2F';
         rangeButton.borderColor = '#5B6970';
+        rangeButton.hoverColor = '#FB5B31'
     }
     else {
         rangeButton.fillColor = '#272C2F';
         rangeButton.textColor = '#FFFFFF';
         rangeButton.borderColor = '#5B6970';
+        rangeButton.hoverColor = '#FB5B31';
     }
     const {
         text = 'Button',
@@ -333,6 +335,7 @@ window.changeBackgroundColor = (mode) => {
     backgroundColor = isDarkMode ? '#202527' : '#ffffff';
     dropdownButtonColor = isDarkMode ? '#5B6970' : '#ffffff';
     document.body.style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
+    hoverColor = isDarkMode ? '#FB5B31' : '#5B6970';
     //document.getElementById("headbar").style.backgroundColor = isDarkMode ? '#202527' : '#ffffff';
     document.documentElement.setAttribute('data-sidebar', isDarkMode ? 'dark' : 'light');
     if (isDarkMode) {
@@ -351,14 +354,48 @@ window.changeBackgroundColor = (mode) => {
     });
 
     // Update color for the buttons.
-    document.querySelectorAll('.highcharts-button-box').forEach(button => {
-        button.style.fill = backgroundColor;
-        button.style.stroke = fontColor;        
+   // Update color for the buttons.
+    document.querySelectorAll('.highcharts-button').forEach(button => {
+        const buttonBox = button.querySelector('.highcharts-button-box');
+        const text = button.querySelector('text');
+        
+        if (buttonBox) {
+            // Apply initial styles
+            buttonBox.style.fill = isDarkMode ? "#1B2934" : "#ffffff";
+            buttonBox.style.stroke = fontColor;
+            buttonBox.zIndex = 100;
+        }
+
+        if (text) {
+            text.style.fill = fontColor;
+            text.zIndex = 0;
+        }
+
+        // Handle hover effect for both button and text
+        const handleMouseOver = () => {
+            if (buttonBox) buttonBox.style.fill = isDarkMode ? "#FB5B31" : "#5B6970";
+        };
+
+        const handleMouseOut = () => {
+            if (buttonBox) buttonBox.style.fill = isDarkMode ? "#272C2F" : "#ffffff";
+        };
+
+        // Add event listeners for the entire button (including text)
+        button.addEventListener('mouseover', handleMouseOver);
+        button.addEventListener('mouseout', handleMouseOut);
+
+        // Also add event listeners to the text itself
+        if (text) {
+            text.addEventListener('mouseover', handleMouseOver);
+            text.addEventListener('mouseout', handleMouseOut);
+        }
     });
 
     // Update text color for the buttons.
     document.querySelectorAll('.highcharts-button text').forEach(text => {
+        debugger
         text.style.fill = fontColor;
+        text.zIndex = 0;
     });
 
     // Update symbol color for the buttons.
