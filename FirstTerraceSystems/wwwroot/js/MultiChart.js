@@ -206,17 +206,21 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     if (!isPopoutChartWindow) {
                         let themeValue = document.documentElement.getAttribute('data-sidebar');
                         let closeButton = {
-                            hoverCol: ''
+                            hoverCol: '',
+                            strokeColor:''
                         }
                         if (themeValue == 'light') {
-                            closeButton.hoverCol = '#272C2F';
+                            closeButton.hoverCol = '#5B6970';
+                            closeButton.strokeColor = '#5B6970';
 
                         } else {
                             closeButton.hoverCol = '#FB5B31';
+                            closeButton.strokeColor = '#FFFFFF';
                         }
                         chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(chart, {
                             text: '<i class="bi bi-x-lg"></i>',
                             hoverColor: closeButton.hoverColor,
+                            stroke: closeButton.strokeColor,
                             x: chartWidth-40,
                             y:10,
                             callback: function () {
