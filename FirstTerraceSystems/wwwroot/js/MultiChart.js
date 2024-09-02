@@ -172,12 +172,12 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         }
                     });
 
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 90, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol,3* 60 * 1000) }, x: 120, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setRange(symbol,24*60* 60 * 1000) }, x: 215, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setButtonActive(this); setRange(symbol, 60 * 1000) }, x: 90, y: 10});
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setButtonActive(this); setRange(symbol,3* 60 * 1000) }, x: 120, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setButtonActive(this); setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setButtonActive(this); setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setButtonActive(this); setRange(symbol,24*60* 60 * 1000) }, x: 215, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setButtonActive(this); setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
                        
                     chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-in"></i>',
@@ -1179,3 +1179,18 @@ async function setRange(symbol, range) {
         //chart.redraw();
     }
 }
+
+async function setButtonActive(e) {
+    debugger
+    var chartContainer = e.element.closest(".chart-container");
+    if (chartContainer) {
+        var activeButtons = chartContainer.getElementsByClassName("active");
+
+        // Convert HTMLCollection to an array using Array.from
+        Array.from(activeButtons).forEach(function (el) {
+            el.classList.remove("active");
+        });
+    }
+    e.element.classList.add('active');
+
+} 
