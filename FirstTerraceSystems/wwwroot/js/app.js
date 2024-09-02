@@ -83,19 +83,23 @@ function addHtmlButtonToChart(chart, options) {
         fillColor: '',
         textColor: '',
         borderColor: '',
-        hoverCol: ''  
+        hoverCol: '',
+        strokeColor: ''
     }
     if (themeValue == 'light') {
         rangeButton.fillColor = '#FFFFFF';
         rangeButton.textColor = '#272C2F';
         rangeButton.borderColor = '#5B6970';
-        rangeButton.hoverCol = '#272C2F';
+        rangeButton.hoverCol = '#5B6970';
+        rangeButton.strokeColor = '#5B6970';
 
     } else {
         rangeButton.fillColor = '#272C2F';
         rangeButton.textColor = '#FFFFFF';
         rangeButton.borderColor = '#5B6970';
         rangeButton.hoverCol = '#FB5B31';
+        rangeButton.strokeColor = '#FFFFFF';
+
     }
 
     const {
@@ -117,7 +121,7 @@ function addHtmlButtonToChart(chart, options) {
         callback,
         {
             fill: rangeButton.fillColor ,
-            stroke: rangeButton.borderColor,
+            stroke: rangeButton.strokeColor,
             //'stroke-width': 2,
             //r: 5,
             style: {
@@ -156,24 +160,26 @@ function addHtmlButtonToChart(chart, options) {
 
 function addButtonToChart(chart, options,theme) {
     let themeValue = document.documentElement.getAttribute('data-sidebar');
-
     let rangeButton = {
         fillColor: '',
         textColor: '',
         borderColor: '',
-        hoverColor:''
+        hoverColor: '',
+        strokeColor: ''
     }
     if (themeValue == 'light') {
         rangeButton.fillColor = '#FFFFFF';
         rangeButton.textColor = '#272C2F';
         rangeButton.borderColor = '#5B6970';
-        rangeButton.hoverColor = '#FB5B31'
+        rangeButton.hoverColor = '#5B6970'
+        rangeButton.strokeColor = '#272C2F';
     }
     else {
         rangeButton.fillColor = '#272C2F';
         rangeButton.textColor = '#FFFFFF';
         rangeButton.borderColor = '#5B6970';
         rangeButton.hoverColor = '#FB5B31';
+        rangeButton.strokeColor = '#ffffff';
     }
     const {
         text = 'Button',
@@ -199,7 +205,7 @@ function addButtonToChart(chart, options,theme) {
         {
 
             fill: rangeButton.fillColor,
-            //stroke: '#272C2F',
+            stroke: rangeButton.strokeColor, //'#272C2F',
             //'stroke-width': 2,
             //r: 5,
             style: {
@@ -353,7 +359,6 @@ window.changeBackgroundColor = (mode) => {
         label.style.fill = fontColor;
     });
 
-    // Update color for the buttons.
    // Update color for the buttons.
     document.querySelectorAll('.highcharts-button').forEach(button => {
         const buttonBox = button.querySelector('.highcharts-button-box');
@@ -362,7 +367,7 @@ window.changeBackgroundColor = (mode) => {
         if (buttonBox) {
             // Apply initial styles
             buttonBox.style.fill = isDarkMode ? "#1B2934" : "#ffffff";
-            buttonBox.style.stroke = fontColor;
+            buttonBox.style.stroke = isDarkMode ? "#ffffff" : "#5B6970";
             buttonBox.zIndex = 100;
         }
 
@@ -393,7 +398,6 @@ window.changeBackgroundColor = (mode) => {
 
     // Update text color for the buttons.
     document.querySelectorAll('.highcharts-button text').forEach(text => {
-        debugger
         text.style.fill = fontColor;
         text.zIndex = 0;
     });
