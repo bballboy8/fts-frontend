@@ -78,10 +78,6 @@ namespace FirstTerraceSystems.Services
 
             authResult.EnsureSuccessStatusCode();
 
-            var authContent = await authResult.Content.ReadAsStringAsync();
-
-            var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
-
             SecureStorage.RemoveAll();
             //SecureStorage.Remove(ApplicationConst.SS_AuthToken);
             ((AuthStateProvider)_authStateProvider).NotifyUserLogout();

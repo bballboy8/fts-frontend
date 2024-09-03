@@ -65,14 +65,38 @@
 
     private async Task HandleValidSubmit()
     {
-        var result = await AuthenticationService.Login(_loginDto);
-        if (!string.IsNullOrEmpty(result.Detail))
+        try
         {
-            Toast.ShowDangerMessage(result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail);
+            var result = await AuthenticationService.Login(_loginDto);
+
+            if (!string.IsNullOrEmpty(result.Detail))
+            {
+                if (result.Detail.Contains("wrong password", StringComparison.OrdinalIgnoreCase))
+                {
+                    Toast.ShowDangerMessage("Wrong password. Please try again.");
+                }
+                else if (result.Detail.Contains("user not found", StringComparison.OrdinalIgnoreCase))
+                {
+                    Toast.ShowDangerMessage("Invalid Username or Password");
+                }
+                else
+                {
+                    Toast.ShowDangerMessage(result.Detail);
+                }
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/loading");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            NavigationManager.NavigateTo("/loading");
+            // Log the exception or handle it as needed
+            // You might want to use a logging service or tool here
+            Toast.ShowDangerMessage("An unexpected error occurred. Please try again later.");
+
+            // Optionally, log the exception details for debugging purposes
+            Console.Error.WriteLine($"An error occurred during login: {ex.Message}");
         }
     }
 
