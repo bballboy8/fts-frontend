@@ -3,6 +3,8 @@ using System.Text.Json;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Repositories;
+using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Storage;
 
 namespace FirstTerraceSystems.Services
 {
@@ -108,7 +110,7 @@ namespace FirstTerraceSystems.Services
         public void SaveChartLayout()
         {
             string? json = JsonSerializer.Serialize(InitialChartSymbols);
-            Preferences.Set(PKey_ChartSymbols, json);
+           // Preferences.Set(PKey_ChartSymbols, json);
             Preferences.Set(PKey_SavedChartLayout, InitialChartLayout);
         }
 

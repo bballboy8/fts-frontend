@@ -151,12 +151,14 @@
 
     private async Task Logout()
     {
+        NavigationManager.NavigateTo("/login", true);
+        await Task.Run(async () =>
+    {
         var model = new LoginDto();
         await AuthenticationService.Logout(model);
         WindowsSerivce.CloseAllOpenedWindows();
         WindowsSerivce.LockWindowResize();
-        NavigationManager.NavigateTo("/login");
-        StateHasChanged();
+    });
     }
 
     [JSInvokable]

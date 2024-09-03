@@ -70,6 +70,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
+            type: 'scatter',
             marginTop: 40,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
@@ -361,10 +362,11 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
         },
         plotOptions: {
 
-            candlestick: {
-                color: 'red',    // Color of the downward candles
-                upColor: 'green' // Color of the upward candles
-            },
+            //candlestick: {
+                
+            //    color: 'red',    // Color of the downward candles
+            //    upColor: 'green' // Color of the upward candles
+            //},
             series: {
                 turboThreshold: 0,
                 marker: {
@@ -443,9 +445,15 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 title: {
                     text: 'Volume'
                 },
+
                 top: '65%',
                 height: '35%',
-                offset: 0
+                resize: { enabled: true },
+                offset: 1,
+                lineWidth: 2,
+                formatter: function () {
+                    return Highcharts.numberFormat(this.value / 10000, 2);
+                }
             }
         ], tooltip: {
             split: true
