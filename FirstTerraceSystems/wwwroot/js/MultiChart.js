@@ -174,8 +174,10 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setButtonActive(this); setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
                     chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setButtonActive(this); setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });
                     chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setButtonActive(this); setRange(symbol,24*60* 60 * 1000) }, x: 215, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setButtonActive(this); setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
-                       
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setButtonActive(this); setRange(symbol, 3 * 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
+
+                    setButtonActive(chart.ButtonNamespace.customButton1);
+
                     chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-in"></i>',
                         x: 360,
