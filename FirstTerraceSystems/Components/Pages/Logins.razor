@@ -51,6 +51,7 @@
 
 @code {
     private LoginDto _loginDto = new LoginDto();
+    private CancellationTokenSource _cts = new CancellationTokenSource();
 
     protected override void OnInitialized()
     {
@@ -65,9 +66,13 @@
 
     private async Task HandleValidSubmit()
     {
+        _cts.Cancel();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
         try
         {
-            var result = await AuthenticationService.Login(_loginDto);
+            var result = await AuthenticationService.Login(_loginDto, token);
 
             if (!string.IsNullOrEmpty(result.Detail))
             {
@@ -89,13 +94,15 @@
                 NavigationManager.NavigateTo("/loading");
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Handle the cancellation here if needed
+            //Toast.ShowDangerMessage("Previous request was cancelled.");
+        }
         catch (Exception ex)
         {
             // Log the exception or handle it as needed
-            // You might want to use a logging service or tool here
             Toast.ShowDangerMessage("An unexpected error occurred. Please try again later.");
-
-            // Optionally, log the exception details for debugging purposes
             Console.Error.WriteLine($"An error occurred during login: {ex.Message}");
         }
     }

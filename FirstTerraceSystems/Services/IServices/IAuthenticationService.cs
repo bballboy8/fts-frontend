@@ -11,7 +11,7 @@ namespace FirstTerraceSystems.Services.IServices
     public interface IAuthenticationService
     {
         Task<RegisterResponseDto> Registration(RegisterModel model);
-        Task<AuthResponse> Login(LoginDto userForAuthentication);
+        Task<AuthResponse> Login(LoginDto userForAuthentication,CancellationToken cancellationToken);
         Task Logout(LoginDto model);
         Task<bool?> ValidateUserEmail(string? email);
     }
