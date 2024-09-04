@@ -151,12 +151,20 @@
 
     private async Task Logout()
     {
-        var model = new LoginDto();
-        await AuthenticationService.Logout(model);
-        WindowsSerivce.CloseAllOpenedWindows();
-        WindowsSerivce.LockWindowResize();
-        NavigationManager.NavigateTo("/login");
-        StateHasChanged();
+        try
+        {
+            var model = new LoginDto();
+            await AuthenticationService.Logout(model);
+            WindowsSerivce.CloseAllOpenedWindows();
+            WindowsSerivce.LockWindowResize();
+            NavigationManager.NavigateTo("/login");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Logout failed: {ex.Message}");
+            // Log the exception or show a message to the user
+        }
     }
 
     [JSInvokable]

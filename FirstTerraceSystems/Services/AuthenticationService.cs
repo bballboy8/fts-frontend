@@ -23,27 +23,34 @@ namespace FirstTerraceSystems.Services
         }
 
 
-        public async Task<AuthResponse> Login(LoginDto model)
+        public async Task<AuthResponse> Login(LoginDto model, CancellationToken cancellationToken)
         {
             var content = JsonSerializer.Serialize(new { email = model.Email?.ToLower(), password = model.Password }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
             var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
 
-            var authResult = await _client.PostAsync("user/login", bodyContent);
-            var authContent = await authResult.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
+            try
+            {
+                var authResult = await _client.PostAsync("user/login", bodyContent, cancellationToken);
+                var authContent = await authResult.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
 
-            if (!authResult.IsSuccessStatusCode)
-                return result!;
+                if (!authResult.IsSuccessStatusCode)
+                    return result!;
 
-            await SecureStorage.SetAsync(AppSettings.SS_AuthToken, result?.Access_Token ?? "");
-            await SecureStorage.SetAsync(AppSettings.SS_AuthEmail, model.Email ?? "");
+                await SecureStorage.SetAsync(AppSettings.SS_AuthToken, result?.Access_Token ?? "");
+                await SecureStorage.SetAsync(AppSettings.SS_AuthEmail, model.Email ?? "");
 
-            ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email ?? "");
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result?.Access_Token);
+                ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email ?? "");
+                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result?.Access_Token);
 
-            return new AuthResponse();
+                return new AuthResponse();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
         }
+
 
         public async Task<RegisterResponseDto> Registration(RegisterModel model)
         {
@@ -69,14 +76,14 @@ namespace FirstTerraceSystems.Services
 
         public async Task Logout(LoginDto model)
         {
-            var email = await SecureStorage.GetAsync(AppSettings.SS_AuthEmail);
-            var content = JsonSerializer.Serialize(new { email = email?.ToLower() }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            //var email = await SecureStorage.GetAsync(AppSettings.SS_AuthEmail);
+            //var content = JsonSerializer.Serialize(new { email = email?.ToLower() }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
+            //var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
 
-            var authResult = await _client.PostAsync("user/logout", bodyContent);
+            //var authResult = await _client.PostAsync("user/logout", bodyContent);
 
-            authResult.EnsureSuccessStatusCode();
+            //authResult.EnsureSuccessStatusCode();
 
             SecureStorage.RemoveAll();
             //SecureStorage.Remove(ApplicationConst.SS_AuthToken);
