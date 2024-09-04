@@ -61,6 +61,7 @@ function filterData(data, numPoints, startDate, endDate) {
         result.push(filteredData[Math.floor(i * step)]);
     }
     return result;
+    
 }
 
 function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
@@ -70,7 +71,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
-            type: 'scatter',
+            //type: 'scatter',
             marginTop: 40,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
@@ -84,10 +85,10 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     chart.showLoading();
                     chart.ButtonNamespace = {};
                     chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
-                        text: truncateText(`XNYS: <b>${symbol}</b>`, 11, ''),
+                        text: truncateText(`XNYS: <b>${symbol}</b>`, 25, ''),
                         x: 0,
                         y:10,
-                        width: 85,
+                        width: 100,
                         height: 10,
                         title: `XNYS: ${symbol}`,
                         callback: function (e) {
@@ -170,15 +171,15 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     });
 
                     chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setButtonActive(this); setRange(symbol, 60 * 1000) }, x: 90, y: 10});
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setButtonActive(this); setRange(symbol,3* 60 * 1000) }, x: 120, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setButtonActive(this); setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setButtonActive(this); setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setButtonActive(this); setRange(symbol,24*60* 60 * 1000) }, x: 215, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setButtonActive(this); setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setButtonActive(this); setRange(symbol,3* 60 * 1000) }, x: 125  , y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setButtonActive(this); setRange(symbol,30* 60 * 1000) }, x: 160, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setButtonActive(this); setRange(symbol,60* 60 * 1000) }, x: 200, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setButtonActive(this); setRange(symbol,24*60* 60 * 1000) }, x: 232, y: 10 });
+                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setButtonActive(this); setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 267, y: 10 });
                        
                     chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-in"></i>',
-                        x: 360,
+                        x: 460,
                         y:10,
                         callback: function () {
                             zoomChart(true, chart, dotNetObject);
@@ -187,7 +188,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
 
                     chart.ButtonNamespace.zoomOutButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-out"></i>',
-                        x: 400,
+                        x: 500,
                         y:10,
                         callback: function () {
                             zoomChart(false, chart, dotNetObject);
@@ -349,9 +350,11 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
         rangeSelector: {
             enabled:false
         },
-        tooltip: {
+        tooltip:
+        {
             split: true,
-            formatter: function () {
+            formatter: function ()
+            {
                 return [
                     `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S.%L', this.x, false)}</b>`,
                     ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
@@ -360,11 +363,11 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
         },
         plotOptions: {
 
-            //candlestick: {
+            candlestick: {
                 
-            //    color: 'red',    // Color of the downward candles
-            //    upColor: 'green' // Color of the upward candles
-            //},
+                color: 'red',    // Color of the downward candles
+                upColor: 'green' // Color of the upward candles
+            },
             series: {
                 turboThreshold: 0,
                 marker: {
@@ -696,7 +699,7 @@ function processDataPoint(data, previousPrice) {
         primaryKey: data.id,
         x: new Date(data.date).getTime(),
         y: data.price,
-        color: data.price > previousPrice ? 'green' : 'red'
+        color: data.price > previousPrice ? 'green' : 'red',
     };
 }
 
@@ -727,7 +730,7 @@ function setDataToChart(chart, seriesData) {
         const volumePoint = {
             x: new Date(data.date).getTime(),
             y: Number(data.size),
-            color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
+            color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
         };
         return volumePoint;
     }
@@ -758,7 +761,7 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
             const volumePoint = {
                 x: new Date(data.date).getTime(),
                 y: Number(data.size),
-                color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
+                color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
             };
             volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
         }  
