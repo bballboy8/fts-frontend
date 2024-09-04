@@ -34,7 +34,7 @@ namespace FirstTerraceSystems
 
             window.Destroying += async (s, e) =>
             {
-                await WebSocketClient.CloseAsync();
+                await WebSocketClient.ConnectCta();
 
                 var windowsToClose = Application.Current!.Windows.Where(w => w != window).ToList();
 

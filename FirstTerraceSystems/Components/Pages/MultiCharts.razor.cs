@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using BlazorBootstrap;
 using FirstTerraceSystems.Entities;
@@ -20,12 +21,12 @@ namespace FirstTerraceSystems.Components.Pages
         private bool OnWait { get; set; } = false;
 
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
-        public static  ConcurrentDictionary<string, List<MarketFeed>> datasets = new ();
+        public static ConcurrentDictionary<string, List<MarketFeed>> datasets = new();
         private ConcurrentDictionary<string, List<MarketFeed>> collection = new();
-        public static ConcurrentDictionary<string, double> Ranges = new ();
-        private CancellationTokenSource _cancellationTokenSource = new ();
+        public static ConcurrentDictionary<string, double> Ranges = new();
+        private CancellationTokenSource _cancellationTokenSource = new();
         private readonly object _lock = new object();
-     
+
         protected override void OnInitialized()
         {
             _dotNetMualtiChatsRef = DotNetObjectReference.Create(this);
@@ -33,11 +34,7 @@ namespace FirstTerraceSystems.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            Task.Run( async () =>
-            {
-                await InitializedDataBaseAsync();
-            });
-           
+            await InitializedDataBaseAsync();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -47,7 +44,8 @@ namespace FirstTerraceSystems.Components.Pages
                 await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
                 IsLoading = true;
                 preloadService.Show(SpinnerColor.Light, "Loading data...");
-                Task.Run( async () => {
+                Task.Run(async () =>
+                {
 
                     MainThread.BeginInvokeOnMainThread(async () =>
                     {
@@ -55,19 +53,21 @@ namespace FirstTerraceSystems.Components.Pages
                         // Code to run on the main thread
                     });
 
-                  
-                await UpdateAndRenderChartsAsync();
-                MainThread.BeginInvokeOnMainThread(() => { preloadService.Hide(); });
-                IsLoading = false;
-                Logger.LogInformation($"Connecting WebSocketClient");
 
-                await WebSocketClient.ConnectAsync().ConfigureAwait(false);
-                Logger.LogInformation($"Connected WebSocketClient");
-                WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
-                WebSocketClient.ActionReferenceChart += RefreshCharts;
-                Logger.LogInformation($"Listening WebSocketClient");
-                await WebSocketClient.ListenAsync().ConfigureAwait(false);
-                Task.Run(() =>
+                    await UpdateAndRenderChartsAsync();
+                    MainThread.BeginInvokeOnMainThread(() => { preloadService.Hide(); });
+                    IsLoading = false;
+                    Logger.LogInformation($"Connecting WebSocketClient");
+
+                    await WebSocketClient.ConnectUtp().ConfigureAwait(false);
+                    await WebSocketClient.ConnectCta().ConfigureAwait(false);
+                    Logger.LogInformation($"Connected WebSocketClient");
+                    WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+                    WebSocketClient.ActionReferenceChart += RefreshCharts;
+                    Logger.LogInformation($"Listening WebSocketClient");
+                    await WebSocketClient.ListenCta().ConfigureAwait(false);
+                    await WebSocketClient.ConnectUtp().ConfigureAwait(false);
+                    Task.Run(() =>
                 {
                     UpdateUI();
                 });
@@ -89,6 +89,7 @@ namespace FirstTerraceSystems.Components.Pages
                 //});
                 Logger.LogInformation("Starting InitialChartSymbols");
                 foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
+                
                 {
                     tasks.Add(ChartTask(symbol, defaultStartDate));
                 }
@@ -255,39 +256,52 @@ namespace FirstTerraceSystems.Components.Pages
             // }).ConfigureAwait(true);
         }
 
-
         private async Task RefreshCharts(NasdaqResponse? response)
         {
-            Task.Run(() =>
+            await Task.Run(async () =>
             {
                 try
                 {
                     Logger.LogInformation($"...............Socket call start...............");
                     Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+
                     foreach (var data in datasets)
                     {
                         IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data
-                            .Select(data => new MarketFeed(response.Headers, data)).GroupBy(mf => mf.Symbol);
-                        var dataGot = groupedData.FirstOrDefault((x) => x.Key == data.Key)?.ToList();
+                            .Select(data => new MarketFeed(response.Headers, data))
+                            .GroupBy(mf => mf.Symbol);
+
+                        var dataGot = groupedData.FirstOrDefault(x => x.Key == data.Key)?.ToList();
+
+                        Logger.LogInformation("...................System.............................");
+                        Logger.LogInformation($"...................{data.Key}.............................");
+                        Logger.LogInformation("...................end.............................");
+
+                        Logger.LogInformation("...................socket.............................");
+                        Logger.LogInformation($"...............{JsonSerializer.Serialize(groupedData)}...............");
+                        Logger.LogInformation("...................end.............................");
+
                         if (dataGot != null)
                         {
+
                             if (OnWait)
                             {
-                                Thread.Sleep(1000);
+                                await Task.Delay(200);  // Non-blocking delay
                             }
-                            //Task.Run(() =>
-                            //{
-                            //  datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
-                            //}).ConfigureAwait(false);
-                            if (collection.ContainsKey(data.Key))
+                           
+                            lock (_lock)  // Use lock for thread safety
                             {
-                                collection[data.Key].AddRange(dataGot);
+                                datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
+
+                                if (collection.ContainsKey(data.Key))
+                                {
+                                    collection[data.Key].AddRange(dataGot);
+                                }
+                                else
+                                {
+                                    collection[data.Key] = dataGot;
+                                }
                             }
-                            else
-                            {
-                                collection[data.Key] = dataGot;
-                            }
-                            //await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, dataGot);
                         }
                     }
 
@@ -296,35 +310,37 @@ namespace FirstTerraceSystems.Components.Pages
                 }
                 catch (Exception ex)
                 {
-
-                    throw;
+                    Logger.LogError(ex, "Error in RefreshCharts");
                 }
-
             });
         }
-
 
         private async Task UpdateUI()
         {
             while (true)
             {
-                Thread.Sleep(1000);
+                await Task.Delay(1000);  // Non-blocking delay
                 OnWait = true;
-                foreach (var data in collection)
+
+                lock (_lock)  // Ensure thread safety when accessing shared collection
                 {
-                    if (data.Value.Count > 0)
+                    foreach (var data in collection)
                     {
-                        
-                        JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value);
-                        collection[data.Key].Clear();
-                        Thread.Sleep(50);
+                        if (data.Value.Count > 0)
+                        {
+                            MainThread.BeginInvokeOnMainThread(async () =>
+                            {
+                                await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value);
+                            });
+                            collection[data.Key].Clear();
+                        }
                     }
                 }
+
                 OnWait = false;
             }
-           
-
         }
+
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
@@ -484,7 +500,8 @@ namespace FirstTerraceSystems.Components.Pages
 
             WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;
             WebSocketClient.ActionReferenceChart -= RefreshCharts;
-            await WebSocketClient.CloseAsync();
+            await WebSocketClient.CloseCta();
+            await WebSocketClient.CloseUtp();
         }
     }
 }

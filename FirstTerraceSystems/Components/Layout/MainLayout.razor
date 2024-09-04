@@ -152,7 +152,11 @@
     private async Task Logout()
     {
         var model = new LoginDto();
-        await AuthenticationService.Logout(model);
+      _= Task.Run( async () =>
+        {
+          await AuthenticationService.Logout(model);    
+        }).ConfigureAwait(false);
+        
         WindowsSerivce.CloseAllOpenedWindows();
         WindowsSerivce.LockWindowResize();
         NavigationManager.NavigateTo("/login");
