@@ -71,7 +71,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
-            //type: 'scatter',
+            type: 'scatter',
             marginTop: 40,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
