@@ -82,6 +82,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             events: {
                 load: function () {
                     var chart = this;
+                    console.log('chart: ', chart)
                     let chartWidth = chart.chartWidth;
                     chart.showLoading();
                     chart.ButtonNamespace = {};
@@ -356,7 +357,6 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             split: true,
             formatter: function ()
             {
-                console.log('first: ', this)
                return [
                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S.%L', this.x, false)}</b>`,
                    ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
@@ -364,23 +364,29 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             },
         },
         plotOptions: {
-            //candlestick: {
-            //    color: 'red',    // Color of the downward candles
-            //    upColor: 'green' // Color of the upward candles
-            //},
             scatter: {
                 color: 'green',
                 negativeColor: 'red',
                 tooltip: {
                     pointFormatter: function () {
-                        console.log('second: ', this.color)
+                        console.log('upper: ', this.x)
                         return [
                             `<b>${symbol} ${Highcharts.numberFormat(this.y, 2)}</b>`,
-                            //...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat()}`) : [])
                         ]
                     }
                 }
             },
+            //column: {
+            //    label: {
+            //        format: 'Volume'
+            //    },
+            //    tooltip: {
+            //        pointFormatter: function () {
+            //            console.log('lower', this.x)
+            //            return this.y
+            //        }
+            //    }
+            //},
             series: {
                 turboThreshold: 0,
                 marker: {
@@ -442,7 +448,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     },
                     formatter: function () {
                         console.log('third: ', this)
-                        return Highcharts.numberFormat(this.value / 10000, 2);
+                        return ' abcd' ;
                     }
                 },
                 height: '65%',
@@ -740,7 +746,6 @@ function setDataToChart(chart, seriesData) {
         return processDataPoint(data, seriesData[index].price);
     }
     );
-    console.log('datapoints', datapoints)
     //symbolData[chart.series[0].name] = dataPoints;
     series.setData(dataPoints, false, false);
 
@@ -758,7 +763,6 @@ function setDataToChart(chart, seriesData) {
     );
 
 
-    console.log('volumepoints: ', volumePoints)
     chart.series[1].setData(volumePoints, false, false);
     chart.redraw();
     if (seriesData.length > 1)
