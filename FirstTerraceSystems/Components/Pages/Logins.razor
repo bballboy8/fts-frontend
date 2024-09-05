@@ -51,7 +51,6 @@
 
 @code {
     private LoginDto _loginDto = new LoginDto();
-    private CancellationTokenSource _cts = new CancellationTokenSource();
 
     protected override void OnInitialized()
     {
@@ -66,46 +65,17 @@
 
     private async Task HandleValidSubmit()
     {
-        _cts.Cancel();
-        _cts = new CancellationTokenSource();
-        var token = _cts.Token;
-
-        try
+        var result = await AuthenticationService.Login(_loginDto);
+        if (!string.IsNullOrEmpty(result.Detail))
         {
-            var result = await AuthenticationService.Login(_loginDto, token);
-
-            if (!string.IsNullOrEmpty(result.Detail))
-            {
-                if (result.Detail.Contains("wrong password", StringComparison.OrdinalIgnoreCase))
-                {
-                    Toast.ShowDangerMessage("Wrong password. Please try again.");
-                }
-                else if (result.Detail.Contains("user not found", StringComparison.OrdinalIgnoreCase))
-                {
-                    Toast.ShowDangerMessage("Invalid Username or Password");
-                }
-                else
-                {
-                    Toast.ShowDangerMessage(result.Detail);
-                }
-            }
-            else
-            {
-                NavigationManager.NavigateTo("/loading");
-            }
+            Toast.ShowDangerMessage(result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail);
         }
-        catch (OperationCanceledException)
+        else
         {
-            // Handle the cancellation here if needed
-            //Toast.ShowDangerMessage("Previous request was cancelled.");
-        }
-        catch (Exception ex)
-        {
-            // Log the exception or handle it as needed
-            Toast.ShowDangerMessage("An unexpected error occurred. Please try again later.");
-            Console.Error.WriteLine($"An error occurred during login: {ex.Message}");
+            NavigationManager.NavigateTo("/loading");
         }
     }
+
 
     private void Register()
     {
@@ -123,4 +93,5 @@
         // Handle Google login
     }
     
+}
 }

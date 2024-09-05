@@ -23,32 +23,26 @@ namespace FirstTerraceSystems.Services
         }
 
 
-        public async Task<AuthResponse> Login(LoginDto model, CancellationToken cancellationToken)
+        public async Task<AuthResponse> Login(LoginDto model)
         {
             var content = JsonSerializer.Serialize(new { email = model.Email?.ToLower(), password = model.Password }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
             var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
 
-            try
-            {
-                var authResult = await _client.PostAsync("user/login", bodyContent, cancellationToken);
-                var authContent = await authResult.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
+            var authResult = await _client.PostAsync("user/login", bodyContent);
+            var authContent = await authResult.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
 
-                if (!authResult.IsSuccessStatusCode)
-                    return result!;
+            if (!authResult.IsSuccessStatusCode)
+                return result!;
 
-                await SecureStorage.SetAsync(AppSettings.SS_AuthToken, result?.Access_Token ?? "");
-                await SecureStorage.SetAsync(AppSettings.SS_AuthEmail, model.Email ?? "");
+            await SecureStorage.SetAsync(AppSettings.SS_AuthToken, result?.Access_Token ?? "");
+            await SecureStorage.SetAsync(AppSettings.SS_AuthEmail, model.Email ?? "");
 
-                ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email ?? "");
-                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result?.Access_Token);
+            ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(model.Email ?? "");
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result?.Access_Token);
 
-                return new AuthResponse();
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
+            return new AuthResponse();
         }
 
 
