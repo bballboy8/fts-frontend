@@ -1,4 +1,5 @@
-﻿Highcharts.setOptions({
+﻿//debugger
+Highcharts.setOptions({
     global: {
         useUTC: false
     },
@@ -71,7 +72,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
     return Highcharts.stockChart(charContainerId, {
 
         chart: {
-            //type: 'scatter',
+            type: 'scatter',
             marginTop: 40,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
@@ -355,18 +356,30 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
             split: true,
             formatter: function ()
             {
-                return [
-                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S.%L', this.x, false)}</b>`,
-                    ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
-                ]
+                console.log('first: ', this)
+               return [
+                   `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S.%L', this.x, false)}</b>`,
+                   ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
+               ]
             },
         },
         plotOptions: {
-
-            candlestick: {
-                
-                color: 'red',    // Color of the downward candles
-                upColor: 'green' // Color of the upward candles
+            //candlestick: {
+            //    color: 'red',    // Color of the downward candles
+            //    upColor: 'green' // Color of the upward candles
+            //},
+            scatter: {
+                color: 'green',
+                negativeColor: 'red',
+                tooltip: {
+                    pointFormatter: function () {
+                        console.log('second: ', this.color)
+                        return [
+                            `<b>${symbol} ${Highcharts.numberFormat(this.y, 2)}</b>`,
+                            //...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat()}`) : [])
+                        ]
+                    }
+                }
             },
             series: {
                 turboThreshold: 0,
@@ -428,6 +441,7 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                         color: fontColor // Green color
                     },
                     formatter: function () {
+                        console.log('third: ', this)
                         return Highcharts.numberFormat(this.value / 10000, 2);
                     }
                 },
@@ -453,10 +467,12 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 offset: 1,
                 lineWidth: 2,
                 formatter: function () {
+                    console.log('forth: ', this)
                     return Highcharts.numberFormat(this.value / 10000, 2);
                 }
             }
-        ], tooltip: {
+        ],
+        tooltip: {
             split: true
         },
         series: [
@@ -468,7 +484,8 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                     radius: 1
                 },
                 tooltip: {
-                    valueDecimals: 2
+                    valueDecimals: 2,
+                    
                 },
                 states: {
                     hover: {
@@ -513,6 +530,9 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
         }
     });
 }
+
+
+
 const updatingCharts = {};
 function handleExtremesChange(symbol,chart, min, max) {
     setTimeout(async function () {
@@ -720,6 +740,7 @@ function setDataToChart(chart, seriesData) {
         return processDataPoint(data, seriesData[index].price);
     }
     );
+    console.log('datapoints', datapoints)
     //symbolData[chart.series[0].name] = dataPoints;
     series.setData(dataPoints, false, false);
 
@@ -735,13 +756,16 @@ function setDataToChart(chart, seriesData) {
         return volumePoint;
     }
     );
+
+
+    console.log('volumepoints: ', volumePoints)
     chart.series[1].setData(volumePoints, false, false);
     chart.redraw();
     if (seriesData.length > 1)
         chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
 }
 
-
+//debugger
 let dataMap = new Map();
 function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
     if (seriesData.length < 1) return;
@@ -1178,7 +1202,7 @@ async function setRange(symbol, range) {
 }
 
 async function setButtonActive(e) {
-    debugger
+    //debugger
     var chartContainer = e.element.closest(".chart-container");
     if (chartContainer) {
         var activeButtons = chartContainer.getElementsByClassName("active");
