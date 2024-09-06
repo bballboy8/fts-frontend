@@ -286,7 +286,7 @@ namespace FirstTerraceSystems.Components.Pages
 
                             if (OnWait)
                             {
-                                await Task.Delay(200);  // Non-blocking delay
+                                await Task.Delay(1000);  // Non-blocking delay
                             }
 
                             lock (_lock)  // Use lock for thread safety
@@ -326,12 +326,28 @@ namespace FirstTerraceSystems.Components.Pages
                 {
                     foreach (var data in collection)
                     {
-                        if (data.Value.Count > 0)
+                        if (data.Value.Count != 0 && data.Key== "NVDA")
                         {
-                            MainThread.BeginInvokeOnMainThread(async () =>
-                            {
-                                await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value);
-                            });
+
+                            //    const volumePoint = {
+                            //    x: new Date(data.date).getTime(),
+                            //    y: Number(data.size),
+                            //    color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
+                            //};
+
+
+
+                            //MainThread.BeginInvokeOnMainThread(async () =>
+                            //{
+
+                            
+                                JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.Select(a => new
+                                {
+                                    x = a.Date.ToString("HH:mm"),
+                                    y = a.Size,
+                                    color = "green"
+                                }).ToList());
+                            //});
                             collection[data.Key].Clear();
                         }
                     }

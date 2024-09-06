@@ -978,6 +978,79 @@ function addPointToChart(
   }
 }
 
+//function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
+//    if (seriesData.length < 1) return;
+//    let lastPoint = null;
+//    let series = chart.series[0];
+//    let volumeSeries = chart.series[1];
+//    seriesData.slice(0).forEach((data, index) => {
+//        const previousPrice = seriesData[index].price; // Get the previous price
+//        const currentPrice = data.price; // Get the current price
+
+//        // Create the point for the main series
+//        const point = processDataPoint(data, previousPrice);
+
+//        // Add the volume data to the volume series with color based on the price comparison
+//        if (data.size) {
+//            const volumePoint = {
+//                x: new Date(data.date).getTime(),
+//                y: Number(data.size),
+//                color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
+//            };
+//            volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
+//        }
+//        series.addPoint(point, redraw, animateOnUpdate);
+//        // Update the main series with the combined existing and new data using setData
+//        chart.series[0].setData(newMainSeriesData, redraw, animateOnUpdate, true);
+//    });
+//}
+
+
+
+
+//function addPointToChart2(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
+//    if (seriesData.length < 1) return;
+//    let lastPoint = null;
+//    let series = chart.series[0];
+//    let volumeSeries = chart.series[1];
+//    //seriesData.slice(0).forEach((data, index) => {
+//    //    const previousPrice = seriesData[index].price; // Get the previous price
+//    //    const currentPrice = data.price; // Get the current price
+
+//    //    // Create the point for the main series
+//    //    const point = processDataPoint(data, previousPrice);
+
+//    //    // Add the volume data to the volume series with color based on the price comparison
+//    //    if (data.size) {
+//    //        const volumePoint = {
+//    //            x: new Date(data.date).getTime(),
+//    //            y: Number(data.size),
+//    //            color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
+//    //        };
+//    //        volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
+//    //    }
+//    //    series.addPoint(point, redraw, animateOnUpdate);
+
+//    //});
+//    //series.(seriesData, redraw, animateOnUpdate);
+
+
+//    let existingMainSeriesData = chart.series[0].data.map((point) => ({
+//        x: point.x,
+//        y: point.y,
+//    }));
+//    //let existingVolumeSeriesData = chart.series[1].data.map((point) => ({
+//    //    x: point.x,
+//    //    y: point.y,
+//    //    color: point.color,
+//    //}));
+//    let combinedList = [...existingMainSeriesData, ...seriesData];
+//    chart.series[0].setData([], true, animateOnUpdate, true);;
+//    //chart.redraw();
+//    chart.series[0].setData(combinedList, true, animateOnUpdate, true);
+//    //chart.redraw();
+//}
+
 function removeOldPoints(chart, daysToKeep) {
   var now = Date.now();
   var cutoffTime = now - daysToKeep * 24 * 60 * 60 * 1000;
@@ -1010,7 +1083,7 @@ async function refreshCharts(symbol, seriesData) {
     let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
       
-      (chart, seriesData, false, true, true);
+      addPointToChart(chart, seriesData, false, true, true);
       chart.redraw();
     }
   }, 100);
