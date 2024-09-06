@@ -66,7 +66,7 @@ namespace FirstTerraceSystems.Components.Pages
                     WebSocketClient.ActionReferenceChart += RefreshCharts;
                     Logger.LogInformation($"Listening WebSocketClient");
                     await WebSocketClient.ListenCta().ConfigureAwait(false);
-                    await WebSocketClient.ConnectUtp().ConfigureAwait(false);
+                    await WebSocketClient.ListenUtp().ConfigureAwait(false);
                     Task.Run(() =>
                     {
                         UpdateUI();
