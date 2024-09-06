@@ -924,7 +924,6 @@ function setDataToChart(chart, seriesData) {
 
 //debugger
 let dataMap = new Map();
-
 function addPointToChart(
   chart,
   seriesData,
@@ -1010,7 +1009,8 @@ async function refreshCharts(symbol, seriesData) {
   setTimeout(async function () {
     let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
-      addPointToChart(chart, seriesData, false, true, true);
+      
+      (chart, seriesData, false, true, true);
       chart.redraw();
     }
   }, 100);
