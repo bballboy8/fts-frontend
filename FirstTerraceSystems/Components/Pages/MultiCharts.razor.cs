@@ -49,7 +49,7 @@ namespace FirstTerraceSystems.Components.Pages
 
                     MainThread.BeginInvokeOnMainThread(async () =>
                     {
-                        await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols.Where(x => x.IsVisible == true));
+                        await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols.Where(x => x.Symbol == "AAPL"));
                         // Code to run on the main thread
                     });
 
