@@ -772,11 +772,12 @@ function setDataToChart(chart, seriesData) {
 //debugger
 let dataMap = new Map();
 function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
+    debugger
     if (seriesData.length < 1) return;
     let lastPoint = null;
     let series = chart.series[0];
     let volumeSeries = chart.series[1];
-    seriesData.slice(1).forEach((data, index) => {
+    seriesData.slice(0).forEach((data, index) => {
         const previousPrice = seriesData[index].price; // Get the previous price
         const currentPrice = data.price; // Get the current price
 

@@ -66,7 +66,8 @@ namespace FirstTerraceSystems.Components.Pages
                     WebSocketClient.ActionReferenceChart += RefreshCharts;
                     Logger.LogInformation($"Listening WebSocketClient");
                     await WebSocketClient.ListenCta().ConfigureAwait(false);
-                    await WebSocketClient.ConnectUtp().ConfigureAwait(false);
+                    //await WebSocketClient.ConnectUtp().ConfigureAwait(false);
+                    await WebSocketClient.ListenUtp().ConfigureAwait(false);
                     Task.Run(() =>
                     {
                         UpdateUI();
@@ -324,9 +325,10 @@ namespace FirstTerraceSystems.Components.Pages
 
                 lock (_lock)  // Ensure thread safety when accessing shared collection
                 {
+
                     foreach (var data in collection)
                     {
-                        if (data.Value.Count > 0)
+                        if (data.Value.Count > 0 && data.Key=="AAPL")
                         {
                             MainThread.BeginInvokeOnMainThread(async () =>
                             {
