@@ -562,10 +562,10 @@ function addChart(
           style: {
             color: fontColor, // Green color
           },
-          formatter: function () {
-            console.log("third: ", this);
-            return " abcd";
-          },
+          //formatter: function () {
+          //  console.log("third: ", this);
+          //  return " abcd";
+          //},
         },
         height: "65%",
         resize: { enabled: true },
@@ -1168,6 +1168,7 @@ var plotLines = [];
 var plotBands = [];
 
 function loadDashboard(totalCharts, initialChartSymbols) {
+    totalCharts = 1;
   // Assuming your data starts and ends on specific dates
   var endDate = new Date(); // Current date and time
 

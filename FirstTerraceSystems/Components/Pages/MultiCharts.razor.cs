@@ -262,8 +262,8 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 try
                 {
-                    Logger.LogInformation($"...............Socket call start...............");
-                    Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+                    //Logger.LogInformation($"...............Socket call start...............");
+                    //Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
 
                     foreach (var data in datasets)
                     {
@@ -273,13 +273,13 @@ namespace FirstTerraceSystems.Components.Pages
 
                         var dataGot = groupedData.FirstOrDefault(x => x.Key == data.Key)?.ToList();
 
-                        Logger.LogInformation("...................System.............................");
-                        Logger.LogInformation($"...................{data.Key}.............................");
-                        Logger.LogInformation("...................end.............................");
+                        //Logger.LogInformation("...................System.............................");
+                        //Logger.LogInformation($"...................{data.Key}.............................");
+                        //Logger.LogInformation("...................end.............................");
 
-                        Logger.LogInformation("...................socket.............................");
-                        Logger.LogInformation($"...............{JsonSerializer.Serialize(groupedData)}...............");
-                        Logger.LogInformation("...................end.............................");
+                        //Logger.LogInformation("...................socket.............................");
+                        //Logger.LogInformation($"...............{JsonSerializer.Serialize(groupedData)}...............");
+                        //Logger.LogInformation("...................end.............................");
 
                         if (dataGot != null)
                         {
