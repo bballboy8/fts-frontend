@@ -1421,12 +1421,12 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
 }
 
 async function setRange(symbol, range) {
-  let chart = getChartInstanceBySeriesName(symbol);
-  if (chart) {
-    let filtereddata = await getFilteredDataBySymbol(symbol, range);
-    setDataToChart(chart, filtereddata);
-    //chart.redraw();
-  }
+    let chart = getChartInstanceBySeriesName(symbol);
+    if (chart) {
+        let filtereddata = await getFilteredDataBySymbol(symbol, range);
+        setDataToChart(chart, filtereddata);
+        chart.redraw();
+    }
 }
 
 async function setButtonActive(e) {
