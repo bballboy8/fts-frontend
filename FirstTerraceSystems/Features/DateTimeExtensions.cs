@@ -10,10 +10,11 @@
             while (daysSubtracted < daysToSubtract)
             {
                 lastBusinessDay = lastBusinessDay.AddDays(-1);
-                if (lastBusinessDay.DayOfWeek != DayOfWeek.Saturday && lastBusinessDay.DayOfWeek != DayOfWeek.Sunday)
-                {
-                    daysSubtracted++;
-                }
+                // if (lastBusinessDay.DayOfWeek != DayOfWeek.Saturday && lastBusinessDay.DayOfWeek != DayOfWeek.Sunday)
+                // {
+                //     daysSubtracted++;
+                // }
+                daysSubtracted++;
             }
 
             return lastBusinessDay;

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using BlazorBootstrap;
@@ -305,8 +306,8 @@ namespace FirstTerraceSystems.Components.Pages
                         }
                     }
 
-                    Logger.LogInformation($"...............Socket call end...............");
-                    Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+                    // Logger.LogInformation($"...............Socket call end...............");
+                    // Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
                 }
                 catch (Exception ex)
                 {
@@ -315,7 +316,7 @@ namespace FirstTerraceSystems.Components.Pages
             });
         }
 
-        private async Task UpdateUI()
+       private async Task UpdateUI()
         {
             while (true)
             {
@@ -326,29 +327,32 @@ namespace FirstTerraceSystems.Components.Pages
                 {
                     foreach (var data in collection)
                     {
-                        if (data.Value.Count != 0 && data.Key== "NVDA")
+                        // Check if the symbol associated with the data key is visible
+                        foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
                         {
-
-                            //    const volumePoint = {
-                            //    x: new Date(data.date).getTime(),
-                            //    y: Number(data.size),
-                            //    color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
-                            //};
-
-
-
-                            //MainThread.BeginInvokeOnMainThread(async () =>
-                            //{
-
-                            
-                                JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.Select(a => new
+                            if (symbol.Symbol == data.Key) 
+                            {
+                                if (data.Value.Count > 0)
                                 {
-                                    x = a.Date.ToString("HH:mm"),
-                                    y = a.Size,
-                                    color = "green"
-                                }).ToList());
-                            //});
-                            collection[data.Key].Clear();
+                                    // Debugging or Logging Statement
+                                    Console.WriteLine($"Invoking refreshCharts for {data.Key} with {data.Value.Count} items.");
+
+                                    MainThread.BeginInvokeOnMainThread(async () =>
+                                    {
+                                        await JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+                                    });
+
+                                    // Debugging or Logging Statement
+                                    Console.WriteLine($"Clearing data for {data.Key}.");
+
+                                    collection[data.Key].Clear();
+                                }
+                                else
+                                {
+                                    // Debugging or Logging Statement
+                                    Console.WriteLine($"No data to update for {data.Key}. Count: {data.Value.Count}");
+                                }
+                            }
                         }
                     }
                 }

@@ -29,22 +29,32 @@ namespace FirstTerraceSystems.Services
             {
                 Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
             };
+
+            Console.WriteLine($"Sending request to /nasdaq/get_data with data: {jsonData}");
+
             try
             {
-
                 HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
+                // Check if the response indicates success
                 response.EnsureSuccessStatusCode();
 
+                Console.WriteLine("Request successful. Processing response...");
+                
                 return await DeserializeStreamAsync(await response.Content.ReadAsStreamAsync());
-
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP Request Error: {ex.Message}");
+                Log.Logger.Error(ex, "NasdaqGetDataAsync");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"General Error: {ex.Message}");
                 Log.Logger.Error(ex, "NasdaqGetDataAsync");
-                Console.WriteLine(ex.Message);
-                return null;
             }
+
+            return null;
         }
         private async Task<IEnumerable<MarketFeed>> DeserializeStreamAsync(Stream stream)
         {

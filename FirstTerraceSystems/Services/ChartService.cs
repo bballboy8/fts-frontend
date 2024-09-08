@@ -44,7 +44,7 @@ namespace FirstTerraceSystems.Services
                         ChartOrderIndx = adjustedIndex,
                         ChartId = "chart-" + adjustedIndex,
                         Symbol = chart.Symbol,
-                        IsVisible = adjustedIndex <= InitialChartLayout
+                        IsVisible = chart.Symbol == "AAPL"
                     };
 
                     // Ensure thread-safe addition to the list
