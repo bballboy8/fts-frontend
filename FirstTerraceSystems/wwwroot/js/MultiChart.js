@@ -1062,36 +1062,111 @@ function setDataToChart(chart, seriesData) {
 
 //debugger
 let dataMap = new Map();
-function addPointToChart(
-  chart,
-  seriesData,
-  redraw = false,
-  animateOnUpdate = false,
-  isAddVolume = false
-) {
-  if (seriesData.length < 1) return;
-  let lastPoint = null;
-  let series = chart.series[0];
-  let volumeSeries = chart.series[1];
-  seriesData.slice(1).forEach((data, index) => {
-    const previousPrice = seriesData[index].price; // Get the previous price
-    const currentPrice = data.price; // Get the current price
 
-    // Create the point for the main series
-    const point = processDataPoint(data, previousPrice);
+//function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
+//    let chart = getChartInstanceBySeriesName(symbol);
+//    if (chart) {
+//        let series = chart.series[0];
+//        if (!seriesData) {
+//            // Handle case where no series data is provided (indicating all data loaded)
+//            chart.redraw();
+//            chart.hideLoading();
+//            return;
+//        }
 
-    // Add the volume data to the volume series with color based on the price comparison
-    if (data.size) {
-      const volumePoint = {
-        x: new Date(data.date).getTime(),
-        y: Number(data.size),
-        color: currentPrice > previousPrice ? "green" : "red", // Set color conditionally
-      };
-      volumeSeries.addPoint(volumePoint, false);
+//        setTimeout(addPointToChart(chart, seriesData, false, false, true), 0);
+
+//        if (isAllLoaded) {
+//            chart.redraw();
+//            chart.hideLoading();
+//        }
+//    }
+//}
+
+function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
+    let chart = getChartInstanceBySeriesName(symbol);
+    if (!chart) {
+        console.error(`No chart instance found for symbol: ${symbol}`);
+        return;
     }
-    series.addPoint(point, false);
-  });
+
+    let series = chart.series[0];
+    if (!seriesData) {
+        chart.redraw();
+        chart.hideLoading();
+        return;
+    }
+
+    // Function to add data points to the chart
+    function processData() {
+        if (seriesData.length > 0) {
+            addPointToChart(chart, [seriesData.shift()], false, false, true);
+        } else {
+            clearInterval(intervalId);
+            chart.redraw();
+            chart.hideLoading();
+        }
+    }
+
+    if (isAllLoaded) {
+        addPointToChart(chart, seriesData, true, false, true);
+        chart.redraw();
+        chart.hideLoading();
+    } else {
+        // Set an interval to add data points every second
+        let intervalId = setInterval(processData, 1000);
+    }
 }
+
+
+function addPointToChart(
+    chart,
+    seriesData,
+    redraw = true,
+    animateOnUpdate = false,
+    isAddVolume = false
+) {
+    if (seriesData.length < 1) return;
+
+    let series = chart.series[0];
+    let volumeSeries = isAddVolume ? chart.series[1] : null;
+
+    // Initialize the previous price
+    let previousPrice = seriesData[0].price;
+
+    // Add points one by one (similar to addPointSet)
+    seriesData.forEach((data) => {
+        const currentPrice = data.price;
+
+        // Create the point for the main series
+        const point = {
+            x: new Date(data.date).getTime(),
+            y: Number(currentPrice),
+            color: currentPrice > previousPrice ? 'green' : 'red',
+        };
+
+        // Add the point without redrawing immediately
+        series.addPoint(point, false, animateOnUpdate);
+
+        // Add volume data if applicable
+        if (isAddVolume && data.size) {
+            const volumePoint = {
+                x: new Date(data.date).getTime(),
+                y: Number(data.size),
+                color: currentPrice > previousPrice ? 'green' : 'red',
+            };
+            volumeSeries.addPoint(volumePoint, false);
+        }
+
+        // Update previous price
+        previousPrice = currentPrice;
+    });
+    if (redraw) {
+        chart.redraw(false);
+    }
+}
+
+
 //function addPointToChart(
 //  chart,
 //  seriesData,
@@ -1634,26 +1709,6 @@ function getChartInstanceBySeriesName(seriesName) {
 function setMinMaxPointToPopoutChart(minPoint, maxPoint) {
   if (minPoint && maxPoint) {
     Highcharts.charts[0].xAxis[0].setExtremes(minPoint, maxPoint);
-  }
-}
-
-function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
-  let chart = getChartInstanceBySeriesName(symbol);
-  if (chart) {
-    let series = chart.series[0];
-    if (!seriesData) {
-      // Handle case where no series data is provided (indicating all data loaded)
-      chart.redraw();
-      chart.hideLoading();
-      return;
-    }
-
-    setTimeout(addPointToChart(chart, seriesData, false, false, true), 0);
-
-    if (isAllLoaded) {
-      chart.redraw();
-      chart.hideLoading();
-    }
   }
 }
 
