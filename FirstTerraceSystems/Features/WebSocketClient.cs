@@ -151,7 +151,7 @@ namespace FirstTerraceSystems.Features
 
                         if (messageBuilder.Length > 0)
                         {
-                            ProcessMessage(messageBuilder.ToString()).ConfigureAwait(false);
+                            await ProcessMessage(messageBuilder.ToString()).ConfigureAwait(false);
                             messageBuilder.Clear();
                         }
                     }
@@ -189,9 +189,10 @@ namespace FirstTerraceSystems.Features
                             }
                             // Handle other message types if necessary
                         } while (!result.EndOfMessage);
+
                         if (messageBuilder.Length > 0)
                         {
-                            ProcessMessage(messageBuilder.ToString()).ConfigureAwait(false);
+                            await ProcessMessage(messageBuilder.ToString()).ConfigureAwait(false);
                             messageBuilder.Clear();
                         }
                     }

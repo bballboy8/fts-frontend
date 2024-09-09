@@ -9,6 +9,7 @@ using FirstTerraceSystems.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
+
 namespace FirstTerraceSystems.Components.Pages
 {
 
@@ -44,7 +45,7 @@ namespace FirstTerraceSystems.Components.Pages
                 await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
                 IsLoading = true;
                 preloadService.Show(SpinnerColor.Light, "Loading data...");
-                Task.Run(async () =>
+                await Task.Run(async () =>
                 {
 
                     MainThread.BeginInvokeOnMainThread(async () =>
@@ -62,14 +63,21 @@ namespace FirstTerraceSystems.Components.Pages
                     await WebSocketClient.ConnectUtp().ConfigureAwait(false);
                     await WebSocketClient.ConnectCta().ConfigureAwait(false);
                     Logger.LogInformation($"Connected WebSocketClient");
-                    WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+
+
+                    // WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+
                     WebSocketClient.ActionReferenceChart += RefreshCharts;
+
                     Logger.LogInformation($"Listening WebSocketClient");
+
                     await WebSocketClient.ListenCta().ConfigureAwait(false);
                     await WebSocketClient.ListenUtp().ConfigureAwait(false);
-                    Task.Run(() =>
+
+
+                    await Task.Run(async () =>
                     {
-                        UpdateUI();
+                        await UpdateUI();
                     });
                 });
 
@@ -158,7 +166,7 @@ namespace FirstTerraceSystems.Components.Pages
         {
             datasets[symbol] = marketFeeds.ToList();
             var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
-
+       
             foreach (var chunk in chunks)
             {
                 try
@@ -249,12 +257,12 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
-        private async Task OnRealDataReceived(NasdaqResponse? response)
+     /*   private async Task OnRealDataReceived(NasdaqResponse? response)
         {
             //await Task.Run(async() => { 
             // await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
             // }).ConfigureAwait(true);
-        }
+        }*/
 
         private async Task RefreshCharts(NasdaqResponse? response)
         {
@@ -326,7 +334,7 @@ namespace FirstTerraceSystems.Components.Pages
                 {
                     foreach (var data in collection)
                     {
-                        if (data.Value.Count != 0 && data.Key== "NVDA")
+                        if (data.Value.Count != 0 && data.Key == "NVDA")
                         {
 
                             //    const volumePoint = {
@@ -340,13 +348,19 @@ namespace FirstTerraceSystems.Components.Pages
                             //MainThread.BeginInvokeOnMainThread(async () =>
                             //{
 
-                            
-                                JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.Select(a => new
+                            /*   JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.Select(a => new
                                 {
                                     x = a.Date.ToString("HH:mm"),
                                     y = a.Size,
                                     color = "green"
-                                }).ToList());
+
+                                }).ToList());*/
+
+
+                              JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+
+                     
+
                             //});
                             collection[data.Key].Clear();
                         }
@@ -513,8 +527,8 @@ namespace FirstTerraceSystems.Components.Pages
         public async ValueTask DisposeAsync()
         {
             _dotNetMualtiChatsRef?.Dispose();
-
-            WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;
+            
+         //   WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;//Commented out because it's not in use
             WebSocketClient.ActionReferenceChart -= RefreshCharts;
             await WebSocketClient.CloseCta();
             await WebSocketClient.CloseUtp();
