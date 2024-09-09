@@ -239,7 +239,7 @@ namespace FirstTerraceSystems.Components.Pages
           TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
             var last = datasets[symbol][datasets[symbol].Count - 1];
             var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
-            filtered = FilterData(filtered, PointSize);
+             filtered = FilterData(filtered, PointSize);
             return filtered;
         }
 
@@ -334,7 +334,7 @@ namespace FirstTerraceSystems.Components.Pages
                 {
                     foreach (var data in collection)
                     {
-                        if (data.Value.Count != 0 && data.Key == "NVDA")
+                        if (data.Value.Count != 0)
                         {
 
                             //    const volumePoint = {
