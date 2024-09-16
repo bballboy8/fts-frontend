@@ -1,4 +1,4 @@
-﻿using System.Net.WebSockets;
+using System.Net.WebSockets;
 using System.Text;
 using FirstTerraceSystems.Models;
 using System.Text.Json;
