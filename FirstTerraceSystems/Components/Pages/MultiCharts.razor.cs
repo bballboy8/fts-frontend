@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using BlazorBootstrap;
@@ -61,24 +61,25 @@ namespace FirstTerraceSystems.Components.Pages
                     Logger.LogInformation($"Connecting WebSocketClient");
 
                     await WebSocketClient.ConnectUtp().ConfigureAwait(false);
-                    await WebSocketClient.ConnectCta().ConfigureAwait(false);
+                   await WebSocketClient.ConnectCta().ConfigureAwait(false);
                     Logger.LogInformation($"Connected WebSocketClient");
 
 
                     // WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
 
-                    WebSocketClient.ActionReferenceChart += RefreshCharts;
+                   WebSocketClient.ActionReferenceChart += RefreshCharts;
 
                     Logger.LogInformation($"Listening WebSocketClient");
 
-                    await WebSocketClient.ListenCta().ConfigureAwait(false);
+                         await WebSocketClient.ListenCta().ConfigureAwait(false);
                     await WebSocketClient.ListenUtp().ConfigureAwait(false);
-
+                
 
                     await Task.Run(async () =>
                     {
                         await UpdateUI();
                     });
+                 
                 });
 
                 //await Task.WhenAll(Task1, Task2);
@@ -166,7 +167,7 @@ namespace FirstTerraceSystems.Components.Pages
         {
             datasets[symbol] = marketFeeds.ToList();
             var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
-       
+
             foreach (var chunk in chunks)
             {
                 try
@@ -228,10 +229,23 @@ namespace FirstTerraceSystems.Components.Pages
             return [];
         }
 
-        [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
+        /* [JSInvokable]
+         public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
+         {
+             Ranges[symbol] = range;
+             var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+             DateTime eastern = TimeZoneInfo
+         .ConvertTimeFromUtc(
+           RangeDate,
+           TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+             var last = datasets[symbol][datasets[symbol].Count - 1];
+             var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+             filtered = FilterData(filtered, PointSize);
+             return filtered;
+         }*/
+        public static List<MarketFeed> FilteredDataBySymbol(string symbol, double range)
         {
-            Ranges[symbol] = range;
+
             var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
             DateTime eastern = TimeZoneInfo
         .ConvertTimeFromUtc(
@@ -239,7 +253,7 @@ namespace FirstTerraceSystems.Components.Pages
           TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
             var last = datasets[symbol][datasets[symbol].Count - 1];
             var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
-             filtered = FilterData(filtered, PointSize);
+            filtered = FilterData(filtered, PointSize);
             return filtered;
         }
 
@@ -257,12 +271,12 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
-     /*   private async Task OnRealDataReceived(NasdaqResponse? response)
-        {
-            //await Task.Run(async() => { 
-            // await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
-            // }).ConfigureAwait(true);
-        }*/
+        /*   private async Task OnRealDataReceived(NasdaqResponse? response)
+           {
+               //await Task.Run(async() => { 
+               // await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
+               // }).ConfigureAwait(true);
+           }*/
 
         private async Task RefreshCharts(NasdaqResponse? response)
         {
@@ -322,8 +336,9 @@ namespace FirstTerraceSystems.Components.Pages
                 }
             });
         }
-
-        private async Task UpdateUI()
+      
+                private async Task UpdateUI()
+                    
         {
             while (true)
             {
@@ -356,10 +371,37 @@ namespace FirstTerraceSystems.Components.Pages
 
                                 }).ToList());*/
 
+                            /*   if (Ranges.Keys.Contains(data.Key))
+                               {
 
-                              JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+                                   var selectedRange = Ranges.FirstOrDefault(item => item.Key == data.Key);
+                                   if(!(selectedRange.Equals(default(KeyValuePair<string,double>))))
+                                   {
+                                       var _newlist = FilteredDataBySymbol(data.Key, selectedRange.Value);
+                                       if (_newlist != null)
+                                       {
+                                           JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, _newlist);
+                                       }
+                                       else
+                                       {
+                                           JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+                                       }
 
-                     
+                                   }
+                                   else
+                                   {
+                                       JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+                                   }
+                               }
+                               else
+                               {*/
+                            JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+                            ///   }
+
+
+
+
+
 
                             //});
                             collection[data.Key].Clear();
@@ -527,11 +569,119 @@ namespace FirstTerraceSystems.Components.Pages
         public async ValueTask DisposeAsync()
         {
             _dotNetMualtiChatsRef?.Dispose();
-            
-         //   WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;//Commented out because it's not in use
+
+            //   WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;//Commented out because it's not in use
             WebSocketClient.ActionReferenceChart -= RefreshCharts;
             await WebSocketClient.CloseCta();
             await WebSocketClient.CloseUtp();
         }
+        [JSInvokable]
+        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range, int xAxisPixels, int yAxisPixels)
+
+        {
+
+            // Update the range for the symbol
+
+            Ranges[symbol] = range;
+
+            var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+
+            // Convert UTC to Eastern Time
+
+            DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+
+
+
+            // Get the last data point
+
+            var last = datasets[symbol][datasets[symbol].Count - 1];
+
+
+            // Filter the data by time range
+
+            var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+
+
+
+            // Calculate the number of data points to display
+
+            filtered = FilterData(filtered, xAxisPixels, yAxisPixels);
+
+
+            return filtered;
+
+        }
+
+
+        public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int xAxisPixels, int yAxisPixels)
+
+        {
+
+            var currentTime = DateTime.Now.TimeOfDay;
+
+
+
+            // Total number of data points
+
+            var totalPoints = data.Count();
+
+
+
+            // Determine if we need to reduce the number of points based on xAxisPixels
+
+            int numPointsToShow = Math.Min(totalPoints, xAxisPixels);
+
+
+
+            // Determine step size for selecting points
+
+            int step = totalPoints > numPointsToShow ? (int)Math.Ceiling((double)totalPoints / numPointsToShow) : 1;
+
+
+
+            // Filter data to have at least one point per x-axis pixel
+
+            var filteredData = data.Where((_, index) => index % step == 0).ToList();
+
+
+            // Additional filtering to ensure at least 10 distinct y-axis points for each time pixel
+
+            var groupedByTimePixel = filteredData
+
+                .GroupBy(point => point.Date.Ticks / (TimeSpan.TicksPerMillisecond * xAxisPixels))
+
+                .SelectMany(g =>
+
+                {
+
+                    // If fewer than 10 points in this time group, show them all
+
+                    if (g.Count() <= 10)
+
+                        return g;
+
+
+
+                    // Otherwise, distribute points across y-axis
+
+                    var pointsByPriceRange = g
+
+                        .GroupBy(point => point.Price / (yAxisPixels * 10)) // Divide prices into y-axis pixels
+
+                        .SelectMany(pg => pg.Take(10)) // Take up to 10 per pixel group
+
+                        .Take(yAxisPixels);
+
+
+                    return pointsByPriceRange;
+
+                });
+
+
+            return groupedByTimePixel.ToList();
+
+        }
+
+
     }
 }
