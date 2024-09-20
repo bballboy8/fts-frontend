@@ -1,10 +1,11 @@
-﻿using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Entities;
 using System.Text.Json;
 using System.Data;
 using Dapper;
 using FirstTerraceSystems.Services;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
+using System.Transactions;
 
 namespace FirstTerraceSystems.Repositories
 {
@@ -16,6 +17,7 @@ namespace FirstTerraceSystems.Repositories
         private readonly object _databaseLock = new object();
         public MarketFeedRepository(IDbConnection connection, DatabaseService databaseService)
         {
+            Dapper.SqlMapper.AddTypeMap(typeof(string), System.Data.DbType.AnsiString);
             _connection = connection;
             _databaseService = databaseService;
         }
@@ -57,7 +59,30 @@ namespace FirstTerraceSystems.Repositories
             try
             {
                 //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
-                string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
+                //         string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= @StartDateTime ORDER BY Date limit 300000";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= '{startDateTime.ToString(AppSettings.DFormat_SQLite)}' ORDER BY Date limit 400000";
+                return await _connection.QueryAsync<MarketFeed>(sql);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return [];
+            }
+          
+           }
+        public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol1(string symbol, DateTime startDateTime, bool initialLoad = false,bool isDesc=false)
+        {
+            try
+            {
+                string ord = "";
+
+                if (isDesc==true)
+                {
+                    ord = "DESC";
+                }
+                
+                //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date WHERE Date >= @StartDateTime ORDER BY Date {ord}  limit 400000";
                 return await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite) });
             }
             catch (Exception ex)
@@ -65,8 +90,8 @@ namespace FirstTerraceSystems.Repositories
                 Console.WriteLine(ex.Message);
                 return [];
             }
-        }
 
+        }
         public async Task<IEnumerable<MarketFeed>> GetChartDataByMinMax(string symbol, DateTime startDateTime, DateTime endDateTime)
         {
             try
@@ -216,12 +241,13 @@ namespace FirstTerraceSystems.Repositories
                             "Price FLOAT," +
                             "Size VARCHAR)");
 
-                            //_connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_symbol ON symbol_{symbol}(Symbol)");
+                      
                             connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_date ON symbol_{symbol}(Date)");
-
+                           
                             transaction.Commit();
                         }
                     }
+               
                 }
             }
             catch (Exception ex)
