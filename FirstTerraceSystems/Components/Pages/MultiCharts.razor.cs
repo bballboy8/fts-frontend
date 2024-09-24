@@ -17,7 +17,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 800;
+        private const int PointSize = 3000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
 
@@ -61,25 +61,24 @@ namespace FirstTerraceSystems.Components.Pages
                     Logger.LogInformation($"Connecting WebSocketClient");
 
                     await WebSocketClient.ConnectUtp().ConfigureAwait(false);
-                   await WebSocketClient.ConnectCta().ConfigureAwait(false);
+                    await WebSocketClient.ConnectCta().ConfigureAwait(false);
                     Logger.LogInformation($"Connected WebSocketClient");
 
 
                     // WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
 
-                   WebSocketClient.ActionReferenceChart += RefreshCharts;
+                    WebSocketClient.ActionReferenceChart += RefreshCharts;
 
                     Logger.LogInformation($"Listening WebSocketClient");
 
-                         await WebSocketClient.ListenCta().ConfigureAwait(false);
+                    await WebSocketClient.ListenCta().ConfigureAwait(false);
                     await WebSocketClient.ListenUtp().ConfigureAwait(false);
-                
+
 
                     await Task.Run(async () =>
                     {
                         await UpdateUI();
                     });
-                 
                 });
 
                 //await Task.WhenAll(Task1, Task2);
@@ -125,7 +124,7 @@ namespace FirstTerraceSystems.Components.Pages
                 Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
                 var marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
                 Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
-
+              
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
@@ -336,9 +335,8 @@ namespace FirstTerraceSystems.Components.Pages
                 }
             });
         }
-      
-                private async Task UpdateUI()
-                    
+
+        private async Task UpdateUI()
         {
             while (true)
             {
@@ -456,10 +454,16 @@ namespace FirstTerraceSystems.Components.Pages
                 Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
                 return null;
             }
+            if (datasets.ContainsKey(symbol))
+            {
+                var filtered = FilterData(datasets[symbol], PointSize);
+                SymbolChanged(chartId, symbol);
+                return filtered;
+            }
 
             var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
             Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
-            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate,false,true).ConfigureAwait(false);
 
             if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
             {
@@ -619,7 +623,7 @@ namespace FirstTerraceSystems.Components.Pages
 
             var currentTime = DateTime.Now.TimeOfDay;
 
-
+           xAxisPixels = PointSize + xAxisPixels;
 
             // Total number of data points
 
