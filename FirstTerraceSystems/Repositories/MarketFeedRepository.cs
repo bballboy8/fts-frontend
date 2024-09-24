@@ -1,10 +1,20 @@
-﻿using FirstTerraceSystems.Entities;
+using FirstTerraceSystems.Entities;
 using System.Text.Json;
 using System.Data;
 using Dapper;
 using FirstTerraceSystems.Services;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
+using System.Transactions;
+
+using Microsoft.Maui.ApplicationModel.DataTransfer;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls.PlatformConfiguration;
+using Microsoft.Maui.Controls;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Buffers.Text;
+using System.Diagnostics;
+using System;
 
 namespace FirstTerraceSystems.Repositories
 {
@@ -16,6 +26,7 @@ namespace FirstTerraceSystems.Repositories
         private readonly object _databaseLock = new object();
         public MarketFeedRepository(IDbConnection connection, DatabaseService databaseService)
         {
+            Dapper.SqlMapper.AddTypeMap(typeof(string), System.Data.DbType.AnsiString);
             _connection = connection;
             _databaseService = databaseService;
         }
@@ -51,27 +62,134 @@ namespace FirstTerraceSystems.Repositories
                 return null;
             }
         }
+        //public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, DateTime startDateTime, bool initialLoad = false)
+        //{
+        //    try
+        //    {
+        //        // Get the current time in Eastern Standard Time (EST)
+        //        var estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        //        DateTime endDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, estTimeZone);
 
+        //        // Ensure the query matches the dynamic nature of your inputs, symbol, and time range
+        //        string sql = $@"
+        //WITH price_range AS (
+        //    SELECT 
+        //        MIN(price) AS min_price,
+        //        MAX(price) AS max_price
+        //     FROM 
+        //        symbol_{symbol}
+        //    WHERE 
+        //        symbol = @Symbol
+        //        AND date BETWEEN @StartDateTime AND @EndDateTime
+        //        AND msgtype = 'T'
+        //),
+        //pixel_data AS (
+        //    SELECT
+        //        width_bucket(
+        //            EXTRACT(EPOCH FROM date),
+        //            EXTRACT(EPOCH FROM @StartDateTime),
+        //            EXTRACT(EPOCH FROM @EndDateTime),
+        //            1000  -- Number of x-axis pixels
+        //        ) AS x_pixel_bin,
+
+        //        width_bucket(
+        //            price,
+        //            (SELECT min_price FROM price_range),
+        //            (SELECT max_price FROM price_range),
+        //            500  
+        //        ) AS y_pixel_bin,
+
+        //        date,      
+        //        symbol,  
+        //        price
+        //    FROM
+        //       symbol_{symbol}
+        //    WHERE
+        //        symbol = @Symbol
+        //         date >= @StartDateTime 
+        //)
+        //SELECT
+        //    DISTINCT ON (x_pixel_bin, y_pixel_bin)
+        //    date,
+        //    symbol,
+        //    price 
+        //FROM
+        //    pixel_data
+        //ORDER BY
+        //    x_pixel_bin, y_pixel_bin;";
+
+        //        var thk = sql;
+
+        //        var parameters = new
+        //        {
+        //            Symbol = symbol,
+        //            StartDateTime = startDateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+        //            EndDateTime = endDateTime.ToString("yyyy-MM-dd HH:mm:ss")
+        //        };
+
+        //        return await _connection.QueryAsync<MarketFeed>(sql, parameters);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex.Message);
+        //        return Enumerable.Empty<MarketFeed>();
+        //    }
+        //}
         public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol(string symbol, DateTime startDateTime, bool initialLoad = false)
         {
             try
             {
                 //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
-                string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
-                return await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite) });
+                //         string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= @StartDateTime ORDER BY Date limit 300000";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= '{startDateTime.ToString(AppSettings.DFormat_SQLite)}' ORDER BY date ";
+
+
+
+
+
+                var marketFeeds = await _connection.QueryAsync<MarketFeed>(sql);
+               
+
+                return marketFeeds;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return [];
             }
-        }
 
+        }
+        public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol1(string symbol, DateTime startDateTime, bool initialLoad = false,bool isDesc=false)
+        {
+            try
+            {
+                string ord = "";
+
+                if (isDesc==true)
+                {
+                    ord = "DESC";
+                }
+                
+                //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date WHERE Date >= @StartDateTime ORDER BY Date {ord} ";
+                var marketFeeds = await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite) });
+           
+
+                return marketFeeds;
+                 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return [];
+            }
+
+        }
         public async Task<IEnumerable<MarketFeed>> GetChartDataByMinMax(string symbol, DateTime startDateTime, DateTime endDateTime)
         {
             try
             {
-                string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDateTime and Date <= @EndDateTime ORDER BY Date";
+                string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDateTime and Date <= @EndDateTime ORDER BY Date ";
                 return await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite), EndDateTime = endDateTime.ToString(AppSettings.DFormat_SQLite) });
             }
             catch (Exception ex)
@@ -216,12 +334,13 @@ namespace FirstTerraceSystems.Repositories
                             "Price FLOAT," +
                             "Size VARCHAR)");
 
-                            //_connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_symbol ON symbol_{symbol}(Symbol)");
+                      
                             connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_date ON symbol_{symbol}(Date)");
-
+                           
                             transaction.Commit();
                         }
                     }
+               
                 }
             }
             catch (Exception ex)
