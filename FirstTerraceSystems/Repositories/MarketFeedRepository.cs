@@ -141,14 +141,14 @@ namespace FirstTerraceSystems.Repositories
             {
                 //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
                 //         string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= @StartDateTime ORDER BY Date limit 300000";
-                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= '{startDateTime.ToString(AppSettings.DFormat_SQLite)}' ORDER BY date ";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= '{startDateTime.ToString(AppSettings.DFormat_SQLite)}' ORDER BY date DESC  limit 100000";
 
 
 
 
 
                 var marketFeeds = await _connection.QueryAsync<MarketFeed>(sql);
-               
+                marketFeeds = marketFeeds.OrderBy((x) => x.Date);
 
                 return marketFeeds;
             }
@@ -171,9 +171,9 @@ namespace FirstTerraceSystems.Repositories
                 }
                 
                 //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
-                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date WHERE Date >= @StartDateTime ORDER BY Date {ord} ";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date WHERE Date >= @StartDateTime ORDER BY Date {ord} 100000 ";
                 var marketFeeds = await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite) });
-           
+                marketFeeds = marketFeeds.OrderBy((x) => x.Date);
 
                 return marketFeeds;
                  
