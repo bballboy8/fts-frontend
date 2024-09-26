@@ -6,7 +6,6 @@ using FirstTerraceSystems.Services;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using System.Transactions;
-
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls.PlatformConfiguration;
@@ -15,6 +14,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System;
+
 
 namespace FirstTerraceSystems.Repositories
 {
@@ -141,6 +141,7 @@ namespace FirstTerraceSystems.Repositories
             {
                 //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
                 //         string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= @StartDateTime ORDER BY Date limit 300000";
+
                 string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= '{startDateTime.ToString(AppSettings.DFormat_SQLite)}' ORDER BY date DESC  limit 100000";
 
 
@@ -151,12 +152,14 @@ namespace FirstTerraceSystems.Repositories
                 marketFeeds = marketFeeds.OrderBy((x) => x.Date);
 
                 return marketFeeds;
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return [];
             }
+
 
         }
         public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol1(string symbol, DateTime startDateTime, bool initialLoad = false,bool isDesc=false)
@@ -183,6 +186,7 @@ namespace FirstTerraceSystems.Repositories
                 Console.WriteLine(ex.Message);
                 return [];
             }
+
 
         }
         public async Task<IEnumerable<MarketFeed>> GetChartDataByMinMax(string symbol, DateTime startDateTime, DateTime endDateTime)

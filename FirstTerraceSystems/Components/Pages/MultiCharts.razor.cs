@@ -122,13 +122,15 @@ namespace FirstTerraceSystems.Components.Pages
             try
             {
                 Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
-                var marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
+                var marketFeeds = await  MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
                 Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
               
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
                     await SendChartDataInChunks(chart.Symbol, marketFeeds);
+                //    await JSRuntime.InvokeVoidAsync("setRange", chart.Symbol, 3 * 24 * 60 * 60 * 1000);
+
                     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                 }
                 catch (Exception ex)
@@ -350,58 +352,9 @@ namespace FirstTerraceSystems.Components.Pages
                         if (data.Value.Count != 0)
                         {
 
-                            //    const volumePoint = {
-                            //    x: new Date(data.date).getTime(),
-                            //    y: Number(data.size),
-                            //    color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
-                            //};
-
-
-
-                            //MainThread.BeginInvokeOnMainThread(async () =>
-                            //{
-
-                            /*   JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.Select(a => new
-                                {
-                                    x = a.Date.ToString("HH:mm"),
-                                    y = a.Size,
-                                    color = "green"
-
-                                }).ToList());*/
-
-                            /*   if (Ranges.Keys.Contains(data.Key))
-                               {
-
-                                   var selectedRange = Ranges.FirstOrDefault(item => item.Key == data.Key);
-                                   if(!(selectedRange.Equals(default(KeyValuePair<string,double>))))
-                                   {
-                                       var _newlist = FilteredDataBySymbol(data.Key, selectedRange.Value);
-                                       if (_newlist != null)
-                                       {
-                                           JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, _newlist);
-                                       }
-                                       else
-                                       {
-                                           JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
-                                       }
-
-                                   }
-                                   else
-                                   {
-                                       JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
-                                   }
-                               }
-                               else
-                               {*/
+                          
                             JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
-                            ///   }
-
-
-
-
-
-
-                            //});
+                       
                             collection[data.Key].Clear();
                         }
                     }
@@ -435,6 +388,7 @@ namespace FirstTerraceSystems.Components.Pages
             else
                 marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
             await SendChartDataInChunks(symbol, marketFeeds).ConfigureAwait(false);
+        //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
             marketFeeds = null;
         }
 
@@ -465,6 +419,11 @@ namespace FirstTerraceSystems.Components.Pages
             Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
             var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate,false,true).ConfigureAwait(false);
 
+             var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+           // var defaultStartDate=   DateTime.Now.AddHours(-10);
+            Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate,false,false).ConfigureAwait(false);
+          //  dbmarketFeeds = dbmarketFeeds.OrderBy((x) => x.Date);
             if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
             {
                 datasets[symbol] = dbmarketFeeds.ToList();
@@ -479,6 +438,7 @@ namespace FirstTerraceSystems.Components.Pages
                     .ConvertTimeFromUtc(
                         UTCDate,
                         TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+
 
                 Logger.LogInformation($"Starting API call for symbol for 1 hour: {symbol}");
                 IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(easternOneHour, symbol).ConfigureAwait(false);
@@ -624,6 +584,7 @@ namespace FirstTerraceSystems.Components.Pages
             var currentTime = DateTime.Now.TimeOfDay;
 
            xAxisPixels = PointSize + xAxisPixels;
+
 
             // Total number of data points
 

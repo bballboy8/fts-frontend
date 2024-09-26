@@ -84,6 +84,7 @@ function addChart(
             boostThreshold: 1,
             backgroundColor: backgroundColor,
             borderWidth: 1,
+            animation:true,
             borderColor: "#5B6970",
 
             events: {
@@ -94,7 +95,9 @@ function addChart(
                     /*    chart1.yAxis[0].update({
                             min: chart1.series[0].dataMin,
                             max: chart1.series[0].dataMax
+
                         });*/
+
 
                     let chartWidth = chart.chartWidth;
                     chart.showLoading();
@@ -155,7 +158,7 @@ function addChart(
                                     chart.showLoading();
                                     symbol = existingChart.series[0].name;
                                     chart.series[0].setData(existingChart.series[0].options.data);
-
+                                    console.log("existing");
                                     chart.series[0].update({
                                         name: symbol,
                                     });
@@ -177,6 +180,7 @@ function addChart(
                                     chart.hideLoading();
                                 } else {
                                     chart.showLoading();
+
                                     updateChartSymbol(chart.renderTo.id, symbol).then(
                                         (seriesData) => {
                                             if (seriesData) {
@@ -194,6 +198,7 @@ function addChart(
                                                 chart.hideLoading();
                                             }
 
+
                                             chart.hideLoading();
                                         }
                                     );
@@ -204,6 +209,7 @@ function addChart(
 
                             $("body").append(divInput);
                         },
+
                     });
 
                     const buttonConfigs = [
@@ -229,6 +235,7 @@ function addChart(
                     });
 
                     setButtonActive(chart.ButtonNamespace.customButton1);
+
                     chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-in"></i>',
                         x: 460,
@@ -380,8 +387,10 @@ function addChart(
                         "spacingBox"
                     );
 
+
                     var totalChartsCount = localStorage.getItem("chartCount");
                     if (totalCharts == 8 || totalChartsCount == 8) {
+
                         chart.ButtonNamespace.zoomInButton.align(
                             {
                                 align: "left",
@@ -465,7 +474,9 @@ function addChart(
                 },
             },
             zooming: {
+
                 type: "x",
+
             },
         },
 
@@ -492,10 +503,12 @@ function addChart(
             ]
         },
         tooltip: {
+
          
             shared: false,
 
         /*    formatter: function () {
+
                 return [
                     `<b>${Highcharts.dateFormat(
                         "%A, %e %b. %H:%M:%S.%L",
@@ -523,7 +536,9 @@ function addChart(
                 negativeColor: "red",
                 tooltip: {
                     pointFormatter: function () {
+
                         console.log("upper: ", this.x);
+
                         return [`<b>${symbol} ${Highcharts.numberFormat(this.y/10000, 2)}</b>`];
                     },
                 },
@@ -543,6 +558,8 @@ function addChart(
                 turboThreshold: 0,
 
 
+
+
                 marker: {
                     enabled: false,
                 }
@@ -558,7 +575,9 @@ function addChart(
                 events: {
                     afterSetExtremes: function (e) {
                         //if (!updatingCharts[symbol])
+
                        handleExtremesChange2(symbol, this.chart, e.min, e.max);
+
                         // Remove points that are outside the new extremes
                         /*series.data.forEach(function (point) {
                                         if (point.x >= e.min && point.x <= e.max) {
@@ -567,6 +586,7 @@ function addChart(
                                     });*/
                         const values = [];
                         var tchart = this.chart;
+
                         /*   this.chart.series[0].points.forEach(point => {
                                if (point.visible) {
                              //      console.log(point);
@@ -582,6 +602,7 @@ function addChart(
                             //  tchart.redraw();
                         } else {
 
+
                             this.chart.series[0].points.forEach(point => {
                                 if (point.visible) {
                                     //      console.log(point);
@@ -590,6 +611,7 @@ function addChart(
                                 }
                             });
                             var _min = Math.min(...values);
+
                             if (!(isFinite(_min))) {
                                 console.log(_min + "hjhj");
                                 tchart.yAxis[0].setExtremes(_min, Math.max(...values), false, true);
@@ -614,15 +636,19 @@ function addChart(
                         }
 
 
+
                     },
                 },
                 ordinal: false,
                 type: "datetime",
+
                 plotLines: plotLines,
                 plotBands: plotBands,
                 //offset: 0,
                 labels: {
+
                     style: { color: fontColor },
+
                 },
                 dateTimeLabelFormats: {
                     second: "%H:%M:%S.%L",
@@ -635,7 +661,9 @@ function addChart(
                 },
                 lineWidth: 0,
                 opposite: false,
+
                 tickPixelInterval: 150,
+
             },
         ],
         yAxis: [
@@ -662,9 +690,11 @@ function addChart(
                     afterSetExtremes: function (e) {
                         const values = [];
 
+
                         var tchart = this.chart;
                         console.log(e.max + "ychanged");
                       /*  tchart.yAxis[0].setExtremes(e.min, e.max, true, false);*/
+
 
                     }
                 }
@@ -753,7 +783,7 @@ function addChart(
 
 const updatingCharts = {};
 function handleExtremesChange(symbol, chart, min, max) {
-    setTimeout(async function () {
+   setTimeout(async function () {
         updatingCharts[symbol] = true;
         /*for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
                 let point = chart.series[0].data[i];
@@ -767,7 +797,9 @@ function handleExtremesChange(symbol, chart, min, max) {
             min,
             max
         );
+
         addPointToChart(chart, filterData, false, false, false);
+
         updatingCharts[symbol] = false;
     }, 0);
 }
@@ -1042,6 +1074,7 @@ function setDataToChart(chart, seriesData) {
     }
 
     // Update both series data without immediate redraw
+
     series.setData(dataPoints, false, false);
     chart.series[1].setData(volumePoints, false, false);
 
@@ -1145,6 +1178,7 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
 
     });
 }
+
 
 
 
@@ -1686,7 +1720,9 @@ async function setRange(symbol, range) {
 
         console.log("points filtered " + filtereddata.length);
         setDataToChart(chart, filtereddata);
+
         chart.redraw();
+
     }
 }
 
