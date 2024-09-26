@@ -17,7 +17,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 800;
+        private const int PointSize = 3000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
 
@@ -124,7 +124,7 @@ namespace FirstTerraceSystems.Components.Pages
                 Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
                 var marketFeeds = await  MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
                 Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
-
+              
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
@@ -408,7 +408,6 @@ namespace FirstTerraceSystems.Components.Pages
                 Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
                 return null;
             }
-
             if (datasets.ContainsKey(symbol))
             {
                 var filtered = FilterData(datasets[symbol], PointSize);
@@ -416,6 +415,9 @@ namespace FirstTerraceSystems.Components.Pages
                 return filtered;
             }
 
+            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate,false,true).ConfigureAwait(false);
 
              var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
            // var defaultStartDate=   DateTime.Now.AddHours(-10);
@@ -581,7 +583,7 @@ namespace FirstTerraceSystems.Components.Pages
 
             var currentTime = DateTime.Now.TimeOfDay;
 
-           
+           xAxisPixels = PointSize + xAxisPixels;
 
 
             // Total number of data points
