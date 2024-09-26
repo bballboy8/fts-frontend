@@ -84,7 +84,8 @@ function addChart(
             boostThreshold: 1,
             backgroundColor: backgroundColor,
             borderWidth: 1,
-            animation:true,
+            marginLeft: 10,
+            animation: true,
             borderColor: "#5B6970",
 
             events: {
@@ -190,6 +191,11 @@ function addChart(
                                                     console.log("dont change data");
                                                     setDataToChart(chart, seriesData);
 
+                                                    console.log(chart.series[0].dataMin + "," + chart.series[0].dataMax);
+
+
+
+
                                                     chart.series[0].update({
                                                         name: symbol,
                                                     });
@@ -199,14 +205,25 @@ function addChart(
                                                     chart.ButtonNamespace.symbolButton.attr({
                                                         title: `XNYS: ${symbol}`,
                                                     });
+                                                    if (!(typeof chart.series[0].dataMin == 'undefined') && !(typeof chart.series[0].dataMax == 'undefined')) {
+                                                        chart.yAxis[0].setExtremes(chart.series[0].dataMin, chart.series[0].dataMax, true, false);
+                                                    } else {
+                                                        var sortedData = seriesData.sort((pointA, pointB) => { return pointA.price - pointB.price });
+                                                        console.log(sortedData);
+                                                        var firstmin = sortedData[0].price;
+                                                        var lastmax = sortedData[sortedData.length - 1].price;
+                                                        console.log(firstmin + ",un-" + lastmax);
+                                                        chart.yAxis[0].setExtremes(firstmin, lastmax, true, false);
+
+                                                    }
                                                 }
                                                 chart.hideLoading();
                                             } else {
                                                 symbol = chart.series[0].name;
                                             }
-                                          
-                                         
-                                       
+
+
+
                                             chart.hideLoading();
                                         }
                                     );
@@ -420,11 +437,18 @@ function addChart(
 
                         return Checker;
                     };
+                    var issmallchartwindow = function () {
 
+                        if ((chart.chartWidth >= 380 && chart.chartWidth <= 390) || (chart.chartWidth >= 280 && chart.chartWidth <= 290)) {
+                            return true;
+                        }
+                        return false;
+                    }
 
 
                     var totalChartsCount = localStorage.getItem("chartCount");
-                    if (totalCharts == 8 || totalChartsCount == 8 || totalCharts == 6 || totalChartsCount == 6 || defaultchartlayoutchecker() == true) {
+                    //    if ((totalCharts == 8 || totalChartsCount == 8 || totalCharts == 6 || totalChartsCount == 6 || defaultchartlayoutchecker() == true) && !isPopoutChartWindow) {
+                    if (issmallchartwindow()) {
                         chart.ButtonNamespace.zoomInButton.align(
                             {
                                 align: "left",
@@ -465,6 +489,72 @@ function addChart(
                             "spacingBox"
                         );
                     }
+
+                    /*
+                    
+                          const buttonConfigs = [
+                        { text: "1m", x: 90, duration: 60 * 1000 },
+                        { text: "3m", x: 125, duration: 3 * 60 * 1000 },
+                        { text: "30m", x: 160, duration: 30 * 60 * 1000 },
+                        { text: "1h", x: 200, duration: 60 * 60 * 1000 },
+                        { text: "1D", x: 232, duration: 24 * 60 * 60 * 1000 },
+                        { text: "3D", x: 267, duration: 3 * 24 * 60 * 60 * 1000 },
+                    ];
+                    
+                    
+                    */
+
+                    console.log(chart.ButtonNamespace["3D"].element);
+                    if (chart.chartWidth >= 380 && chart.chartWidth <= 390) {
+
+                        $(chart.ButtonNamespace["3m"].element).hide();
+                        chart.ButtonNamespace["30m"].align(
+                            {
+                                x: 123,
+                                y: 10
+                            }
+                        );
+                        chart.ButtonNamespace["1h"].align(
+                            {
+                                x: 162,
+                                y: 10
+                            }
+                        );
+                        chart.ButtonNamespace["1D"].align(
+                            {
+                                x: 193,
+                                y: 10
+                            }
+                        );
+                        chart.ButtonNamespace["3D"].align(
+                            {
+                                x: 225,
+                                y: 10
+                            }
+                        );
+                    } else if (chart.chartWidth >= 280 && chart.chartWidth <= 290) {
+
+                        $(chart.ButtonNamespace["3D"].element).hide();
+                        $(chart.ButtonNamespace["1h"].element).hide();
+                        $(chart.ButtonNamespace["3m"].element).hide();
+
+                        chart.ButtonNamespace["30m"].align(
+                            {
+                                x: 123,
+                                y: 10
+                            }
+                        );
+                        chart.ButtonNamespace["1D"].align(
+                            {
+                                x: 162,
+                                y: 10
+                            }
+                        );
+
+
+
+                    }
+                    console.log(isPopoutChartWindow + "lklk");
                     if (!isPopoutChartWindow) {
                         var closeX = -30;
                         var minX = -60;
@@ -478,7 +568,7 @@ function addChart(
                             {
                                 align: "right",
                                 x: closeX,
-                                y: 2,
+                                y: 1,
                             },
                             false,
                             "spacingBox"
@@ -488,7 +578,7 @@ function addChart(
                             {
                                 align: "right",
                                 x: minX,
-                                y: 2,
+                                y: 1,
                             },
                             false,
                             "spacingBox"
@@ -498,7 +588,7 @@ function addChart(
                             {
                                 align: "right",
                                 x: maxX,
-                                y: 2,
+                                y: 1,
                             },
                             false,
                             "spacingBox"
@@ -508,7 +598,7 @@ function addChart(
                 },
             },
             zooming: {
-                type: "xy",
+                type: "y",
             },
         },
 
@@ -535,30 +625,32 @@ function addChart(
             ]
         },
         tooltip: {
-            shared: false, 
-          
-
-     /*       formatter: function () {
-                return [
-                    `<b>${Highcharts.dateFormat(
-                        "%A, %e %b. %H:%M:%S.%L",
-                        this.x,
-                        false
-                    )}</b>`,
-                    ...(this.points
-                        ? this.points.map(
-                            (point) => {
-                                var formatednumber = Highcharts.numberFormat(point.y / 10000, 2) + "";
-                                if (point.series.name == "Volume") {
-                                    formatednumber = point.y
-                                }
-
-                                return `${point.series.name}: ${formatednumber}`
-                            }
-                        )
-                        : []),
-                ];
-            },*/
+            shared: false,
+            /*    pointFormatter: function () {
+                   return [`<b>${symbol} ${Highcharts.numberFormat(this.y / 10000, 2)}</b>`]
+               }
+   
+              formatter: function () {
+                   return [
+                       `<b>${Highcharts.dateFormat(
+                           "%A, %e %b. %H:%M:%S.%L",
+                           this.x,
+                           false
+                       )}</b>`,
+                       ...(this.points
+                           ? this.points.map(
+                               (point) => {
+                                   var formatednumber = Highcharts.numberFormat(point.y / 10000, 2) + "";
+                                   if (point.series.name == "Volume") {
+                                       formatednumber = point.y
+                                   }
+   
+                                   return `${point.series.name}: ${formatednumber}`
+                               }
+                           )
+                           : []),
+                   ];
+               },*/
         },
         plotOptions: {
             scatter: {
@@ -566,8 +658,8 @@ function addChart(
                 negativeColor: "red",
                 tooltip: {
                     pointFormatter: function () {
-                     //   console.log("upper: ", this.x);
-                        return [`<b>${symbol} ${Highcharts.numberFormat(this.y/10000, 2)}</b>`];
+                        //   console.log("upper: ", this.x);
+                        return [`<b>${symbol} ${Highcharts.numberFormat(this.y / 10000, 2)}</b>`];
                     },
                 },
             },
@@ -583,8 +675,8 @@ function addChart(
             //    }
             //},
             series: {
-                turboThreshold: 0,
-                animation:true,
+                turboThreshold: 20000,
+                animation: true,
 
                 marker: {
                     enabled: false,
@@ -601,7 +693,7 @@ function addChart(
                 events: {
                     afterSetExtremes: function (e) {
                         //if (!updatingCharts[symbol])
-                    //    handleExtremesChange(symbol, this.chart, e.min, e.max);
+                       handleExtremesChange(symbol, this.chart, e.min, e.max);
                         // Remove points that are outside the new extremes
                         /*series.data.forEach(function (point) {
                                         if (point.x >= e.min && point.x <= e.max) {
@@ -610,48 +702,77 @@ function addChart(
                                     });*/
                         const values = [];
                         var tchart = this.chart;
-                    //    tchart.yAxis[0].setExtremes(e.min / 10000, e.max/10000, true,true);
-                        console.log(tchart.series[0].dataMax);
+                        //    tchart.yAxis[0].setExtremes(e.min / 10000, e.max/10000, true,true);
+                        console.log(tchart);
                         //   
-           /*         if (!(typeof tchart.series[0].dataMax == 'undefined')) {
-                            tchart.yAxis[0].setExtremes(tchart.series[0].dataMin, tchart.series[0].dataMax, true, true);
-                            console.log(tchart.series[0].dataMin + "JK" + tchart.series[0].dataMax);
-                            //  tchart.redraw();
-                        } else {
-                            this.chart.series[0].points.forEach(point => {
-                                if (point.visible) {
-                                    //      console.log(point);
+                        /*         if (!(typeof tchart.series[0].dataMax == 'undefined')) {
+                                         tchart.yAxis[0].setExtremes(tchart.series[0].dataMin, tchart.series[0].dataMax, true, true);
+                                         console.log(tchart.series[0].dataMin + "JK" + tchart.series[0].dataMax);
+                                         //  tchart.redraw();
+                                     } else {
+                                         this.chart.series[0].points.forEach(point => {
+                                             if (point.visible) {
+                                                 //      console.log(point);
+             
+                                                 values.push(point.y)
+                                             }
+                                         });
+                                         var _min = Math.min(...values);
+                                         console.log(_min + "hjhj");
+                                         tchart.yAxis[0].setExtremes(_min, Math.max(...values), false, true);
+                                         //   tchart.redraw();
+                                     }*/
+                        var eleText = $($(tchart.container).find(".highcharts-xaxis-labels")[0]).first().children().eq(0).text();
+                        var grouptext = $($(tchart.container).find(".highcharts-xaxis-labels")[0]).first().text();
+                        //           console.log(grouptext + grouptext.toString().split(":").length + "c" + grouptext.toString().split(".").length + "jjk-" + grouptext.toString().includes("."));
+                        if ((eleText.toString().split(":").length >= 3 && eleText.toString().split(".").length >= 2) || (grouptext.toString().split(":").length > 1 && grouptext.toString().includes(".") == false)) {
+                            console.log(eleText);
 
-                                    values.push(point.y)
-                                }
-                            });
-                            var _min = Math.min(...values);
-                            console.log(_min + "hjhj");
-                            tchart.yAxis[0].setExtremes(_min, Math.max(...values), false, true);
-                            //   tchart.redraw();
-                        }*/
+                            var xaxis = tchart.xAxis[0];
+                            console.log(xaxis.options.labels.step);
+                            if (xaxis.options.labels.step == 2) {
+                                tchart.xAxis[0].update({
+                                    labels: {
+                                        step: 3
+                                    }
+                                });
+                            }
+
+                        } else {
+                            var xaxis = tchart.xAxis[0];
+                            console.log(xaxis.options.labels.step);
+                            if (xaxis.options.labels.step == 3) {
+                                tchart.xAxis[0].update({
+                                    labels: {
+                                        step: 2
+                                    }
+                                });
+                            }
+                        }
                         if (!(typeof tchart.series[0].dataMax == 'undefined') && !(typeof tchart.series[0].dataMin == 'undefined')) {
-                            tchart.yAxis[0].setExtremes(tchart.series[0].dataMin, tchart.series[0].dataMax, false, false);
-                            console.log(tchart.series[0].dataMin + "xchanged" + tchart.series[0].dataMax);
+                            //    tchart.yAxis[0].setExtremes(tchart.series[0].dataMin, tchart.series[0].dataMax, true, false);
+                            console.log(tchart.series[0].dataMin + "xchangedx" + tchart.series[0].dataMax);
                         } else {
                             console.log(tchart.series[0].dataMin + "-xchanged-" + tchart.series[0].dataMax);
+                            tchart.yAxis[0].setExtremes(null, null , false);
                         }
 
                     },
                 },
                 ordinal: false,
                 type: "datetime",
-             
+
                 plotLines: plotLines,
                 plotBands: plotBands,
                 //offset: 0,
                 labels: {
-                    style: { color: fontColor ,msrginRight:5}, padding: 5,
+                    style: { color: fontColor, msrginRight: 5 }, padding: 5,
                     allowOverlap: false,
-                    step:2
+                    step: 2
                 },
                 dateTimeLabelFormats: {
-                    second: "%H:%M:%S.%L",
+                    millisecond: "%H:%M:%S.%L",
+                    second: "%H:%M:%S",
                     minute: "%H:%M",
                     hour: "%H:%M",
                     day: "%e. %b",
@@ -661,7 +782,9 @@ function addChart(
                 },
                 lineWidth: 0,
                 opposite: false,
-                tickPixelInterval: 160,
+                tickPixelInterval: 180,
+                startOnTock: false,
+                endOnTick:false
             },
         ],
         yAxis: [
@@ -687,9 +810,9 @@ function addChart(
                 events: {
                     afterSetExtremes: function (e) {
                         const values = [];
-
-                        console.log(e.max +"ychanged");
-                  
+                        var tchart = this.chart;
+                        console.log(e.max + "ychanged");
+                     tchart.yAxis[0].setExtremes(e.min, e.max, true, false)
                     }
                 }
             },
@@ -738,8 +861,10 @@ function addChart(
                     },
                 },
                 data: [],
-                boostThreshold: 10000,
-                turboThreshold: 0,
+                boostThreshold: 500,
+                turboThreshold: 20000,
+
+
             },
             {
                 type: "column",
@@ -761,6 +886,7 @@ function addChart(
         boost: {
             enabled: true,
             useGPUTranslations: true,
+            usePreAllocated: true,
         },
         accessibility: {
             highContrastTheme: null,
@@ -777,7 +903,7 @@ function addChart(
 
 const updatingCharts = {};
 function handleExtremesChange(symbol, chart, min, max) {
-   setTimeout(async function () {
+    setTimeout(async function () {
         updatingCharts[symbol] = true;
         /*for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
                 let point = chart.series[0].data[i];
@@ -791,7 +917,7 @@ function handleExtremesChange(symbol, chart, min, max) {
             min,
             max
         );
-        addPointToChart(chart, filterData, false, false,false);
+        addPointToChart(chart, filterData, false, false, false);
         updatingCharts[symbol] = false;
     }, 0);
 }
@@ -959,12 +1085,12 @@ async function getFilteredDataBySymbol(symbol, range = undefined) {
         console.error("Error fetching filtered data: ", error);
     }
 }
-async function getFilteredDataBySymbol(symbol, range = undefined, xAxisPixels = 0, yAxisPixels = 0) {
+async function getFilteredDataBySymbol(symbol, range = undefined, xAxisPixels = 0, yAxisPixels = 0,canfilter=true) {
     try {
         return await ChatAppInterop.dotnetReference.invokeMethodAsync(
             "GetFilteredDataBySymbol",
             symbol,
-            range, xAxisPixels, yAxisPixels
+            range, xAxisPixels, yAxisPixels,canfilter
         );
     } catch (error) {
         console.error("Error fetching filtered data: ", error);
@@ -1207,7 +1333,7 @@ async function refreshCharts(symbol, seriesData) {
             chart.redraw();
 
         }
-    }, 100);
+    }, 0);
     //removeOldPoints(chart, 3);
     //chart.redraw();
 }
@@ -1632,7 +1758,7 @@ async function setRange(symbol, range) {
 
         console.log("points filtered " + filtereddata.length);
         setDataToChart(chart, filtereddata);
-    
+
     }
 }
 
