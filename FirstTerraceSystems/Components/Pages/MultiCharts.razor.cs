@@ -17,10 +17,10 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 800;
+        private const int PointSize = 20000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
-
+        private ManualResetEvent waitevent;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
         public static ConcurrentDictionary<string, List<MarketFeed>> datasets = new();
         private ConcurrentDictionary<string, List<MarketFeed>> collection = new();
@@ -74,11 +74,11 @@ namespace FirstTerraceSystems.Components.Pages
                     await WebSocketClient.ListenCta().ConfigureAwait(false);
                     await WebSocketClient.ListenUtp().ConfigureAwait(false);
 
-
-                    await Task.Run(async () =>
+                    this.waitevent = new ManualResetEvent(false);
+                 await  Task.Run(async () =>
                     {
-                        await UpdateUI();
-                    });
+                        await UpdateUI().ConfigureAwait(false);
+                    }).ConfigureAwait(false);
                 });
 
                 //await Task.WhenAll(Task1, Task2);
@@ -122,14 +122,15 @@ namespace FirstTerraceSystems.Components.Pages
             try
             {
                 Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
-                var marketFeeds = await  MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
+//         var ff=       MarketFeedRepository.tryado(chart.Symbol, defaultStartDate);
+                var marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
                 Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
 
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
-                    await SendChartDataInChunks(chart.Symbol, marketFeeds);
-                //    await JSRuntime.InvokeVoidAsync("setRange", chart.Symbol, 3 * 24 * 60 * 60 * 1000);
+                    await SendChartDataInChunks(chart.Symbol, marketFeeds,false);
+                    //    await JSRuntime.InvokeVoidAsync("setRange", chart.Symbol, 3 * 24 * 60 * 60 * 1000);
 
                     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                 }
@@ -158,16 +159,52 @@ namespace FirstTerraceSystems.Components.Pages
             if (numPoints > 0 && numPoints < filteredData.Count())
             {
                 var step = Math.Max(1, filteredData.Count() / numPoints);
-                return filteredData.Where((_, index) => index % step == 0).Take(numPoints).ToList();
+                return filteredData.Where((_, index) => { if (index % step == 0)
+                    {
+                        Console.WriteLine(index.ToString());
+                        return true;
+                    
+                   
+                    }
+                    return false;
+                }).Take(numPoints).ToList();
             }
 
             return filteredData.ToList();
         }
+        public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data)
+        {
+            var currentTime = DateTime.Now.TimeOfDay;
+            //data = data.Where((x) => x.Date.TimeOfDay < currentTime);
+            var filteredData = data;
 
-        public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
+
+       /*     if (numPoints > 0 && numPoints < filteredData.Count())
+            {
+                var step = Math.Max(1, filteredData.Count() / numPoints);
+                return filteredData.Where((_, index) => {
+                    if (index % step == 0)
+                    {
+                        Console.WriteLine(index.ToString());
+                        return true;
+
+
+                    }
+                    return false;
+                }).Take(numPoints).ToList();
+            }*/
+
+            return filteredData.ToList();
+        }
+        public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds,bool canFilter=true)
         {
             datasets[symbol] = marketFeeds.ToList();
-            var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
+            var chunks = marketFeeds.Chunk(MarketFeedChunkSize);
+            if (canFilter)
+            {
+                chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
+            }
+      
 
             foreach (var chunk in chunks)
             {
@@ -309,7 +346,8 @@ namespace FirstTerraceSystems.Components.Pages
 
                             if (OnWait)
                             {
-                                await Task.Delay(1000);  // Non-blocking delay
+                                await Task.Delay(2000);  // Non-blocking delay
+                              //  this.waitevent.WaitOne();
                             }
 
                             lock (_lock)  // Use lock for thread safety
@@ -338,13 +376,13 @@ namespace FirstTerraceSystems.Components.Pages
             });
         }
 
-        private async Task UpdateUI()
+        private async  Task UpdateUI()
         {
             while (true)
             {
-                await Task.Delay(1000);  // Non-blocking delay
-                OnWait = true;
-
+                   await Task.Delay(2000);  // Non-blocking delay
+               OnWait = true;
+               
                 lock (_lock)  // Ensure thread safety when accessing shared collection
                 {
                     foreach (var data in collection)
@@ -352,15 +390,18 @@ namespace FirstTerraceSystems.Components.Pages
                         if (data.Value.Count != 0)
                         {
 
-                          
-                            JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
-                       
+
+                         JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+
                             collection[data.Key].Clear();
                         }
                     }
+
+        //    this.waitevent.Reset();
                 }
 
-                OnWait = false;
+               OnWait = false;
+              //  yield;
             }
         }
 
@@ -387,8 +428,8 @@ namespace FirstTerraceSystems.Components.Pages
                 marketFeeds = datasets[symbol];
             else
                 marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
-            await SendChartDataInChunks(symbol, marketFeeds).ConfigureAwait(false);
-        //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
+            await SendChartDataInChunks(symbol, marketFeeds,false).ConfigureAwait(false);
+            //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
             marketFeeds = null;
         }
 
@@ -417,16 +458,17 @@ namespace FirstTerraceSystems.Components.Pages
             }
 
 
-             var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-           // var defaultStartDate=   DateTime.Now.AddHours(-10);
+            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            // var defaultStartDate=   DateTime.Now.AddHours(-10);
             Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
-            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate,false,false).ConfigureAwait(false);
-          //  dbmarketFeeds = dbmarketFeeds.OrderBy((x) => x.Date);
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate, false).ConfigureAwait(false);
             if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
             {
                 datasets[symbol] = dbmarketFeeds.ToList();
-                var filtered = FilterData(dbmarketFeeds, PointSize);
+                //  var filtered = FilterData(dbmarketFeeds, PointSize);
+                var filtered = dbmarketFeeds;
                 SymbolChanged(chartId, symbol);
+                dbmarketFeeds = null;
                 return filtered;
             }
             else
@@ -538,7 +580,7 @@ namespace FirstTerraceSystems.Components.Pages
             await WebSocketClient.CloseUtp();
         }
         [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range, int xAxisPixels, int yAxisPixels)
+        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range, int xAxisPixels, int yAxisPixels,bool canfilter=true)
 
         {
 
@@ -559,6 +601,7 @@ namespace FirstTerraceSystems.Components.Pages
             var last = datasets[symbol][datasets[symbol].Count - 1];
 
 
+
             // Filter the data by time range
 
             var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
@@ -567,7 +610,7 @@ namespace FirstTerraceSystems.Components.Pages
 
             // Calculate the number of data points to display
 
-            filtered = FilterData(filtered, xAxisPixels, yAxisPixels);
+            filtered = FilterData(filtered, PointSize, yAxisPixels);
 
 
             return filtered;
@@ -575,22 +618,26 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
 
-        public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int xAxisPixels, int yAxisPixels)
+        public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int xAxisPixels, int yAxisPixels,bool canfilter=true)
 
         {
 
             var currentTime = DateTime.Now.TimeOfDay;
 
-           
+
 
 
             // Total number of data points
 
             var totalPoints = data.Count();
 
-
+            var filteredData = data;
 
             // Determine if we need to reduce the number of points based on xAxisPixels
+            if (canfilter==true)
+            {
+
+           
 
             int numPointsToShow = Math.Min(totalPoints, xAxisPixels);
 
@@ -604,8 +651,8 @@ namespace FirstTerraceSystems.Components.Pages
 
             // Filter data to have at least one point per x-axis pixel
 
-            var filteredData = data.Where((_, index) => index % step == 0).ToList();
-
+             filteredData = data.Where((_, index) => index % step == 0).ToList();
+            }
 
             // Additional filtering to ensure at least 10 distinct y-axis points for each time pixel
 
