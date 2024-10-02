@@ -8,11 +8,12 @@
 @inject BsToastService Toast
 @inject WindowsSerivce WindowsSerivce
 @inject ChartService ChartService
+@inject NasdaqService NasdaqService
 @* @attribute [Authorize] *@
 @implements IDisposable
 
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
-<Preload/>
+<Preload />
 <div class="page" style="background: radial-gradient(circle at 50% 8.19%, #1B2934 0%, #000000 100%);">
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register") && !NavigationManager.Uri.Contains("loading"))
@@ -61,7 +62,7 @@
                 <div class="market-open">
                     <span class="market-time-text">MARKET <span style="font-weight: 700;">@MarketStatus</span></span>
                 </div>
-                <Button ElementId="btn-logout" Class="me-2" Style="background-color:#FB5B31 !important"  Outline="true" @onclick="Logout">Logout </Button>
+                <Button ElementId="btn-logout" Class="me-2" Style="background-color:#FB5B31 !important" Outline="true" @onclick="Logout">Logout </Button>
                 <Switch Class="w-auto" Value="IsDarkMode" ValueExpression="() => IsDarkMode" ValueChanged="ToggleDarkMode" />
             </div>
         }
@@ -73,10 +74,11 @@
 </div>
 
 @code {
+
     private bool IsDarkMode = true;
     private ElementReference Er_DisplayOptions { get; set; }
     private string? currentTime;
-    private string MarketStatus="Closed";
+    private string MarketStatus = "Closed";
     private void ToggleDarkMode(bool value)
     {
         IsDarkMode = value;
@@ -103,8 +105,9 @@
         timer.Start();
     }
 
-    private void UpdateTime()
+    private async void UpdateTime()
     {
+        List<HolidayList> holidayList = await NasdaqService.GetHolidays();
         var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
         var coreMarketStartTime = new TimeSpan(9, 30, 0); // 9:30 AM
         var coreMarketEndTime = new TimeSpan(16, 0, 0);   // 4:00 PM
@@ -118,6 +121,12 @@
         {
             MarketStatus = "Closed";
         }
+
+        // if (holidayList.Where(x => DateTime.Parse(x.date_time).Date == estTime.Date).Any())
+        // {
+        //     MarketStatus = "Closed";
+        // }
+
         currentTime = estTime.ToString("h:mm tt EST");
         InvokeAsync(StateHasChanged);
     }

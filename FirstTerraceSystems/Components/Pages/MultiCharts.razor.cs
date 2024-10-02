@@ -277,7 +277,7 @@ namespace FirstTerraceSystems.Components.Pages
                //await Task.Run(async() => { 
                // await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
                // }).ConfigureAwait(true);
-           }*/
+           }*/  
 
         private async Task RefreshCharts(NasdaqResponse? response)
         {
@@ -561,7 +561,7 @@ namespace FirstTerraceSystems.Components.Pages
 
             // Filter the data by time range
 
-            var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+            var filtered = datasets[symbol].Where((x) => x.Date >= eastern && x.Price >= 0).ToList();
 
 
 

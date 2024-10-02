@@ -122,6 +122,8 @@ function addHtmlButtonToChart(chart, options) {
         {
             fill: rangeButton.fillColor ,
             stroke: rangeButton.strokeColor,
+            padding: 5,
+
             //'stroke-width': 2,
             //r: 5,
             style: {
@@ -206,6 +208,7 @@ function addButtonToChart(chart, options,theme) {
 
             fill: rangeButton.fillColor,
             stroke: rangeButton.strokeColor, //'#272C2F',
+            padding: 5,
             //'stroke-width': 2,
             //r: 5,
             style: {

@@ -46,6 +46,17 @@ namespace FirstTerraceSystems.Services
                 return null;
             }
         }
+        public async Task<List<HolidayList>?> GetHolidays()
+        {
+            var client = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Get, "http://52.0.33.126:8000/nasdaq/holidays");
+            request.Headers.Add("accept", "application/json");
+            var response = await client.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            string content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<List<HolidayList>>(content);
+
+        }
         private async Task<IEnumerable<MarketFeed>> DeserializeStreamAsync(Stream stream)
         {
             var result = new List<MarketFeed>();

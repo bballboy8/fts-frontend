@@ -28,7 +28,7 @@ namespace FirstTerraceSystems.Repositories
 
             try
             {
-                string sql = $"SELECT * FROM {GetSymbolTableName(symbol)} ORDER BY Id DESC LIMIT 1";
+                string sql = $"SELECT * FROM {GetSymbolTableName(symbol)} ORDER BY Date DESC LIMIT 1";
                 return _connection.QueryFirstOrDefault<MarketFeed>(sql);
             }
             catch (Exception ex)
