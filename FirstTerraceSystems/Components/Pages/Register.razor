@@ -16,7 +16,7 @@
             <div Class="signIn signUp questions login-content">
                 <EditForm Model="@_registerDto" OnValidSubmit="ValidateUserAsync" autocomplete="off" aria-autocomplete="none">
                     <DataAnnotationsValidator />
-                    <img src="../images/logo.png" Alt="logo" class="logo" />
+                    <img src="../images/applogtemp.png" Alt="logo" class="logo" />
 
                     <InputText @bind-Value="_registerDto.first_name" DisplayName="First name" placeholder="First name" autocomplete="off" aria-autocomplete="none"></InputText>
                     <ValidationMessage For="@(() => _registerDto.first_name)" />

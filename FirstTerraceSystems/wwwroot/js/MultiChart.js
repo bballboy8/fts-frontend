@@ -1,39 +1,40 @@
-﻿Highcharts.setOptions({
+//debugger
+Highcharts.setOptions({
     global: {
-        useUTC: false
+        useUTC: false,
     },
     boost: {
         useGPUTranslations: true,
-        usePreAllocated: true
+        usePreAllocated: true,
     },
     credits: {
-        enabled: false
+        enabled: false,
     },
 });
 
 const defaultkeyboardNavigationOrder = [
-    'symbolButton',
-    'rangeSelector',
-    'zoomInButton',
-    'zoomOutButton',
-    'minimizeButton',
-    'maximizeButton',
-    'closeChartButton',
-    'series',
-    'zoom',
-    'chartMenu',
-    'legend'
+    "symbolButton",
+    "rangeSelector",
+    "zoomInButton",
+    "zoomOutButton",
+    "minimizeButton",
+    "maximizeButton",
+    "closeChartButton",
+    "series",
+    "zoom",
+    "chartMenu",
+    "legend",
 ];
 
 const singleChartkeyboardNavigationOrder = [
-    'symbolButton',
-    'rangeSelector',
-    'zoomInButton',
-    'zoomOutButton',
-    'series',
-    'zoom',
-    'chartMenu',
-    'legend'
+    "symbolButton",
+    "rangeSelector",
+    "zoomInButton",
+    "zoomOutButton",
+    "series",
+    "zoom",
+    "chartMenu",
+    "legend",
 ];
 
 var ChatAppInterop = window.ChatAppInterop || {};
@@ -48,7 +49,11 @@ var symbolData = {};
 function filterData(data, numPoints, startDate, endDate) {
     let filteredData = data;
     if (startDate && endDate) {
-        filteredData = data.filter(point => new Date(point.date).getTime() >= startDate && new Date(point.date).getTime() <= endDate);
+        filteredData = data.filter(
+            (point) =>
+                new Date(point.date).getTime() >= startDate &&
+                new Date(point.date).getTime() <= endDate
+        );
     }
     if (filteredData.length <= numPoints) {
         return filteredData;
@@ -63,151 +68,244 @@ function filterData(data, numPoints, startDate, endDate) {
     return result;
 }
 
-function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWindow = false, dotNetObject = undefined) {
-
-
+function addChart(
+    totalCharts,
+    charContainerId,
+    data,
+    symbol,
+    isPopoutChartWindow = false,
+    dotNetObject = undefined
+) {
     updatingCharts[symbol] = false;
     return Highcharts.stockChart(charContainerId, {
-
         chart: {
-            marginTop: 40,
+            type: "scatter",
+            marginTop: totalCharts == 8 ? 60 : 40,
             boostThreshold: 1,
             backgroundColor: backgroundColor,
             borderWidth: 1,
+            animation: false,
             borderColor: "#5B6970",
+
             events: {
                 load: function () {
                     var chart = this;
+
+                    console.log("chart: ", chart);
+                    /*    chart1.yAxis[0].update({
+                            min: chart1.series[0].dataMin,
+                            max: chart1.series[0].dataMax
+                        });
+                    this.yAxis[0].setExtremes(this.series[0].dataMin, this.series[0].dataMax,false);*/
                     let chartWidth = chart.chartWidth;
                     chart.showLoading();
+
+                    //set min and max to avoid y-axis points from dissapearing when zoomed in or out
+
+
+                    ///
+
                     chart.ButtonNamespace = {};
                     chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
-                        text: truncateText(`XNYS: ${symbol}`, 11, ''),
+                        text: truncateText(`XNYS: <b>${symbol}</b>`, 25, ""),
                         x: 0,
-                        y:10,
-                        width: 85,
+                        y: 10,
+                        width: 100,
                         height: 10,
                         title: `XNYS: ${symbol}`,
                         callback: function (e) {
-
                             $("#dvSymbolInput").remove();
 
                             var button = $(e.target);
                             var buttonOffset = button.offset();
                             if (totalCharts != 8) {
-                                var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 35px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
+                                var divInput = $(
+                                    `<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()
+                                    }px;left:${buttonOffset.left
+                                    }px;margin-top: 35px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name
+                                    }"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`
+                                );
+                            } else {
+                                var divInput = $(
+                                    `<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()
+                                    }px;left:${buttonOffset.left
+                                    }px;margin-top: 55px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name
+                                    }"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`
+                                );
                             }
-                            else {
-                                var divInput = $(`<div id="dvSymbolInput" style="position:absolute;top:${buttonOffset.top + button.outerHeight()}px;left:${buttonOffset.left}px;margin-top: 55px;"><input id="txtSymboleName" type="text" value="${chart.series[0].name}"/><button id="btnUpdateChartSymbol" type="button" datachartid="${charContainerId}">Ok</button><button id="btnCancelChartSymbol" type="button" datachartid="${charContainerId}">Cancel</button></div>`);
 
-                            }
-
-                            var btn = divInput.find('#btnUpdateChartSymbol');
-                            var cancelBtn = divInput.find('#btnCancelChartSymbol');
+                            var btn = divInput.find("#btnUpdateChartSymbol");
+                            var cancelBtn = divInput.find("#btnCancelChartSymbol");
                             cancelBtn.on("click", function () {
                                 var dvInput = $(this).closest("#dvSymbolInput");
                                 $("#dvSymbolInput").remove();
                             });
                             btn.on("click", function () {
-
-                                var dvInput = $(this).closest("#dvSymbolInput")
+                                var dvInput = $(this).closest("#dvSymbolInput");
                                 symbol = $("#txtSymboleName", dvInput).val();
                                 symbol = symbol.toUpperCase();
 
-                                if (symbol == chart.series[0].name || symbol == '') {
+                                if (symbol == chart.series[0].name || symbol == "") {
                                     $("#dvSymbolInput").remove();
                                     return;
                                 }
 
-                                let existingChart = getChartInstanceBySeriesName(symbol)
+                                let existingChart = getChartInstanceBySeriesName(symbol);
 
                                 if (existingChart) {
                                     chart.showLoading();
                                     symbol = existingChart.series[0].name;
                                     chart.series[0].setData(existingChart.series[0].options.data);
-
+                                    console.log("existing");
                                     chart.series[0].update({
                                         name: symbol,
-                                    })
-
-                                    chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
-                                    chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
-
-                                    if (ChatAppInterop.dotnetReference) {
-                                        ChatAppInterop.dotnetReference.invokeMethodAsync('SymbolChanged', chart.renderTo.id, symbol);
-                                    }
-                                    chart.hideLoading();
-
-                                } else {
-                                    chart.showLoading();
-                                    updateChartSymbol(chart.renderTo.id, symbol).then((seriesData) => {
-
-                                        if (seriesData) {
-                                            setDataToChart(chart, seriesData);
-
-                                            chart.series[0].update({
-                                                name: symbol,
-                                            })
-                                            chart.ButtonNamespace.symbolButton.attr({ text: truncateText(`XNYS: ${symbol}`, 11, '') });
-                                            chart.ButtonNamespace.symbolButton.attr({ title: `XNYS: ${symbol}` });
-                                            chart.hideLoading();
-                                        }
-
-                                        
-                                        chart.hideLoading();
                                     });
 
+                                    chart.ButtonNamespace.symbolButton.attr({
+                                        text: truncateText(`XNYS: ${symbol}`, 11, ""),
+                                    });
+                                    chart.ButtonNamespace.symbolButton.attr({
+                                        title: `XNYS: ${symbol}`,
+                                    });
+
+                                    if (ChatAppInterop.dotnetReference) {
+                                        ChatAppInterop.dotnetReference.invokeMethodAsync(
+                                            "SymbolChanged",
+                                            chart.renderTo.id,
+                                            symbol
+                                        );
+                                    }
+                                    chart.hideLoading();
+                                } else {
+                                    chart.showLoading();
+
+                                    console.log("place" + chart.series[0].name);
+                                    updateChartSymbol(chart.renderTo.id, symbol).then(
+                                        (seriesData) => {
+                                            console.log("place1");
+                                            if (seriesData) {
+                                                console.log("place3");
+                                                if (seriesData.length > 0) {
+
+                                                    console.log("dont change data");
+                                                    setDataToChart(chart, seriesData);
+
+                                                    chart.series[0].update({
+                                                        name: symbol,
+                                                    });
+                                                    chart.ButtonNamespace.symbolButton.attr({
+                                                        text: truncateText(`XNYS: ${symbol}`, 11, ""),
+                                                    });
+                                                    chart.ButtonNamespace.symbolButton.attr({
+                                                        title: `XNYS: ${symbol}`,
+                                                    });
+                                                }
+                                                chart.hideLoading();
+                                            } else {
+                                                symbol = chart.series[0].name;
+                                            }
+
+
+
+                                            chart.hideLoading();
+                                        }
+                                    );
                                 }
 
                                 $("#dvSymbolInput").remove();
                             });
 
                             $("body").append(divInput);
-                        }
+                        },
                     });
 
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1m', callback: function () { setRange(symbol, 60 * 1000) }, x: 90, y: 10});
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3m', callback: function () { setRange(symbol,3* 60 * 1000) }, x: 120, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '30m', callback: function () { setRange(symbol,30* 60 * 1000) }, x: 150, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1h', callback: function () { setRange(symbol,60* 60 * 1000) }, x: 185, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '1D', callback: function () { setRange(symbol,24*60* 60 * 1000) }, x: 215, y: 10 });
-                    chart.ButtonNamespace.customButton1 = addButtonToChart(chart, { text: '3D', callback: function () { setRange(symbol,3* 24 * 60 * 60 * 1000) }, x: 245, y: 10 });
-                       
+                    const buttonConfigs = [
+                        { text: "1m", x: 85, duration: 60 * 1000, width: 5, height: 5 },
+                        { text: "3m", x: 113, duration: 3 * 60 * 1000, width: 5, height: 5 },
+                        { text: "30m", x: 143, duration: 30 * 60 * 1000, width: 5, height: 5 },
+                        { text: "1h", x: 178, duration: 60 * 60 * 1000, width: 5, height: 5 },
+                        { text: "1D", x: 208, duration: 24 * 60 * 60 * 1000, width: 5, height: 5 },
+                        { text: "3D", x: 238, duration: 3 * 24 * 60 * 60 * 1000, width: 5, height: 5 },
+                    ];
+
+                    var counter1 = 0;
+                    buttonConfigs.forEach((config) => {
+                        chart.ButtonNamespace[config.text] = addButtonToChart(chart, {
+                            text: config.text,
+                            callback: function () {
+                                setButtonActive(this);
+                                setRange(symbol, config.duration);
+
+                            },
+                            x: config.x,
+                            y: 10,
+                        });
+                    });
+
+
+
+
+                    setButtonActive(chart.ButtonNamespace["3D"]);
                     chart.ButtonNamespace.zoomInButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-in"></i>',
-                        x: 360,
-                        y:10,
+                        x: 460,
+                        y: 10,
                         callback: function () {
                             zoomChart(true, chart, dotNetObject);
-                        }
+                        },
                     });
 
                     chart.ButtonNamespace.zoomOutButton = addHtmlButtonToChart(chart, {
                         text: '<i class="bi bi-zoom-out"></i>',
-                        x: 400,
-                        y:10,
+                        x: 500,
+                        y: 10,
                         callback: function () {
                             zoomChart(false, chart, dotNetObject);
-                        }
+                        },
                     });
 
                     var customComponents = {
-                        symbolButton: new ButtonComponent(chart, chart.ButtonNamespace.symbolButton),
-                        zoomInButton: new ButtonComponent(chart, chart.ButtonNamespace.zoomInButton),
-                        zoomOutButton: new ButtonComponent(chart, chart.ButtonNamespace.zoomOutButton),
+                        symbolButton: new ButtonComponent(
+                            chart,
+                            chart.ButtonNamespace.symbolButton
+                        ),
+                        zoomInButton: new ButtonComponent(
+                            chart,
+                            chart.ButtonNamespace.zoomInButton
+                        ),
+                        zoomOutButton: new ButtonComponent(
+                            chart,
+                            chart.ButtonNamespace.zoomOutButton
+                        ),
                     };
 
                     if (!isPopoutChartWindow) {
-                        
-                        chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(chart, {
-                            text: '<i class="bi bi-x-lg"></i>',
-                            hoverColor: '#5B6970',
-                            x: chartWidth-40,
-                            y:10,
-                            callback: function () {
-                                removeChart(chart);
+                        let themeValue =
+                            document.documentElement.getAttribute("data-sidebar");
+                        let closeButton = {
+                            hoverCol: "",
+                            strokeColor: "",
+                        };
+                        if (themeValue == "light") {
+                            closeButton.hoverCol = "#5B6970";
+                            closeButton.strokeColor = "#5B6970";
+                        } else {
+                            closeButton.hoverCol = "#FB5B31";
+                            closeButton.strokeColor = "#FFFFFF";
+                        }
+                        chart.ButtonNamespace.closeChartButton = addHtmlButtonToChart(
+                            chart,
+                            {
+                                text: '<i class="bi bi-x-lg"></i>',
+                                hoverColor: closeButton.hoverColor,
+                                stroke: closeButton.strokeColor,
+                                x: chartWidth - 40,
+                                y: 10,
+                                callback: function () {
+                                    removeChart(chart);
+                                },
                             }
-                        });
+                        );
 
                         chart.ButtonNamespace.maximizeButton = addHtmlButtonToChart(chart, {
                             text: '<i class="bi bi-window"></i>',
@@ -220,8 +318,17 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                                 var extremes = chart.xAxis[0].getExtremes();
                                 //var data = chart.options.series[0].data;
                                 removeChart(chart);
-                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, true, chartId, extremes.min, extremes.max, symbol);
-                            }
+                                await DotNet.invokeMethodAsync(
+                                    "FirstTerraceSystems",
+                                    "DragedChartWindow",
+                                    jsObjectReference,
+                                    true,
+                                    chartId,
+                                    extremes.min,
+                                    extremes.max,
+                                    symbol
+                                );
+                            },
                         });
 
                         chart.ButtonNamespace.minimizeButton = addHtmlButtonToChart(chart, {
@@ -235,25 +342,43 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                                 var extremes = chart.xAxis[0].getExtremes();
                                 //var data = chart.options.series[0].data;
                                 removeChart(chart);
-                                await DotNet.invokeMethodAsync('FirstTerraceSystems', 'DragedChartWindow', jsObjectReference, false, chartId, extremes.min, extremes.max, symbol)
-                            }
+                                await DotNet.invokeMethodAsync(
+                                    "FirstTerraceSystems",
+                                    "DragedChartWindow",
+                                    jsObjectReference,
+                                    false,
+                                    chartId,
+                                    extremes.min,
+                                    extremes.max,
+                                    symbol
+                                );
+                            },
                         });
 
-                        customComponents.minimizeButton = new ButtonComponent(chart, chart.ButtonNamespace.minimizeButton);
-                        customComponents.maximizeButton = new ButtonComponent(chart, chart.ButtonNamespace.maximizeButton);
-                        customComponents.closeChartButton = new ButtonComponent(chart, chart.ButtonNamespace.closeChartButton);
+                        customComponents.minimizeButton = new ButtonComponent(
+                            chart,
+                            chart.ButtonNamespace.minimizeButton
+                        );
+                        customComponents.maximizeButton = new ButtonComponent(
+                            chart,
+                            chart.ButtonNamespace.maximizeButton
+                        );
+                        customComponents.closeChartButton = new ButtonComponent(
+                            chart,
+                            chart.ButtonNamespace.closeChartButton
+                        );
                     }
 
                     chart.update({
                         accessibility: {
                             customComponents: customComponents,
                             keyboardNavigation: {
-                                order: !isPopoutChartWindow ? defaultkeyboardNavigationOrder : singleChartkeyboardNavigationOrder
-                            }
-                        }
+                                order: !isPopoutChartWindow
+                                    ? defaultkeyboardNavigationOrder
+                                    : singleChartkeyboardNavigationOrder,
+                            },
+                        },
                     });
-                    
-
 
                 },
                 //redraw: function () {
@@ -261,224 +386,427 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 //},
                 render: function () {
                     var chart = this;
-                    chart.ButtonNamespace.symbolButton.align({
-                        align: 'left',
-                        x: 0,
-                        y: 0
-                    }, true, 'spacingBox');
 
-                    var totalChartsCount = localStorage.getItem('chartCount');
-                    if (totalCharts == 8 || totalChartsCount == 8) {
-                        chart.ButtonNamespace.zoomInButton.align({
-                            align: 'left',
+                    chart.ButtonNamespace.symbolButton.align(
+                        {
+                            align: "left",
                             x: 0,
-                            y: 30
-                        }, true, 'spacingBox');
+                            y: 0,
+                        },
+                        true,
+                        "spacingBox"
+                    );
+                    var defaultchartlayoutchecker = function () {
 
-                        chart.ButtonNamespace.zoomOutButton.align({
-                            align: 'left',
-                            x: 25,
-                            y: 30
-                        }, false, 'spacingBox');
-                    }
-                    else {
-                        chart.ButtonNamespace.zoomInButton.align({
-                            align: 'left',
-                            x: 290,
-                            y: 2
-                        }, true, 'spacingBox');
+                        var Checker = false;
 
-                        chart.ButtonNamespace.zoomOutButton.align({
-                            align: 'left',
-                            x: 315,
-                            y: 2
-                        }, false, 'spacingBox');
+                        try {
+                            var charthigherparent = $(chart.container).parent().parent().parent();
+                            if (charthigherparent != null) {
+
+
+                                if ($(charthigherparent).attr("id") == "chartListCol2" && $(charthigherparent).children().length == 3 && (totalCharts == 5 || totalChartsCount == 5)) {
+                                    {
+
+                                        Checker = true;
+                                        console.log("isDlayout");
+                                    }
+
+                                }
+                            }
+                        } catch (ex) {
+
+                        }
+
+
+                        return Checker;
+                    };
+
+
+
+                    var totalChartsCount = localStorage.getItem("chartCount");
+                    if (totalCharts == 8 || totalChartsCount == 8 || totalCharts == 6 || totalChartsCount == 6 || defaultchartlayoutchecker() == true) {
+                        chart.ButtonNamespace.zoomInButton.align(
+                            {
+                                align: "left",
+                                x: 0,
+                                y: 30,
+                            },
+                            true,
+                            "spacingBox"
+                        );
+
+                        chart.ButtonNamespace.zoomOutButton.align(
+                            {
+                                align: "left",
+                                x: 25,
+                                y: 30,
+                            },
+                            false,
+                            "spacingBox"
+                        );
+                    } else {
+                        chart.ButtonNamespace.zoomInButton.align(
+                            {
+                                align: "left",
+                                x: 290,
+                                y: 2,
+                            },
+                            true,
+                            "spacingBox"
+                        );
+
+                        chart.ButtonNamespace.zoomOutButton.align(
+                            {
+                                align: "left",
+                                x: 315,
+                                y: 2,
+                            },
+                            false,
+                            "spacingBox"
+                        );
                     }
                     if (!isPopoutChartWindow) {
-
                         var closeX = -30;
                         var minX = -60;
                         var maxX = -90;
                         if (totalCharts == 8) {
                             closeX = -25;
                             minX = -50;
-                                maxX = -75;
+                            maxX = -75;
                         }
-                        chart.ButtonNamespace.closeChartButton.align({
-                            align: 'right',
-                            x: closeX,
-                            y: 2
-                        }, false, 'spacingBox');
+                        chart.ButtonNamespace.closeChartButton.align(
+                            {
+                                align: "right",
+                                x: closeX,
+                                y: 2,
+                            },
+                            false,
+                            "spacingBox"
+                        );
 
-                        chart.ButtonNamespace.maximizeButton.align({
-                            align: 'right',
-                            x: minX,
-                            y: 2
-                        }, false, 'spacingBox');
+                        chart.ButtonNamespace.maximizeButton.align(
+                            {
+                                align: "right",
+                                x: minX,
+                                y: 2,
+                            },
+                            false,
+                            "spacingBox"
+                        );
 
-                        chart.ButtonNamespace.minimizeButton.align({
-                            align: 'right',
-                            x: maxX,
-                            y: 2
-                        }, false, 'spacingBox');
+                        chart.ButtonNamespace.minimizeButton.align(
+                            {
+                                align: "right",
+                                x: maxX,
+                                y: 2,
+                            },
+                            false,
+                            "spacingBox"
+                        );
                     }
 
-                }
+                },
             },
             zooming: {
-                type: 'x'
-            }
+                type: "xy",
+            },
         },
-        
+
         rangeSelector: {
-            enabled:false
+
+            enabled: false,
+            buttons: [
+                {
+                    type: 'minute',
+                    count: 3,
+                    text: "m"
+
+                },
+                {
+                    type: 'day',
+                    count: 1,
+                    text: "d"
+
+                }, {
+                    type: 'hour',
+                    count: 1,
+                    text: "h"
+                }
+            ]
         },
         tooltip: {
-            split: true,
-            formatter: function () {
-                return [
-                    `<b>${Highcharts.dateFormat('%A, %e %b. %H:%M:%S.%L', this.x, false)}</b>`,
-                    ...(this.points ? this.points.map(point => `${point.series.name}: ${Highcharts.numberFormat(point.y / 10000, 2)}`) : [])
-                ]
-            },
+            shared: false,
+
+
+            /*       formatter: function () {
+                       return [
+                           `<b>${Highcharts.dateFormat(
+                               "%A, %e %b. %H:%M:%S.%L",
+                               this.x,
+                               false
+                           )}</b>`,
+                           ...(this.points
+                               ? this.points.map(
+                                   (point) => {
+                                       var formatednumber = Highcharts.numberFormat(point.y / 10000, 2) + "";
+                                       if (point.series.name == "Volume") {
+                                           formatednumber = point.y
+                                       }
+       
+                                       return `${point.series.name}: ${formatednumber}`
+                                   }
+                               )
+                               : []),
+                       ];
+                   },*/
         },
         plotOptions: {
-
-            candlestick: {
-                color: 'red',    // Color of the downward candles
-                upColor: 'green' // Color of the upward candles
+            scatter: {
+                color: "green",
+                negativeColor: "red",
+                tooltip: {
+                    pointFormatter: function () {
+                        //   console.log("upper: ", this.x);
+                        return [`<b>${symbol} ${Highcharts.numberFormat(this.y / 10000, 2)}</b>`];
+                    },
+                },
             },
+            //column: {
+            //    label: {
+            //        format: 'Volume'
+            //    },
+            //    tooltip: {
+            //        pointFormatter: function () {
+            //            console.log('lower', this.x)
+            //            return this.y
+            //        }
+            //    }
+            //},
             series: {
                 turboThreshold: 0,
+                animation: true,
+
                 marker: {
-                    enabled: false
+                    enabled: false,
                 }
-            }
+            },
         },
         time: {
-            timezone: 'America/New_York',
+            timezone: "America/New_York",
             //timezone: 'US/Eastern',
-            useUTC: false
+            useUTC: false,
         },
         xAxis: [
             {
                 events: {
                     afterSetExtremes: function (e) {
                         //if (!updatingCharts[symbol])
-                        handleExtremesChange(symbol,this.chart, e.min, e.max);
+                        //    handleExtremesChange(symbol, this.chart, e.min, e.max);
                         // Remove points that are outside the new extremes
                         /*series.data.forEach(function (point) {
-                            if (point.x >= e.min && point.x <= e.max) {
-                                point.remove(false);
-                            }
-                        });*/
+                                        if (point.x >= e.min && point.x <= e.max) {
+                                            point.remove(false);
+                                        }
+                                    });*/
+                        const values = [];
+                        var tchart = this.chart;
+                        //    tchart.yAxis[0].setExtremes(e.min / 10000, e.max/10000, true,true);
+                        console.log(tchart.series[0].dataMax);
+                        //   
+                        /*         if (!(typeof tchart.series[0].dataMax == 'undefined')) {
+                                         tchart.yAxis[0].setExtremes(tchart.series[0].dataMin, tchart.series[0].dataMax, true, true);
+                                         console.log(tchart.series[0].dataMin + "JK" + tchart.series[0].dataMax);
+                                         //  tchart.redraw();
+                                     } else {
+                                         this.chart.series[0].points.forEach(point => {
+                                             if (point.visible) {
+                                                 //      console.log(point);
+             
+                                                 values.push(point.y)
+                                             }
+                                         });
+                                         var _min = Math.min(...values);
+                                         console.log(_min + "hjhj");
+                                         tchart.yAxis[0].setExtremes(_min, Math.max(...values), false, true);
+                                         //   tchart.redraw();
+                                     }*/
+                        if (!(typeof tchart.series[0].dataMax == 'undefined') && !(typeof tchart.series[0].dataMin == 'undefined')) {
+                            tchart.yAxis[0].setExtremes(tchart.series[0].dataMin, tchart.series[0].dataMax, false, false);
+                            console.log(tchart.series[0].dataMin + "xchanged" + tchart.series[0].dataMax);
+                        } else {
+                            console.log(tchart.series[0].dataMin + "-xchanged-" + tchart.series[0].dataMax);
+                        }
 
-                        
-                    }
+                    },
                 },
                 ordinal: false,
-                type: 'datetime',
+                type: "datetime",
                 plotLines: plotLines,
                 plotBands: plotBands,
+                breaks: plotbreaks,
                 //offset: 0,
                 labels: {
-                    style: { color: fontColor }
+                    style: { color: fontColor, msrginRight: 5 }, padding: 5,
+                    allowOverlap: false,
+                    step: 2,
+                    //formatter: function () {
+                    //    var hideValue = false;
+                    //    var xdate = new Date(this.pos)
+                    //    var dayOfWeek = xdate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+                    //    if (xdate.getHours() > 20 || xdate.getHours() < 4) {
+                    //        hideValue = true;
+                    //    }
+                    //    //if (dayOfWeek == 6 || dayOfWeek == 7) {
+                    //    //    hideValue = true;
+                    //    //}
+                    //    //plotBands.push({
+                    //    //    color: "rgba(68, 170, 213, 0.1)", // Light blue shading
+                    //    //    from: new Date(
+                    //    //        date.getFullYear(),
+                    //    //        date.getMonth(),
+                    //    //        date.getDate(),
+                    //    //        20,
+                    //    //        0
+                    //    //    ), // Start of the day
+                    //    //    to: new Date(
+                    //    //        date.getFullYear(),
+                    //    //        date.getMonth(),
+                    //    //        date.getDate() + 3,
+                    //    //        4,
+                    //    //        0
+                    //    //    ), // End of the day
+                    //    //    zIndex: 3,
+                    //    //}); plotLines.push({
+                    //    //    color: "red",
+                    //    //    width: 2,
+                    //    //    value: new Date(
+                    //    //        date.getFullYear(),
+                    //    //        date.getMonth(),
+                    //    //        date.getDate(),
+                    //    //        20,
+                    //    //        0
+                    //    //    ), // 8 PM
+                    //    //    zIndex: 5,
+                    //    //});
+
+                    //    if (!hideValue) {
+                    //        return Highcharts.dateFormat(this.dateTimeLabelFormat, this.pos)
+                    //    }
+                    //}
                 },
                 dateTimeLabelFormats: {
-                    second: '%H:%M:%S.%L',
-                    minute: '%H:%M',
-                    hour: '%H:%M',
-                    day: '%e. %b',
-                    week: '%e. %b',
-                    month: '%b \'%y',
-                    year: '%Y'
+                    second: "%H:%M:%S.%L",
+                    minute: "%H:%M",
+                    hour: "%H:%M",
+                    day: "%e. %b",
+                    week: "%e. %b",
+                    month: "%b '%y",
+                    year: "%Y",
                 },
                 lineWidth: 0,
                 opposite: false,
-                tickPixelInterval: 150
+                tickPixelInterval: 160,
             },
         ],
         yAxis: [
             {
                 gridLineWidth: 0,
+                dataGrouping: {
+                    enabled: false
+                },
                 labels: {
-                    align: 'left',
+                    align: "left",
                     x: 5,
                     style: {
-                        color: fontColor // Green color
+                        color: fontColor, // Green color
                     },
                     formatter: function () {
-                        return Highcharts.numberFormat(this.value / 10000, 2);
+
+                        return (Highcharts.numberFormat(this.value / 10000, 2));
                     }
                 },
-                height: '65%',
+                height: "65%",
+
                 resize: { enabled: true },
+                events: {
+                    afterSetExtremes: function (e) {
+                        const values = [];
+
+                        console.log(e.max + "ychanged");
+
+                    }
+                }
             },
             {
                 gridLineWidth: 0,
                 labels: {
-                    align: 'left',
+                    align: "left",
                     x: 5,
                     style: {
-                        color: fontColor
-                    },
+                        color: fontColor,
+                    }/*,
+                    formatter: function () {
+
+                        return (Highcharts.numberFormat(this.value / 1000, 0) + "k");
+                    }*/
                 },
                 title: {
-                    text: 'Volume'
+                    text: "Volume",
                 },
-                top: '65%',
-                height: '35%',
+                top: "65%",
+                height: "35%",
                 resize: { enabled: true },
-                offset: 0,
+                offset: 1,
                 lineWidth: 2,
                 formatter: function () {
-                    return Highcharts.numberFormat(this.value / 10000, 2);
-                }
-            }
-        ], tooltip: {
-            split: true
-        },
+                    console.log("forth: ", this);
+                    return Highcharts.numberFormat(this.value / 1000, 2);
+                },
+            },
+        ],
         series: [
             {
+
                 name: symbol,
                 lineWidth: 0,
                 marker: {
                     enabled: true,
-                    radius: 1
+                    radius: 1,
                 },
                 tooltip: {
-                    valueDecimals: 2
+                    valueDecimals: 2,
                 },
                 states: {
                     hover: {
-                        lineWidthPlus: 0
-                    }
+                        lineWidthPlus: 0,
+                    },
                 },
                 data: [],
                 boostThreshold: 10000,
-                turboThreshold: 0
-            }, {
-                type: 'column',
-                name: 'Volume',
+                turboThreshold: 0,
+            },
+            {
+                type: "column",
+                name: "Volume",
                 data: [],
                 yAxis: 1,
-            }
+            },
         ],
-        exporting: {
-            
-        },
+        exporting: {},
         navigation: {
             buttonOptions: {
-                align: 'left',
-                verticalAlign: 'top'
-            }
+                align: "left",
+                verticalAlign: "top",
+            },
         },
         navigator: {
-            enabled:false
+            enabled: false,
         },
         boost: {
             enabled: true,
-            useGPUTranslations: true
+            useGPUTranslations: true,
         },
         accessibility: {
             highContrastTheme: null,
@@ -486,31 +814,35 @@ function addChart(totalCharts , charContainerId, data, symbol, isPopoutChartWind
                 enabled: true,
                 focusBorder: {
                     enabled: false,
-                    hideBrowserFocusOutline: false
+                    hideBrowserFocusOutline: false,
                 },
             },
-        }
+        },
     });
 }
+
 const updatingCharts = {};
-function handleExtremesChange(symbol,chart, min, max) {
+function handleExtremesChange(symbol, chart, min, max) {
     setTimeout(async function () {
         updatingCharts[symbol] = true;
         /*for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
-            let point = chart.series[0].data[i];
-            if (point.x >= min && point.x <= max) {
-                console.log("point to be remove");
-                point.remove();
-            }
-        }*/
-        let filterData = await getExtremeDataBySymbol(chart.series[0].name, min, max);
-        addPointToChart(chart, filterData, false, false,false);
+                let point = chart.series[0].data[i];
+                if (point.x >= min && point.x <= max) {
+                    console.log("point to be remove");
+                    point.remove();
+                }
+            }*/
+        let filterData = await getExtremeDataBySymbol(
+            chart.series[0].name,
+            min,
+            max
+        );
+        addPointToChart(chart, filterData, false, false, false);
         updatingCharts[symbol] = false;
     }, 0);
 }
 
 function removeChart(chart) {
-
     if ($("#chartList .chart-box").length == 1) {
         return;
     }
@@ -523,73 +855,79 @@ function removeChart(chart) {
     chart.destroy();
     var totalCharts = $("#chartList .chart-box").length;
 
-
     var cssClass = "col-12";
     if (totalCharts == 1) {
         cssClass = "col-12";
         //$("#chartList").sortable({ disabled: true });
         //if (!$(".chart-container").hasClass("chart-popup"))
         /*$(".chart-container").off("dblclick");*/
-        removeWindowControlButtonsFromChart()
-    }
-    else if (totalCharts == 5) {
+        removeWindowControlButtonsFromChart();
+    } else if (totalCharts == 5) {
         cssClass = "col-12";
-    }
-    else if (totalCharts <= 4) {
+    } else if (totalCharts <= 4) {
         cssClass = "col-6";
-    }
-
-    else if (totalCharts <= 6) {
+    } else if (totalCharts <= 6) {
         cssClass = "col-4";
-    }
-    else if (totalCharts <= 8) {
+    } else if (totalCharts <= 8) {
         cssClass = "col-3";
     }
 
-    $("#chartList .chart-box").removeClass('col-3').removeClass('col-4').removeClass('col-6').removeClass('col-12');
+    $("#chartList .chart-box")
+        .removeClass("col-3")
+        .removeClass("col-4")
+        .removeClass("col-6")
+        .removeClass("col-12");
     $("#chartList .chart-box").addClass(cssClass);
 
-
-    var chartBoxes = $('#chartList').find('.chart-box');
+    var chartBoxes = $("#chartList").find(".chart-box");
 
     chartBoxes.sort(function (a, b) {
-        var counterA = $('.chart-container', a).data('chart-id');
-        var counterB = $('.chart-container', b).data('chart-id');
+        var counterA = $(".chart-container", a).data("chart-id");
+        var counterB = $(".chart-container", b).data("chart-id");
         return counterA - counterB;
     });
 
-
     if (totalCharts == 5) {
-        var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
-        var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
+        var chartListCol1 = $(
+            '<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'
+        );
+        var chartListCol2 = $(
+            '<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'
+        );
 
-        chartBoxes.slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
-        chartBoxes.slice(3).appendTo(chartListCol1.find('#chartListCol1'));
+        chartBoxes.slice(0, 3).appendTo(chartListCol2.find("#chartListCol2"));
+        chartBoxes.slice(3).appendTo(chartListCol1.find("#chartListCol1"));
 
         $("#chartList").append(chartListCol1).append(chartListCol2);
-
     } else {
-        chartBoxes.appendTo('#chartList');
+        chartBoxes.appendTo("#chartList");
         $("#chartListCol1").parent().remove();
         $("#chartListCol2").parent().remove();
     }
 
-
     if (totalCharts == 5) {
-        $('#chartListCol1 .chart-box').removeClass('chart-height-100').removeClass('chart-height-33').addClass('chart-height-50');
-        $('#chartListCol2 .chart-box').removeClass('chart-height-100').removeClass('chart-height-50').addClass('chart-height-33');
+        $("#chartListCol1 .chart-box")
+            .removeClass("chart-height-100")
+            .removeClass("chart-height-33")
+            .addClass("chart-height-50");
+        $("#chartListCol2 .chart-box")
+            .removeClass("chart-height-100")
+            .removeClass("chart-height-50")
+            .addClass("chart-height-33");
     } else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100').removeClass('chart-height-33');
-        $("#chartList .chart-box").addClass('chart-height-50');
-    }
-    else {
-        $("#chartList .chart-box").removeClass('chart-height-50').removeClass('chart-height-33');
-        $("#chartList .chart-box").addClass('chart-height-100');
+        $("#chartList .chart-box")
+            .removeClass("chart-height-100")
+            .removeClass("chart-height-33");
+        $("#chartList .chart-box").addClass("chart-height-50");
+    } else {
+        $("#chartList .chart-box")
+            .removeClass("chart-height-50")
+            .removeClass("chart-height-33");
+        $("#chartList .chart-box").addClass("chart-height-100");
     }
 }
 
 function zoomChart(zoomIn, chart, dotNetObject = undefined) {
-
     var xAxis = chart.xAxis[0];
     var extremes = chart.xAxis[0].getExtremes();
     var range = extremes.max - extremes.min;
@@ -607,16 +945,15 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined) {
     newMax = Math.min(xAxis.dataMax, newMax);
     xAxis.setExtremes(newMin, newMax);
 
+
     if (dotNetObject) {
-        dotNetObject.invokeMethodAsync('ZoomingChanged', newMin, newMax);
+        dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
     }
 }
 
-
 function removeWindowControlButtonsFromChart() {
-    let chart = Highcharts.charts.filter(c => c)[0];
+    let chart = Highcharts.charts.filter((c) => c)[0];
     if (chart) {
-
         chart.ButtonNamespace.closeChartButton.hide();
         chart.ButtonNamespace.minimizeButton.hide();
         chart.ButtonNamespace.maximizeButton.hide();
@@ -624,9 +961,9 @@ function removeWindowControlButtonsFromChart() {
         chart.update({
             accessibility: {
                 keyboardNavigation: {
-                    order: singleChartkeyboardNavigationOrder
-                }
-            }
+                    order: singleChartkeyboardNavigationOrder,
+                },
+            },
         });
     }
 }
@@ -634,7 +971,6 @@ function removeWindowControlButtonsFromChart() {
 function addWindowControlButtonsToChart() {
     Highcharts.charts.forEach(function (chart) {
         if (chart) {
-
             chart.ButtonNamespace.closeChartButton.show();
             chart.ButtonNamespace.minimizeButton.show();
             chart.ButtonNamespace.maximizeButton.show();
@@ -642,112 +978,250 @@ function addWindowControlButtonsToChart() {
             chart.update({
                 accessibility: {
                     keyboardNavigation: {
-                        order: defaultkeyboardNavigationOrder
-                    }
-                }
+                        order: defaultkeyboardNavigationOrder,
+                    },
+                },
             });
-        };
+        }
     });
 }
 
 async function getChartDataByLastFeedPoint(symbol, lastPoint) {
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataByLastFeedPoint", symbol, lastPoint);
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+        "GetChartDataByLastFeedPoint",
+        symbol,
+        lastPoint
+    );
 }
 
-async function getFilteredDataBySymbol(symbol,  range = undefined) {
-    
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetFilteredDataBySymbol", symbol, range);
+async function getFilteredDataBySymbol(symbol, range = undefined) {
+    try {
+        return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+            "GetFilteredDataBySymbol",
+            symbol,
+            range
+        );
+    } catch (error) {
+        console.error("Error fetching filtered data: ", error);
+    }
 }
-
+async function getFilteredDataBySymbol(symbol, range = undefined, xAxisPixels = 0, yAxisPixels = 0) {
+    try {
+        return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+            "GetFilteredDataBySymbol",
+            symbol,
+            range, xAxisPixels, yAxisPixels
+        );
+    } catch (error) {
+        console.error("Error fetching filtered data: ", error);
+    }
+}
 async function getChartDataBySymbol(symbol, lastPoint = undefined) {
-
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetChartDataBySymbol", symbol, lastPoint);
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+        "GetChartDataBySymbol",
+        symbol,
+        lastPoint
+    );
 }
 
-async function getExtremeDataBySymbol(symbol, min = undefined, max = undefined) {
-
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync("GetExtremeDataBySymbol", symbol, min,max);
+async function getExtremeDataBySymbol(
+    symbol,
+    min = undefined,
+    max = undefined
+) {
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+        "GetExtremeDataBySymbol",
+        symbol,
+        min,
+        max
+    );
 }
 
 async function updateChartSymbol(chartId, symbol) {
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync("UpdateChartSymbol", chartId, symbol);
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+        "UpdateChartSymbol",
+        chartId,
+        symbol
+    );
 }
 
 function processDataPoint(data, previousPrice) {
+    const timeStamp = new Date(data.date).getTime(); // Convert date to timestamp once
+    debugger
+    const color = data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red"); // Determine color based on price change
+    console.log("1color:"+data.msgtype);
+    console.log("1color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+    debugger
     return {
         primaryKey: data.id,
-        x: new Date(data.date).getTime(),
+        x: timeStamp, // Use the computed timestamp
         y: data.price,
-        color: data.price > previousPrice ? 'green' : 'red'
+        color: color, // Use the computed color
     };
 }
 
 function processDataChart(data) {
-    return [[
-        new Date(data.date).getTime(),
-        Number(data.size),
-    ], ]
-};
-
-function setDataToChart(chart, seriesData) {
-    //if (seriesData.length < 2) return;
-    let series = chart.series[0];
-    dataMap.clear();
-    const dataPoints = seriesData.slice(1).map((data, index) => {
-        var timeStamp = new Date(data.date).getTime();
-        dataMap.set(timeStamp, null);
-        return processDataPoint(data, seriesData[index].price);
-    }
-    );
-    //symbolData[chart.series[0].name] = dataPoints;
-    series.setData(dataPoints, false, false);
-
-    const volumePoints = seriesData.slice(1).map((data, index) => {
-        const currentPrice = data.price; // Get the current price
-        const previousPrice = seriesData[index].price; // Get the previous price
-
-        const volumePoint = {
-            x: new Date(data.date).getTime(),
-            y: Number(data.size),
-            color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
-        };
-        return volumePoint;
-    }
-    );
-    chart.series[1].setData(volumePoints, false, false);
-    chart.redraw();
-    if (seriesData.length > 1)
-        chart.xAxis[0].setExtremes(dataPoints[0].x, dataPoints[dataPoints.length - 1].x);
+    return [[new Date(data.date).getTime(), Number(data.size)]];
 }
 
+function setDataToChart(chart, seriesData) {
+    if (seriesData.length < 1) return; // Return early if there isn't enough data
 
+    const series = chart.series[0];
+    dataMap.clear();
+
+    const dataPoints = [];
+    const volumePoints = [];
+    let previousPrice = seriesData[0].price; // Initialize with the first price
+
+    for (let i = 1; i < seriesData.length; i++) {
+        const data = seriesData[i];
+        const timeStamp = new Date(data.date).getTime();
+
+        dataMap.set(timeStamp, null);
+
+        // Use processDataPoint to create the data point object
+        dataPoints.push(processDataPoint(data, previousPrice));
+
+        // Process volume points for the secondary series
+        volumePoints.push({
+            x: timeStamp,
+            y: Number(data.size),
+            color: data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red"), // Set color conditionally
+        });
+        console.log("2color:" + data.msgtype);
+        console.log("2color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+        debugger
+
+        previousPrice = data.price; // Update previous price for the next iteration
+    }
+
+    // Update both series data without immediate redraw
+    series.setData([]);
+
+    series.setData(dataPoints, false, false);
+    chart.series[1].setData(volumePoints, false, false);
+
+    // Perform one redraw after all data is set
+    chart.redraw();
+
+    // Set extremes only if there is more than one data point
+    if (dataPoints.length > 1) {
+        chart.xAxis[0].setExtremes(
+            dataPoints[0].x,
+            dataPoints[dataPoints.length - 1].x
+        );
+    }
+}
+
+//debugger
 let dataMap = new Map();
 function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
     if (seriesData.length < 1) return;
     let lastPoint = null;
     let series = chart.series[0];
     let volumeSeries = chart.series[1];
+    console.log(chart);
     seriesData.slice(1).forEach((data, index) => {
         const previousPrice = seriesData[index].price; // Get the previous price
         const currentPrice = data.price; // Get the current price
 
         // Create the point for the main series
         const point = processDataPoint(data, previousPrice);
-       
+
         // Add the volume data to the volume series with color based on the price comparison
-        if (data.size)
-        {
+        if (data.size) {
             const volumePoint = {
                 x: new Date(data.date).getTime(),
                 y: Number(data.size),
-                color: currentPrice > previousPrice ? 'green' : 'red' // Set color conditionally
+                color: data.msgtype != "T" ? "yellow" : (currentPrice > previousPrice ? 'green' : 'red') // Set color conditionally
             };
+            debugger
             volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
-        }  
-            series.addPoint(point, redraw, animateOnUpdate);
-      
+            console.log("3color:" + data.msgtype);
+            console.log("3color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+        }
+        series.addPoint(point, redraw, animateOnUpdate);
+
     });
 }
+
+
+
+
+//function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
+//    if (seriesData.length < 1) return;
+//    let lastPoint = null;
+//    let series = chart.series[0];
+//    let volumeSeries = chart.series[1];
+//    seriesData.slice(0).forEach((data, index) => {
+//        const previousPrice = seriesData[index].price; // Get the previous price
+//        const currentPrice = data.price; // Get the current price
+
+//        // Create the point for the main series
+//        const point = processDataPoint(data, previousPrice);
+
+//        // Add the volume data to the volume series with color based on the price comparison
+//        if (data.size) {
+//            const volumePoint = {
+//                x: new Date(data.date).getTime(),
+//                y: Number(data.size),
+//                color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
+//            };
+//            volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
+//        }
+//        series.addPoint(point, redraw, animateOnUpdate);
+//        // Update the main series with the combined existing and new data using setData
+//        chart.series[0].setData(newMainSeriesData, redraw, animateOnUpdate, true);
+//    });
+//}
+
+
+
+
+//function addPointToChart2(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
+//    if (seriesData.length < 1) return;
+//    let lastPoint = null;
+//    let series = chart.series[0];
+//    let volumeSeries = chart.series[1];
+//    //seriesData.slice(0).forEach((data, index) => {
+//    //    const previousPrice = seriesData[index].price; // Get the previous price
+//    //    const currentPrice = data.price; // Get the current price
+
+//    //    // Create the point for the main series
+//    //    const point = processDataPoint(data, previousPrice);
+
+//    //    // Add the volume data to the volume series with color based on the price comparison
+//    //    if (data.size) {
+//    //        const volumePoint = {
+//    //            x: new Date(data.date).getTime(),
+//    //            y: Number(data.size),
+//    //            color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
+//    //        };
+//    //        volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
+//    //    }
+//    //    series.addPoint(point, redraw, animateOnUpdate);
+
+//    //});
+//    //series.(seriesData, redraw, animateOnUpdate);
+
+
+//    let existingMainSeriesData = chart.series[0].data.map((point) => ({
+//        x: point.x,
+//        y: point.y,
+//    }));
+//    //let existingVolumeSeriesData = chart.series[1].data.map((point) => ({
+//    //    x: point.x,
+//    //    y: point.y,
+//    //    color: point.color,
+//    //}));
+//    let combinedList = [...existingMainSeriesData, ...seriesData];
+//    chart.series[0].setData([], true, animateOnUpdate, true);;
+//    //chart.redraw();
+//    chart.series[0].setData(combinedList, true, animateOnUpdate, true);
+//    //chart.redraw();
+//}
+
 function removeOldPoints(chart, daysToKeep) {
     var now = Date.now();
     var cutoffTime = now - daysToKeep * 24 * 60 * 60 * 1000;
@@ -768,54 +1242,53 @@ async function RefreshChartBySymbol() {
     for (let chart of Highcharts.charts) {
         if (!chart) continue;
 
-        await ChatAppInterop.dotnetReference.invokeMethodAsync("RefreshChartBySymbol", chart.series[0].name);
+        await ChatAppInterop.dotnetReference.invokeMethodAsync(
+            "RefreshChartBySymbol",
+            chart.series[0].name
+        );
     }
 }
 let debounceTimer;
+var counter2 = 0;
 async function refreshCharts(symbol, seriesData) {
     setTimeout(async function () {
         let chart = getChartInstanceBySeriesName(symbol);
         if (chart) {
-            addPointToChart(chart, seriesData, false, true,true);
+
+
+            //    console.log("refresh" + JSON.stringify(seriesData) + "ley "+symbol);
+            addPointToChart(chart, seriesData, false, false, true);
+
             chart.redraw();
+
         }
-    }, 100);
-        //removeOldPoints(chart, 3);
-        //chart.redraw();
-    
+    }, 50);
+    //removeOldPoints(chart, 3);
+    //chart.redraw();
 }
-
-
-
 
 function addClassToChartBoxes(totalCharts) {
     let cssClass = "col-12";
 
     if (totalCharts == 2 || totalCharts == 4) {
         cssClass = "col-6";
-    }
-    else if (totalCharts == 5) {
+    } else if (totalCharts == 5) {
         cssClass = "col-12";
-    }
-    else if (totalCharts == 6) {
+    } else if (totalCharts == 6) {
         cssClass = "col-4";
-    }
-    else if (totalCharts == 8) {
+    } else if (totalCharts == 8) {
         cssClass = "col-3";
     }
 
     $("#chartList .chart-box").addClass(cssClass);
 }
 
-
-
-
 function addChartBoxToChartList(totalCharts, chartBox) {
     if (totalCharts == 5) {
         if ($("#chartList .chart-box").length < 3) {
-            $('#chartListCol2').append(chartBox);
+            $("#chartListCol2").append(chartBox);
         } else {
-            $('#chartListCol1').append(chartBox);
+            $("#chartListCol1").append(chartBox);
         }
     } else {
         $("#chartList").append(chartBox);
@@ -823,46 +1296,43 @@ function addChartBoxToChartList(totalCharts, chartBox) {
 
     if (totalCharts == 5) {
         if ($("#chartList .chart-box").length > 3) {
-            chartBox.addClass('chart-height-50');
+            chartBox.addClass("chart-height-50");
         } else {
-            chartBox.addClass('chart-height-33');
+            chartBox.addClass("chart-height-33");
         }
-    }
-    else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100');
-        $("#chartList .chart-box").addClass('chart-height-50');
-    }
-    else {
-        $("#chartList .chart-box").removeClass('chart-height-50');
-        $("#chartList .chart-box").addClass('chart-height-100');
+    } else if (totalCharts > 2) {
+        $("#chartList .chart-box").removeClass("chart-height-100");
+        $("#chartList .chart-box").addClass("chart-height-50");
+    } else {
+        $("#chartList .chart-box").removeClass("chart-height-50");
+        $("#chartList .chart-box").addClass("chart-height-100");
     }
 }
 
 function addChartBox(totalCharts, chartIndx, symbol) {
-
     var cssClass = "col-12";
 
     if (totalCharts == 2 || totalCharts == 4) {
         cssClass = "col-6";
-    }
-    else if (totalCharts == 5) {
+    } else if (totalCharts == 5) {
         cssClass = "col-12";
-    }
-    else if (totalCharts == 6) {
+    } else if (totalCharts == 6) {
         cssClass = "col-4";
-    }
-    else if (totalCharts == 8) {
+    } else if (totalCharts == 8) {
         cssClass = "col-3";
     }
 
-    var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
-    var chartBox = $(`<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
+    var chartContainerId = "chart-" + chartIndx,
+        chartBoxClass = "chart-box-" + chartIndx;
+    var chartBox = $(
+        `<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
+    );
 
     if (totalCharts == 5) {
         if ($("#chartList .chart-box").length < 3) {
-            $('#chartListCol2').append(chartBox);
+            $("#chartListCol2").append(chartBox);
         } else {
-            $('#chartListCol1').append(chartBox);
+            $("#chartListCol1").append(chartBox);
         }
     } else {
         $("#chartList").append(chartBox);
@@ -870,47 +1340,53 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 
     if (totalCharts == 5) {
         if ($("#chartList .chart-box").length > 3) {
-            chartBox.addClass('chart-height-50');
+            chartBox.addClass("chart-height-50");
         } else {
-            chartBox.addClass('chart-height-33');
+            chartBox.addClass("chart-height-33");
         }
-    }
-    else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100');
-        $("#chartList .chart-box").addClass('chart-height-50');
-    }
-    else {
-        $("#chartList .chart-box").removeClass('chart-height-50');
-        $("#chartList .chart-box").addClass('chart-height-100');
+    } else if (totalCharts > 2) {
+        $("#chartList .chart-box").removeClass("chart-height-100");
+        $("#chartList .chart-box").addClass("chart-height-50");
+    } else {
+        $("#chartList .chart-box").removeClass("chart-height-50");
+        $("#chartList .chart-box").addClass("chart-height-100");
     }
 
-    var chart = addChart(totalCharts , chartContainerId, [], symbol);
+    var chart = addChart(totalCharts, chartContainerId, [], symbol);
 
     if (totalCharts == 1) {
         removeWindowControlButtonsFromChart();
     }
 
-    return chart
+    return chart;
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
     localStorage.setItem("chartCount", totalCharts);
     removeUnusedElement();
 
-    let charts = Highcharts.charts.filter(hc => hc)
+    let charts = Highcharts.charts.filter((hc) => hc);
 
     if (charts.length == totalCharts) return;
 
     let chartList = $("#chartList");
 
-    chartList.html('');
+    chartList.html("");
 
-    charts.forEach(c => c.destroy());
+    charts.forEach((c) => c.destroy());
 
     if (totalCharts == 5) {
         chartList
-            .append($('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'))
-            .append($('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'));
+            .append(
+                $(
+                    '<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'
+                )
+            )
+            .append(
+                $(
+                    '<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'
+                )
+            );
     }
 
     for (let indx = 1; indx <= totalCharts; indx++) {
@@ -938,31 +1414,34 @@ function createDashboard(totalCharts, initialChartSymbols) {
 }
 
 function updateButtonColour() {
-    document.querySelectorAll('.highcharts-button-box').forEach(button => {
+    document.querySelectorAll(".highcharts-button-box").forEach((button) => {
         button.style.fill = backgroundColor;
         button.style.stroke = fontColor;
     });
 
     // Update text color for the buttons.
-    document.querySelectorAll('.highcharts-button text').forEach(text => {
+    document.querySelectorAll(".highcharts-button text").forEach((text) => {
         text.style.fill = fontColor;
     });
 
     // Update symbol color for the buttons.
-    document.querySelectorAll('.highcharts-button i').forEach(i => {
-        i.style.setProperty('color', fontColor, 'important');
+    document.querySelectorAll(".highcharts-button i").forEach((i) => {
+        i.style.setProperty("color", fontColor, "important");
     });
 }
 
 var plotLines = [];
 var plotBands = [];
-
+var plotbreaks = [];
+Date.prototype.addDays = function (days) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+}
 
 function loadDashboard(totalCharts, initialChartSymbols) {
-
-        
-
-        // Assuming your data starts and ends on specific dates
+    //  totalCharts = 1;
+    // Assuming your data starts and ends on specific dates
     var endDate = new Date(); // Current date and time
 
     // Calculate the start date as 3 days before the current date
@@ -978,36 +1457,109 @@ function loadDashboard(totalCharts, initialChartSymbols) {
         return localDate.getTime() + utcOffset + offset;
     }
 
-
     // Iterate over each day in the date range
-    for (var date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+    for (
+        var date = new Date(startDate);
+        date <= endDate;
+        date.setDate(date.getDate() + 1)
+    ) {
         var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-        if (dayOfWeek === 5) { 
+        if (dayOfWeek === 5) {
             // Cover the whole day as a plotBand for weekends
-            plotBands.push({
-                color: 'rgba(68, 170, 213, 0.1)', // Light blue shading
-                from: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0), // Start of the day
-                to: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 3, 4, 0), // End of the day
-                zIndex: 3
-            });
-        } else if (dayOfWeek !== 6 && dayOfWeek!==0) {
-            // 8 PM EST/EDT on the current day
+            //plotBands.push({
+            //    color: "rgba(68, 170, 213, 0.1)", // Light blue shading
+            //    from: new Date(
+            //        date.getFullYear(),
+            //        date.getMonth(),
+            //        date.getDate(),
+            //        20,
+            //        0
+            //    ), // Start of the day
+            //    to: new Date(
+            //        date.getFullYear(),
+            //        date.getMonth(),
+            //        date.getDate() + 3,
+            //        4,
+            //        0
+            //    ), // End of the day
+            //    zIndex: 3,
+            //});
             plotLines.push({
-                color: 'red',
+                color: "red",
                 width: 2,
-                value: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0), // 8 PM
-                zIndex: 5
+                value: new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate(),
+                    20,
+                    0
+                ), // 8 PM
+                zIndex: 5,
             });
 
-            // 4 AM EST/EDT on the next day
-            plotLines.push({
-                color: 'green',
-                width: 2,
-                value: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 4, 0), // 4 AM
-                zIndex: 5
+            var todate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 4, 0);
+            todate.setDate(todate.getDate() + 3)
+            plotbreaks.push({
+                from: Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0).getTime()), // 20170131
+                to: Math.floor(todate.getTime()), // 20180101
+                breakSize: 0
             });
+            //console.log("pb:" + plotbreaks[0]);
+
+        } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
+            // 8 PM EST/EDT on the current day
+            plotLines.push({
+                color: "red",
+                width: 2,
+                value: new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate(),
+                    20,
+                    0
+                ), // 8 PM
+                zIndex: 5,
+            });
+
+            ////// 4 AM EST/EDT on the next day
+            //plotLines.push({
+            //    color: "green",
+            //    width: 2,
+            //    value: new Date(
+            //        date.getFullYear(),
+            //        date.getMonth(),
+            //        date.getDate() ,
+            //        13,
+            //        0
+            //    ), // 4 AM
+            //    zIndex: 5,
+            //});
+
+            //var todate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 13, 0);
+            ////todate.setDate(todate.getDate() + 3)
+            //plotbreaks.push({
+            //    from: 1727764838000,//Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0).getTime() / 1000), // 20170131
+            //    to: 1727770238000,//todate, // 20180101
+            //    breakSize: 0
+            //});
+            var todate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 4, 0);
+            todate.setDate(todate.getDate() + 1)
+
+            plotbreaks.push(
+                {
+                    from: Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0).getTime()), // 20170131
+                    to: Math.floor(todate.getTime()), // 20180101
+                    breakSize: 0
+                });
+
+            //console.log("pbf:" + plotbreaks[0].from);
+            //console.log("pbt:" + plotbreaks[0].to);
+            //console.log("pbdw:" + dayOfWeek);
+            //console.log("pbtf:" + new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0));
+            //console.log("pbtt:" + todate);
         }
+
     }
 
     localStorage.setItem("chartCount", null);
@@ -1015,12 +1567,22 @@ function loadDashboard(totalCharts, initialChartSymbols) {
 
     if (totalCharts == 5) {
         chartList
-            .append($('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'))
-            .append($('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'));
+            .append(
+                $(
+                    '<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'
+                )
+            )
+            .append(
+                $(
+                    '<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'
+                )
+            );
     }
 
     initialChartSymbols.slice(0, totalCharts).forEach((chartSymbol, index) => {
         const chart = addChartBox(totalCharts, index + 1, chartSymbol.symbol);
+
+
     });
     //var seriesData = await getChartDataBySymbol(rec.symbol);
     //setDataToChart(chart, seriesData);
@@ -1029,8 +1591,11 @@ function loadDashboard(totalCharts, initialChartSymbols) {
 function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     removeUnusedElement();
 
-    var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
-    var chartBox = $(`<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
+    var chartContainerId = "chart-" + chartIndx,
+        chartBoxClass = "chart-box-" + chartIndx;
+    var chartBox = $(
+        `<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
+    );
     $(element).append(chartBox);
 
     addChart(1, chartContainerId, [], symbol, false, dotNetObject);
@@ -1038,84 +1603,103 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     removeWindowControlButtonsFromChart();
 
     /*if (dataPoints) {
-        chart.series[0].setData(dataPoints, true, true)
-    } else {
-        getChartDataBySymbol(symbol).then((seriesData) => {
-            setDataToChart(chart, seriesData);
-            if (minPoint && maxPoint) {
-                chart.xAxis[0].setExtremes(minPoint, maxPoint);
-            }
-        });
-    }*/
+          chart.series[0].setData(dataPoints, true, true)
+      } else {
+          getChartDataBySymbol(symbol).then((seriesData) => {
+              setDataToChart(chart, seriesData);
+              if (minPoint && maxPoint) {
+                  chart.xAxis[0].setExtremes(minPoint, maxPoint);
+              }
+          });
+      }*/
 }
 
-async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
 
+
+
+
+
+
+async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
     var totalCharts = $("#chartList .chart-box").length + 1;
 
     //Reset Chart Box
     var cssClass = "col-12";
     if (totalCharts == 1) {
         cssClass = "col-12";
-    }
-    else if (totalCharts == 5) {
+    } else if (totalCharts == 5) {
         cssClass = "col-12";
-    }
-    else if (totalCharts <= 4) {
+    } else if (totalCharts <= 4) {
         cssClass = "col-6";
-    }
-    else if (totalCharts <= 6) {
+    } else if (totalCharts <= 6) {
         cssClass = "col-4";
-    }
-    else if (totalCharts <= 8) {
+    } else if (totalCharts <= 8) {
         cssClass = "col-3";
     }
 
-    $("#chartList .chart-box").removeClass('col-3').removeClass('col-4').removeClass('col-6').removeClass('col-12');
+    $("#chartList .chart-box")
+        .removeClass("col-3")
+        .removeClass("col-4")
+        .removeClass("col-6")
+        .removeClass("col-12");
     $("#chartList .chart-box").addClass(cssClass);
 
-    var chartContainerId = "chart-" + chartIndx, chartBoxClass = "chart-box-" + chartIndx;
-    var chartBox = $(`<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`);
+    var chartContainerId = "chart-" + chartIndx,
+        chartBoxClass = "chart-box-" + chartIndx;
+    var chartBox = $(
+        `<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
+    );
 
     $("#chartList").append(chartBox);
 
-    var chartBoxes = $('#chartList').find('.chart-box');
+    var chartBoxes = $("#chartList").find(".chart-box");
 
     chartBoxes.sort(function (a, b) {
-        var counterA = $('.chart-container', a).data('chart-id');
-        var counterB = $('.chart-container', b).data('chart-id');
+        var counterA = $(".chart-container", a).data("chart-id");
+        var counterB = $(".chart-container", b).data("chart-id");
         return counterA - counterB;
     });
 
-
     if (totalCharts == 5) {
-        var chartListCol1 = $('<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>');
-        var chartListCol2 = $('<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>');
+        var chartListCol1 = $(
+            '<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'
+        );
+        var chartListCol2 = $(
+            '<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'
+        );
 
-        chartBoxes.slice(0, 3).appendTo(chartListCol2.find('#chartListCol2'));
-        chartBoxes.slice(3).appendTo(chartListCol1.find('#chartListCol1'));
+        chartBoxes.slice(0, 3).appendTo(chartListCol2.find("#chartListCol2"));
+        chartBoxes.slice(3).appendTo(chartListCol1.find("#chartListCol1"));
 
         $("#chartList").append(chartListCol1).append(chartListCol2);
-
     } else {
-        chartBoxes.appendTo('#chartList');
+        chartBoxes.appendTo("#chartList");
         $("#chartListCol1").parent().remove();
         $("#chartListCol2").parent().remove();
     }
 
     if (totalCharts == 5) {
-        $('#chartListCol1 .chart-box').removeClass('chart-height-100').removeClass('chart-height-33').addClass('chart-height-50');
-        $('#chartListCol2 .chart-box').removeClass('chart-height-100').removeClass('chart-height-50').addClass('chart-height-33');
+        $("#chartListCol1 .chart-box")
+            .removeClass("chart-height-100")
+            .removeClass("chart-height-33")
+            .addClass("chart-height-50");
+        $("#chartListCol2 .chart-box")
+            .removeClass("chart-height-100")
+            .removeClass("chart-height-50")
+            .addClass("chart-height-33");
     } else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass('chart-height-100').removeClass('chart-height-33');
-        $("#chartList .chart-box").addClass('chart-height-50');
-    }
-    else {
-        $("#chartList .chart-box").removeClass('chart-height-50').removeClass('chart-height-33');
-        $("#chartList .chart-box").addClass('chart-height-100');
+        $("#chartList .chart-box")
+            .removeClass("chart-height-100")
+            .removeClass("chart-height-33");
+        $("#chartList .chart-box").addClass("chart-height-50");
+    } else {
+        $("#chartList .chart-box")
+            .removeClass("chart-height-50")
+            .removeClass("chart-height-33");
+        $("#chartList .chart-box").addClass("chart-height-100");
     }
 
-    let existingChart = getChartInstanceBySeriesName(symbol)
+    let existingChart = getChartInstanceBySeriesName(symbol);
 
     let chart = addChart(1, chartContainerId, [], symbol);
 
@@ -1123,17 +1707,17 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
     var data = await getChartDataBySymbol(symbol, null);
     setDataToChart(chart, data);
     chart.hideLoading();
-    
 }
 
-
 function getChartInstance(chartId) {
-    let chart = Highcharts.charts.find(c => c && c.renderTo.id === chartId);
+    let chart = Highcharts.charts.find((c) => c && c.renderTo.id === chartId);
     return chart || null;
 }
 
 function getChartInstanceBySeriesName(seriesName) {
-    let chart = Highcharts.charts.find(c => c && c.series[0]?.name === seriesName);
+    let chart = Highcharts.charts.find(
+        (c) => c && c.series[0]?.name === seriesName
+    );
     return chart || null;
 }
 
@@ -1153,9 +1737,8 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
             chart.hideLoading();
             return;
         }
-        
-        setTimeout(addPointToChart(chart, seriesData, false, false,true), 0);
 
+        setTimeout(addPointToChart(chart, seriesData, false, false, true), 0);
 
         if (isAllLoaded) {
             chart.redraw();
@@ -1167,9 +1750,29 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
 async function setRange(symbol, range) {
     let chart = getChartInstanceBySeriesName(symbol);
     if (chart) {
+        //    let filtereddata = await getFilteredDataBySymbol(symbol, range, chart.chartWidth - 50, Math.floor((chart.chartHeight * 65) / 100));
+        //  console.log("setRange" + JSON.stringify(filtereddata));
+        let filtereddata = await getFilteredDataBySymbol(symbol, range, chart.xAxis[0].width, chart.yAxis[0].height)
 
-        let filtereddata = await getFilteredDataBySymbol(symbol, range);
+        console.log("points filtered " + filtereddata.length);
         setDataToChart(chart, filtereddata);
-        //chart.redraw();
+
+    }
+}
+
+async function setButtonActive(e) {
+    //debugger
+    if (e) {
+
+        var chartContainer = e.element.closest(".chart-container");
+        if (chartContainer) {
+            var activeButtons = chartContainer.getElementsByClassName("active");
+
+            // Convert HTMLCollection to an array using Array.from
+            Array.from(activeButtons).forEach(function (el) {
+                el.classList.remove("active");
+            });
+        }
+        e.element.classList.add("active");
     }
 }

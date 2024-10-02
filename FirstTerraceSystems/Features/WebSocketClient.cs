@@ -1,4 +1,4 @@
-﻿using System.Net.WebSockets;
+using System.Net.WebSockets;
 using System.Text;
 using FirstTerraceSystems.Models;
 using System.Text.Json;
@@ -9,17 +9,17 @@ namespace FirstTerraceSystems.Features
     public static class WebSocketClient
     {
         static ClientWebSocket _webSocket = new();
-    static ClientWebSocket _webSocketcta = new();
-    public delegate Task OnRealDataReceived(NasdaqResponse? response);
+        static ClientWebSocket _webSocketCta = new();
+        public delegate Task OnRealDataReceived(NasdaqResponse? response);
 
         public delegate Task ReferenceChartAsync(NasdaqResponse? response);
 
         public static event OnRealDataReceived? ActionRealDataReceived;
 
         public static event ReferenceChartAsync? ActionReferenceChart;
-    
 
-    public async static Task ConnectAsync()
+
+        public static async Task ConnectUtp()
         {
 
             int connectionTrial = 0;
@@ -29,14 +29,13 @@ namespace FirstTerraceSystems.Features
                 try
                 {
                     _webSocket = new ClientWebSocket();
-                    await _webSocket.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data_utp"), CancellationToken.None);
+                    await _webSocket.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data_utp"), CancellationToken.None).ConfigureAwait(false);
                     connectionTrial = 0;
                     while (_webSocket.State == WebSocketState.Connecting)
                     {
-                        await Task.Delay(50); // Small delay to avoid busy waiting
+                        await Task.Delay(50).ConfigureAwait(false); // Small delay to avoid busy waiting
                     }
-                    var buffer = Encoding.UTF8.GetBytes("start");
-                    await _webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+                    await _webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes("start")), WebSocketMessageType.Text, true, CancellationToken.None).ConfigureAwait(false);
 
                 }
                 catch (Exception ex)
@@ -44,55 +43,79 @@ namespace FirstTerraceSystems.Features
                     Log.Error($"WebSocket connection error: {ex.Message}");
                     connectionTrial++;
                     Log.Information($"Retry to connect WebSocket: {connectionTrial}");
-                    await ConnectAsync();
+                    await ConnectUtp().ConfigureAwait(false);
                 }
             }
-
         }
 
-    public async static Task ConnectctaAsync()
-    {
-
-      int connectionTrial = 0;
-
-      if (connectionTrial < 3)
-      {
-        try
+        public static async Task ConnectCta()
         {
-          _webSocketcta = new ClientWebSocket();
-          await _webSocketcta.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data_cta"), CancellationToken.None);
-          connectionTrial = 0;
-          while (_webSocketcta.State == WebSocketState.Connecting)
-          {
-            await Task.Delay(50); // Small delay to avoid busy waiting
-          }
-          var buffer = Encoding.UTF8.GetBytes("start");
-          await _webSocketcta.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+            int connectionTrial = 0;
+
+            if (connectionTrial < 3)
+            {
+                try
+                {
+                    _webSocketCta = new ClientWebSocket();
+                    await _webSocketCta.ConnectAsync(new Uri($"{ApiEndpoints.WebSocketUri}/nasdaq/get_real_data_cta"), CancellationToken.None).ConfigureAwait(false);
+                    connectionTrial = 0;
+                    while (_webSocketCta.State == WebSocketState.Connecting)
+                    {
+                        await Task.Delay(50); // Small delay to avoid busy waiting
+                    }
+                    var buffer = Encoding.UTF8.GetBytes("start");
+                    await _webSocketCta.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"WebSocket connection error: {ex.Message}");
+                    connectionTrial++;
+                    Log.Information($"Retry to connect WebSocket: {connectionTrial}");
+                    await ConnectCta().ConfigureAwait(false);
+                }
+            }
         }
-        catch (Exception ex)
+
+        public static Task CloseUtp()
         {
-          Log.Error($"WebSocket connection error: {ex.Message}");
-          connectionTrial++;
-          Log.Information($"Retry to connect WebSocket: {connectionTrial}");
-          await ConnectctaAsync();
+            Task.Run(async () =>
+            {
+                try
+                {
+                    if (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseSent || _webSocket.State == WebSocketState.CloseReceived)
+                    {
+                        await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None).ConfigureAwait(false);
+                        _webSocket.Dispose();
+                        Log.Information("WebSocket Close");
+                    }
+                    else if (_webSocket.State == WebSocketState.Connecting)
+                    {
+                        _webSocket.Abort();
+                        Log.Information("WebSocket is still connecting. Aborting connection.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"WebSocket close error: {ex.Message}");
+                }
+            });
+
+            return Task.CompletedTask;
         }
-      }
 
-    }
-
-    public static async Task CloseAsync()
+        public static async Task CloseCta()
         {
             try
             {
-                if (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseSent || _webSocket.State == WebSocketState.CloseReceived)
+                if (_webSocketCta.State == WebSocketState.Open || _webSocketCta.State == WebSocketState.CloseSent || _webSocketCta.State == WebSocketState.CloseReceived)
                 {
-                    await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-                    _webSocket.Dispose();
+                    await _webSocketCta.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
+                    _webSocketCta.Dispose();
                     Log.Information("WebSocket Close");
                 }
-                else if (_webSocket.State == WebSocketState.Connecting)
+                else if (_webSocketCta.State == WebSocketState.Connecting)
                 {
-                    _webSocket.Abort();
+                    _webSocketCta.Abort();
                     Log.Information("WebSocket is still connecting. Aborting connection.");
                 }
             }
@@ -102,137 +125,114 @@ namespace FirstTerraceSystems.Features
             }
         }
 
-    public static async Task ClosectaAsync()
-    {
-      try
-      {
-        if (_webSocketcta.State == WebSocketState.Open || _webSocketcta.State == WebSocketState.CloseSent || _webSocketcta.State == WebSocketState.CloseReceived)
+
+        public static Task ListenUtp()
         {
-          await _webSocketcta.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", CancellationToken.None);
-          _webSocketcta.Dispose();
-          Log.Information("WebSocket Close");
-        }
-        else if (_webSocketcta.State == WebSocketState.Connecting)
-        {
-          _webSocketcta.Abort();
-          Log.Information("WebSocket is still connecting. Aborting connection.");
-        }
-      }
-      catch (Exception ex)
-      {
-        Log.Error($"WebSocket close error: {ex.Message}");
-      }
-    }
-
-    public static async Task ListenAsync()
-    {
-        byte[] buffer = new byte[1024 * 10];
-        try
-        {
-                StringBuilder messageBuilder = new StringBuilder();
-                while (_webSocket.State == WebSocketState.Open)
-          {
-            WebSocketReceiveResult result;
-            
-
-            do
+            Task.Run(async () =>
             {
-              result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-              if (result.MessageType == WebSocketMessageType.Text)
-              {
-                string messagePart = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                messageBuilder.Append(messagePart);
-              }
-              // Handle other message types if necessary
-            } while (!result.EndOfMessage);
-
-            if (messageBuilder.Length > 0)
-            {
-              string message = messageBuilder.ToString();
-             messageBuilder.Clear();
-              ProcessMessage(message);
-
-            }
-          }
-        }
-        catch (Exception ex)
-        {
-          Log.Error($"WebSocket error: {ex.Message}");
-          Log.Information($"Reconnecting WebSocket");
-          await ConnectAsync();
-          Log.Information($"Reconnected WebSocket");
-          Log.Information($"Listening WebSocket");
-          await ListenAsync(); // Restart listening on reconnection
-        }
-    }
-
-    public static async Task ListenctaAsync()
-    {
-      byte[] buffer = new byte[1024 * 10];
-
-        try
-            {
-                StringBuilder messageBuilder = new StringBuilder();
-                while (_webSocketcta.State == WebSocketState.Open)
-          {
-            WebSocketReceiveResult result;
-
-            do
-            {
-              result = await _webSocketcta.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-              if (result.MessageType == WebSocketMessageType.Text)
-              {
-                string messagePart = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                messageBuilder.Append(messagePart);
-              }
-              // Handle other message types if necessary
-            } while (!result.EndOfMessage);
-
-            if (messageBuilder.Length > 0)
-            {
-              string message = messageBuilder.ToString();
-              messageBuilder.Clear();
-              ProcessMessage(message);
-
-            }
-          }
-        }
-        catch (Exception ex)
-        {
-          Log.Error($"WebSocket error: {ex.Message}");
-          Log.Information($"Reconnecting WebSocket");
-          await ConnectctaAsync();
-          Log.Information($"Reconnected WebSocket");
-          Log.Information($"Listening WebSocket");
-          await ListenctaAsync(); // Restart listening on reconnection
-        }
-    }
-
-
-        static void ProcessMessage(string message)
-        {
-            try
-            {
-        if (message.Contains("start"))
-          return;
-                NasdaqResponse? response = JsonSerializer.Deserialize<NasdaqResponse>(message);
-                Log.Information($"Real Data Received: {response?.Data.Length}");
-                if (response?.Data.Length > 0)
+                byte[] buffer = new byte[1024 * 10];
+                try
                 {
-          ActionReferenceChart?.Invoke(response);
-          ActionRealDataReceived?.Invoke(response);
-                   
+                    StringBuilder messageBuilder = new();
+                    while (_webSocket.State == WebSocketState.Open)
+                    {
+                        WebSocketReceiveResult result;
+                        do
+                        {
+                            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).ConfigureAwait(false);
+
+                            if (result.MessageType == WebSocketMessageType.Text)
+                            {
+                                messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                            }
+
+                            // Handle other message types if necessary
+                        } while (!result.EndOfMessage);
+
+                        if (messageBuilder.Length > 0)
+                        {
+                            await ProcessMessage(messageBuilder.ToString()).ConfigureAwait(false);
+                            messageBuilder.Clear();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"WebSocket error: {ex.Message}");
+                    Log.Information($"Reconnecting WebSocket");
+                    await ConnectUtp();
+                    Log.Information($"Reconnected WebSocket");
+                    Log.Information($"Listening WebSocket");
+                    await ListenUtp(); // Restart listening on reconnection
+                }
+            });
+            return Task.CompletedTask;
         }
-            }
-            catch (Exception ex)
+
+        public static Task ListenCta()
+        {
+            Task.Run(async () =>
             {
-                Log.Error($"ProcessMessage error: {ex.Message}");
-            }
-            finally
+                byte[] buffer = new byte[1024 * 10];
+                try
+                {
+                    StringBuilder messageBuilder = new();
+                    while (_webSocketCta.State == WebSocketState.Open)
+                    {
+                        WebSocketReceiveResult result;
+                        do
+                        {
+                            result = await _webSocketCta.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).ConfigureAwait(false);
+                            if (result.MessageType == WebSocketMessageType.Text)
+                            {
+                                messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                            }
+                            // Handle other message types if necessary
+                        } while (!result.EndOfMessage);
+
+                        if (messageBuilder.Length > 0)
+                        {
+                            await ProcessMessage(messageBuilder.ToString()).ConfigureAwait(false);
+                            messageBuilder.Clear();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"WebSocket error: {ex.Message}");
+                    Log.Information($"Reconnecting WebSocket");
+                    await ConnectCta().ConfigureAwait(false);
+                    Log.Information($"Reconnected WebSocket");
+                    Log.Information($"Listening WebSocket");
+                    await ListenCta().ConfigureAwait(false); // Restart listening on reconnection
+                }
+            });
+            return Task.CompletedTask;
+        }
+
+        static Task ProcessMessage(string message)
+        {
+            Task.Run(() =>
             {
-            }
+                try
+                {
+                    if (message.Contains("start")) return;
+
+                    NasdaqResponse? response = JsonSerializer.Deserialize<NasdaqResponse>(message);
+                    Log.Information($"Real Data Received: {response?.Data.Length}");
+                    if (response?.Data.Length > 0)
+                    {
+                        ActionReferenceChart?.Invoke(response);
+                        ActionRealDataReceived?.Invoke(response);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"ProcessMessage error: {ex.Message}");
+                }
+
+            });
+            return Task.CompletedTask;
         }
     }
 }

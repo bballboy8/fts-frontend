@@ -61,6 +61,14 @@ input[type=password]::-ms-clear {
     border-color: #1861ac;
 }
 
+.dark-body .highcharts-button.active path {
+    fill: #FB5B31 !important;
+}
+
+.light-body .highcharts-button.active path {
+    fill: #5B6970 !important;
+}
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
@@ -205,7 +213,7 @@ h1:focus {
 }
 
 .content:has(.signIn) {
-    background-image: url(../images/Sign-in-bg.jpg);
+    background: radial-gradient(circle at 50% 8.19%, #1B2934 0%, #000000 100%);
     height: 100vh;
     width: 100%;
     background-size: cover;
@@ -216,11 +224,12 @@ h1:focus {
 }
 
 .login-content {
-    background-color: #2D3539 !important;
+    background-color: #1B2934 !important;
     padding: 50px;
     text-align: center;
     border-radius: 20px 0 0 20px;
-    height: 720px;
+    height: 100%;
+    padding-top: 45%;
 }
 
 .signIn > * {
@@ -240,7 +249,7 @@ h1:focus {
 .signIn button.login-btn {
     background: transparent;
     color: #25E2A2;
-    border-radius: 0;
+    border-radius: 5px;
     height: 46px;
     width: 100%;
     text-transform: none;
@@ -248,7 +257,7 @@ h1:focus {
     font-family: "Work Sans", sans-serif !important;
     font-weight: 600;
     margin-bottom: 20px;
-    border: 1px solid #25E2A2;
+    border: 1px solid #FB5B31;
     transition: all 0.3s;
     margin-top: 20px;
 }
@@ -284,7 +293,8 @@ h1:focus {
 
 .signIn button.login-btn.create-new {
     background: transparent;
-    color: #25E2A2;
+    color: #FB5B31;
+    ;
     margin-top: 0;
     margin-bottom: 20px;
 }
@@ -301,7 +311,7 @@ h1:focus {
 }
 
 .signIn button.login-btn.create-new:hover, .signIn button.login-btn.create-new:focus {
-    background: #25E2A2;
+    background: #FB5B31;
     color: #202527;
 }
 
@@ -671,3 +681,6 @@ h1:focus {
     display:none;
 }
 
+.my-custom-button-test:hover {
+    background-color: #FB5B31; /* Change color on hover */
+}

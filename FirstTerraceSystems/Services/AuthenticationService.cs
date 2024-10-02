@@ -45,6 +45,7 @@ namespace FirstTerraceSystems.Services
             return new AuthResponse();
         }
 
+
         public async Task<RegisterResponseDto> Registration(RegisterModel model)
         {
             var content = JsonSerializer.Serialize(model, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -69,18 +70,14 @@ namespace FirstTerraceSystems.Services
 
         public async Task Logout(LoginDto model)
         {
-            var email = await SecureStorage.GetAsync(AppSettings.SS_AuthEmail);
-            var content = JsonSerializer.Serialize(new { email = email?.ToLower() }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            //var email = await SecureStorage.GetAsync(AppSettings.SS_AuthEmail);
+            //var content = JsonSerializer.Serialize(new { email = email?.ToLower() }, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
+            //var bodyContent = new StringContent(content, Encoding.UTF8, "application/json");
 
-            var authResult = await _client.PostAsync("user/logout", bodyContent);
+            //var authResult = await _client.PostAsync("user/logout", bodyContent);
 
-            authResult.EnsureSuccessStatusCode();
-
-            var authContent = await authResult.Content.ReadAsStringAsync();
-
-            var result = JsonSerializer.Deserialize<AuthResponse>(authContent, _options);
+            //authResult.EnsureSuccessStatusCode();
 
             SecureStorage.RemoveAll();
             //SecureStorage.Remove(ApplicationConst.SS_AuthToken);

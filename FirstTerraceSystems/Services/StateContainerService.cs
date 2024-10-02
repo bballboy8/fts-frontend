@@ -6,6 +6,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using BlazorBootstrap;
+using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Models;
 using Microsoft.JSInterop;
 
@@ -18,6 +19,7 @@ namespace FirstTerraceSystems.Services
         public static bool IsDarkMode { get; set; } = true;
         public static bool IsMaximizeClikedForChart { get; set; } = true;
         public static ObservableCollection<ChartModal> ChartPages { get; set; } = [];
+        public static ObservableCollection<HolidayList> HolidayList { get; set; } = [];
 
         public static void AddChartPage(ChartModal chartPage)
         {

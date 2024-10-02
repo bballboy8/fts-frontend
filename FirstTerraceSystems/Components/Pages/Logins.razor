@@ -19,7 +19,7 @@
     <div class="row g-0 justify-content-center">
         <div class="col-6 col-xl-5">
             <div class="login-content">
-                <img src="../images/logo.png" Alt="logo" class="logo" />
+                <img src="../images/applogtemp.png" Alt="logo" class="logo" />
                 <EditForm Model="@_loginDto" OnValidSubmit="HandleValidSubmit" autocomplete="off" aria-autocomplete="none">
                     <DataAnnotationsValidator />
 
@@ -34,7 +34,7 @@
                     </div>
 
                     <button class="login-btn create-new" type="Submit">Sign in</button>
-                    <button type="button" class="login-btn create-new sign-in-down" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</button>
+                    @* <button type="button" class="login-btn create-new sign-in-down" @onclick="@(() => NavigationManager.NavigateTo("/register"))">I don't have an account, create one</button> *@
                     @* <span class="separator">OR</span>
                     <button type="button" class="social-media mb-4"><img src="../images/devicon_google.png" alt="devivon_google" />Continue using Google ID</button>
                     <button type="button" class="social-media tab-to-close-app"><img src="../images/apple.png" alt="apple" />Continue using Apple ID</button> *@
@@ -43,7 +43,7 @@
         </div>
         <div class="col-6 col-xl-7">
             <div class="login-image">
-                <img src="../images/login-bg.png" Alt="login-bg" class="login-img" />
+                <img src="../images/loginbannertemp.png" Alt="login-bg" class="login-img" />
             </div>
         </div>
     </div>
@@ -52,44 +52,87 @@
 @code {
     private LoginDto _loginDto = new LoginDto();
 
+
+
     protected override void OnInitialized()
+
     {
+
         WindowsSerivce.LockWindowResize();
+
         base.OnInitialized();
+
     }
+
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
+
     {
+
         await JSRuntime.InvokeVoidAsync("removeUnusedElement");
+
     }
+
+
 
     private async Task HandleValidSubmit()
+
     {
+
         var result = await AuthenticationService.Login(_loginDto);
+
         if (!string.IsNullOrEmpty(result.Detail))
+
         {
+
             Toast.ShowDangerMessage(result.Detail == "User not found" ? "Invalid Username or Password" : result.Detail);
+
         }
+
         else
+
         {
+
             NavigationManager.NavigateTo("/loading");
+
         }
+
     }
+
+
+
+
 
     private void Register()
+
     {
+
         // Handle the registration process
+
         NavigationManager.NavigateTo("/register");
+
     }
+
+
 
     private void LoginWithApple()
+
     {
+
         // Handle Apple login
+
     }
 
+
+
     private void LoginWithGoogle()
+
     {
+
         // Handle Google login
+
     }
-    
+
+}
 }

@@ -10,6 +10,7 @@ namespace FirstTerraceSystems.Components.Pages
         private int progress = 0;
         public static HashSet<string> _symbolSet = new HashSet<string>();
 
+        int intCompletedTasks = 0, totlalTasks = 0;
         protected override async Task OnInitializedAsync()
         {
             Task tickerTask = TickerTask();
@@ -17,6 +18,7 @@ namespace FirstTerraceSystems.Components.Pages
             List<Task> tasks = [tickerTask];
             List<Task> nonAwaitableTasks = [tickerTask];
 
+            DateTime currentDate = DateTime.Now;
             DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(1);
             DateTime defaultStartDateForBackground = DateTime.Now.GetPastBusinessDay(2);
             await ChartService.ChartModals();
@@ -26,12 +28,13 @@ namespace FirstTerraceSystems.Components.Pages
 
             foreach (ChartModal chart in recordsToFetch)
             {
+                totlalTasks = totlalTasks + 4;
                 Task chartTask = ChartTask(chart, defaultStartDate);
                 tasks.Add(chartTask);
                 _symbolSet.Add(chart.Symbol);
             }
-
-            int intCompletedTasks = 0, totlalTasks = tasks.Count;
+            //defaultStartDate = currentDate;
+            //currentDate = DateTime.Now;
 
             while (tasks.Any())
             {
@@ -47,12 +50,12 @@ namespace FirstTerraceSystems.Components.Pages
             _ = Task.Run(async () =>
             {
                 await Task.Delay(60000);
-                var batchSize = 250;
-                var batches = recordsToFetchInBackGround
-                    .Select((chart, index) => new { chart, index })
-                    .GroupBy(x => x.index / batchSize)
-                    .Select(group => group.Select(x => x.chart).ToList())
-                    .ToList();
+                //var batchSize = 250;
+                //var batches = recordsToFetchInBackGround
+                //    .Select((chart, index) => new { chart, index })
+                //    .GroupBy(x => x.index / batchSize)
+                //    .Select(group => group.Select(x => x.chart).ToList())
+                //    .ToList();
                 // Start all chart tasks
                 foreach (ChartModal chart in recordsToFetchInBackGround)
                 {
@@ -60,6 +63,8 @@ namespace FirstTerraceSystems.Components.Pages
                     nonAwaitableTasks.Add(chartTask);
                     _symbolSet.Add(chart.Symbol);
                 }
+                defaultStartDate = currentDate;
+                currentDate = DateTime.Now;
 
                 // Monitor the completion of tasks
                 while (nonAwaitableTasks.Any())
@@ -166,16 +171,20 @@ namespace FirstTerraceSystems.Components.Pages
             try
             {
                 MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(chart.Symbol);
+                UpdateProgress(intCompletedTasks, totlalTasks);
                 DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
                 Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
                 IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
+
+                UpdateProgress(intCompletedTasks, totlalTasks);
                 Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
 
                 if (marketFeeds != null && marketFeeds.Any())
                 {
                     Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {chart.Symbol}");
                     MarketFeedRepository.InsertMarketFeedDataFromApi(chart.Symbol, marketFeeds);
+                    UpdateProgress(intCompletedTasks, totlalTasks);
                     Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
                     marketFeeds = null;
                 }
@@ -187,7 +196,7 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
         private void UpdateProgress(int completedTasks, int totalTasks)
-        {
+         {
             progress = (completedTasks * 100) / totalTasks;
             StateHasChanged();
         }
