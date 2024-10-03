@@ -121,12 +121,17 @@
         {
             MarketStatus = "Closed";
         }
-
-        // if (holidayList.Where(x => DateTime.Parse(x.date_time).Date == estTime.Date).Any())
-        // {
-        //     MarketStatus = "Closed";
-        // }
-
+        try
+        {
+            if (holidayList.Where(x => DateTime.Parse(x.date_time).Date == estTime.Date).Any())
+            {
+                MarketStatus = "Closed";
+            }
+        }
+        catch
+        {
+            
+        }
         currentTime = estTime.ToString("h:mm tt EST");
         InvokeAsync(StateHasChanged);
     }

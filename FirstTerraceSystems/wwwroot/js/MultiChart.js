@@ -837,6 +837,7 @@ function handleExtremesChange(symbol, chart, min, max) {
             min,
             max
         );
+        console.log("EC:" + chart.series[0].name + "," + chart.renderTo.id)
         addPointToChart(chart, filterData, false, false, false);
         updatingCharts[symbol] = false;
     }, 0);
@@ -1048,9 +1049,9 @@ async function updateChartSymbol(chartId, symbol) {
 function processDataPoint(data, previousPrice) {
     const timeStamp = new Date(data.date).getTime(); // Convert date to timestamp once
     debugger
-    const color = data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red"); // Determine color based on price change
+    const color = data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red"); // Determine color based on price change
     console.log("1color:"+data.msgtype);
-    console.log("1color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+    console.log("1color:" + (data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red")));
     debugger
     return {
         primaryKey: data.id,
@@ -1087,10 +1088,10 @@ function setDataToChart(chart, seriesData) {
         volumePoints.push({
             x: timeStamp,
             y: Number(data.size),
-            color: data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red"), // Set color conditionally
+            color: data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red"), // Set color conditionally
         });
         console.log("2color:" + data.msgtype);
-        console.log("2color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+        console.log("2color:" + (data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red")));
         debugger
 
         previousPrice = data.price; // Update previous price for the next iteration
@@ -1134,12 +1135,12 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
             const volumePoint = {
                 x: new Date(data.date).getTime(),
                 y: Number(data.size),
-                color: data.msgtype != "T" ? "yellow" : (currentPrice > previousPrice ? 'green' : 'red') // Set color conditionally
+                color: data.msgtype == "H" ? "yellow" : (currentPrice > previousPrice ? 'green' : 'red') // Set color conditionally
             };
             debugger
             volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
             console.log("3color:" + data.msgtype);
-            console.log("3color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+            console.log("3color:" + (data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red")));
         }
         series.addPoint(point, redraw, animateOnUpdate);
 
