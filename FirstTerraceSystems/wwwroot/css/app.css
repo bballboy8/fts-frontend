@@ -684,3 +684,21 @@ h1:focus {
 .my-custom-button-test:hover {
     background-color: #FB5B31; /* Change color on hover */
 }
+
+.highcharts-scrollbar {
+    background: #f0f0f0; /* Default background color */
+    height: 10px;
+}
+
+.highcharts-scrollbar .highcharts-scrollbar-thumb {
+    background: #007bff; /* Default thumb color */
+    border-radius: 5px; /* Optional rounded corners */
+}
+
+.highcharts-scrollbar.end {
+    background: #ff0000; /* Color when scrollbar hits the end */
+}
+
+.highcharts-scrollbar.end .highcharts-scrollbar-thumb {
+    background: #ff9900; /* Color for the thumb when at the end */
+}
