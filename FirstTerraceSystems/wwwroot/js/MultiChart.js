@@ -99,7 +99,7 @@ function addChart(
                     let chartWidth = chart.chartWidth;
                     chart.showLoading();
                     console.log('chart namespace: ', chart)
-                    
+
 
                     //set min and max to avoid y-axis points from dissapearing when zoomed in or out
 
@@ -116,7 +116,7 @@ function addChart(
                         title: `XNYS: ${symbol}`,
                         callback: function (e) {
                             $("#dvSymbolInput").remove();
-                           
+
                             var button = $(e.target);
                             var buttonOffset = button.offset();
                             if (totalCharts != 8) {
@@ -610,17 +610,17 @@ function addChart(
                         const rect = scrollbar.querySelector(".highcharts-scrollbar-thumb");
                         // Remove the 'end' class initially
                         scrollbar.classList.remove('end');
-                        
+
                         const max = e.max;
                         const dataMax = this.dataMax;
                         console.log("scrollbar: ", rect)
-                        
+
                         // Check if scrollbar hits the end
                         //if (max >= dataMax) {
                         //    rect.style.fill = "rgba(255,0,0,1)"
                         //} else {
                         //    rect.style.fill = "#ccc"
-                            
+
                         //}
                         //if (!updatingCharts[symbol])
                         //    handleExtremesChange(symbol, this.chart, e.min, e.max);
@@ -857,6 +857,7 @@ function handleExtremesChange(symbol, chart, min, max) {
             min,
             max
         );
+        console.log("EC:" + chart.series[0].name + "," + chart.renderTo.id)
         addPointToChart(chart, filterData, false, false, false);
         updatingCharts[symbol] = false;
     }, 0);
@@ -1067,11 +1068,11 @@ async function updateChartSymbol(chartId, symbol) {
 
 function processDataPoint(data, previousPrice) {
     const timeStamp = new Date(data.date).getTime(); // Convert date to timestamp once
-    // debugger
-    const color = data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red"); // Determine color based on price change
-    console.log("1color:"+data.msgtype);
-    console.log("1color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
-    // debugger
+    debugger
+    const color = data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red"); // Determine color based on price change
+    console.log("1color:" + data.msgtype);
+    console.log("1color:" + (data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+    debugger
     return {
         primaryKey: data.id,
         x: timeStamp, // Use the computed timestamp
@@ -1107,11 +1108,11 @@ function setDataToChart(chart, seriesData) {
         volumePoints.push({
             x: timeStamp,
             y: Number(data.size),
-            color: data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red"), // Set color conditionally
+            color: data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red"), // Set color conditionally
         });
         console.log("2color:" + data.msgtype);
-        console.log("2color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
-        // debugger
+        console.log("2color:" + (data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+        debugger
 
         previousPrice = data.price; // Update previous price for the next iteration
     }
@@ -1154,12 +1155,12 @@ function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = fa
             const volumePoint = {
                 x: new Date(data.date).getTime(),
                 y: Number(data.size),
-                color: data.msgtype != "T" ? "yellow" : (currentPrice > previousPrice ? 'green' : 'red') // Set color conditionally
+                color: data.msgtype == "H" ? "yellow" : (currentPrice > previousPrice ? 'green' : 'red') // Set color conditionally
             };
             // debugger
             volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
             console.log("3color:" + data.msgtype);
-            console.log("3color:" + (data.msgtype != 'T' ? "yellow" : (data.price > previousPrice ? "green" : "red")));
+            console.log("3color:" + (data.msgtype == "H" ? "yellow" : (data.price > previousPrice ? "green" : "red")));
         }
         series.addPoint(point, redraw, animateOnUpdate);
 
