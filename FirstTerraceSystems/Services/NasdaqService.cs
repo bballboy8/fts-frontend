@@ -49,7 +49,7 @@ namespace FirstTerraceSystems.Services
         public async Task<List<HolidayList>?> GetHolidays()
         {
             var client = new HttpClient();
-            var request = new HttpRequestMessage(HttpMethod.Get, "http://52.0.33.126:8000/nasdaq/holidays");
+            var request = new HttpRequestMessage(HttpMethod.Get, ApiEndpoints.RestAPIUri+ "/nasdaq/holidays");
             request.Headers.Add("accept", "application/json");
             var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
