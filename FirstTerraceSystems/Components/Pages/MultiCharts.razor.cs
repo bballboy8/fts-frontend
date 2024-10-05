@@ -17,7 +17,7 @@ namespace FirstTerraceSystems.Components.Pages
     public partial class MultiCharts
     {
         private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 800;
+        private const int PointSize = 10000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
 
@@ -122,14 +122,14 @@ namespace FirstTerraceSystems.Components.Pages
             try
             {
                 Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
-                var marketFeeds = await  MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
+                var marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
                 Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
 
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
                     await SendChartDataInChunks(chart.Symbol, marketFeeds);
-                //    await JSRuntime.InvokeVoidAsync("setRange", chart.Symbol, 3 * 24 * 60 * 60 * 1000);
+                    //    await JSRuntime.InvokeVoidAsync("setRange", chart.Symbol, 3 * 24 * 60 * 60 * 1000);
 
                     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                 }
@@ -277,7 +277,7 @@ namespace FirstTerraceSystems.Components.Pages
                //await Task.Run(async() => { 
                // await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
                // }).ConfigureAwait(true);
-           }*/  
+           }*/
 
         private async Task RefreshCharts(NasdaqResponse? response)
         {
@@ -352,9 +352,9 @@ namespace FirstTerraceSystems.Components.Pages
                         if (data.Value.Count != 0)
                         {
 
-                          
+
                             JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
-                       
+
                             collection[data.Key].Clear();
                         }
                     }
@@ -388,7 +388,7 @@ namespace FirstTerraceSystems.Components.Pages
             else
                 marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
             await SendChartDataInChunks(symbol, marketFeeds).ConfigureAwait(false);
-        //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
+            //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
             marketFeeds = null;
         }
 
@@ -417,11 +417,11 @@ namespace FirstTerraceSystems.Components.Pages
             }
 
 
-             var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-           // var defaultStartDate=   DateTime.Now.AddHours(-10);
+            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            // var defaultStartDate=   DateTime.Now.AddHours(-10);
             Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
-            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate,false,false).ConfigureAwait(false);
-          //  dbmarketFeeds = dbmarketFeeds.OrderBy((x) => x.Date);
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate, false, false).ConfigureAwait(false);
+            //  dbmarketFeeds = dbmarketFeeds.OrderBy((x) => x.Date);
             if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
             {
                 datasets[symbol] = dbmarketFeeds.ToList();
@@ -581,14 +581,17 @@ namespace FirstTerraceSystems.Components.Pages
 
             var currentTime = DateTime.Now.TimeOfDay;
 
-           
 
+            if (PointSize > xAxisPixels)
+            {
+                xAxisPixels = PointSize;
+            }
 
             // Total number of data points
 
             var totalPoints = data.Count();
 
-
+            ///
 
             // Determine if we need to reduce the number of points based on xAxisPixels
 
