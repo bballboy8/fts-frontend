@@ -279,7 +279,7 @@ function addChart(
             x: 460,
             y: 10,
             callback: function () {
-              zoomChart(true, chart, dotNetObject);
+                zoomChart(true, chart, dotNetObject, symbol);
             },
           });
 
@@ -288,7 +288,7 @@ function addChart(
             x: 500,
             y: 10,
             callback: function () {
-              zoomChart(false, chart, dotNetObject);
+                zoomChart(false, chart, dotNetObject, symbol);
             },
           });
 
@@ -966,7 +966,7 @@ function removeChart(chart) {
   }
 }
 
-function zoomChart(zoomIn, chart, dotNetObject = undefined) {
+function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   var xAxis = chart.xAxis[0];
   var extremes = chart.xAxis[0].getExtremes();
   var range = extremes.max - extremes.min;
@@ -982,12 +982,13 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined) {
 
   newMin = Math.max(xAxis.dataMin, newMin);
   newMax = Math.min(xAxis.dataMax, newMax);
-  xAxis.setExtremes(newMin, newMax);
+  //xAxis.setExtremes(newMin, newMax);
 
-  if (dotNetObject) {
-    dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
-  }
-  chart.redraw();
+    setRangeByDate(symbol, newMin, newMax);
+  //if (dotNetObject) {
+  //  dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
+  //}
+  //chart.redraw();
 }
 
 function removeWindowControlButtonsFromChart() {
@@ -1044,17 +1045,31 @@ async function getFilteredDataBySymbol(symbol, range = undefined) {
     console.error("Error fetching filtered data: ", error);
   }
 }
-async function getFilteredDataBySymbol(
+
+async function getFilteredDataBySymbol(symbol, range = undefined) {
+    try {
+        return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+            "GetFilteredDataBySymbol",
+            symbol,
+            range
+        );
+    } catch (error) {
+        console.error("Error fetching filtered data: ", error);
+    }
+}
+async function GetFilteredDataBySymbolAndDateRange(
   symbol,
-  range = undefined,
+  startDate,
+  endDate,
   xAxisPixels = 0,
   yAxisPixels = 0
 ) {
   try {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync(
-      "GetFilteredDataBySymbol",
+      "GetFilteredDataBySymbolAndDateRange",
       symbol,
-      range,
+      startDate,
+      endDate,
       xAxisPixels,
       yAxisPixels
     );
@@ -1825,6 +1840,24 @@ async function setRange(symbol, range) {
     console.log("points filtered " + filtereddata.length);
     setDataToChart(chart, filtereddata);
   }
+}
+
+async function setRangeByDate(symbol,startDate,endDate) {
+    let chart = getChartInstanceBySeriesName(symbol);
+    if (chart) {
+        //    let filtereddata = await getFilteredDataBySymbol(symbol, range, chart.chartWidth - 50, Math.floor((chart.chartHeight * 65) / 100));
+        //  console.log("setRange" + JSON.stringify(filtereddata));
+        let filtereddata = await GetFilteredDataBySymbolAndDateRange(
+            symbol,
+            startDate,
+            endDate,
+            chart.xAxis[0].width,
+            chart.yAxis[0].height
+        );
+
+        console.log("points filtered " + filtereddata.length);
+        setDataToChart(chart, filtereddata);
+    }
 }
 
 async function setButtonActive(e) {

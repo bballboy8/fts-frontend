@@ -8,6 +8,7 @@ using FirstTerraceSystems.Models;
 using FirstTerraceSystems.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+using Microsoft.Maui.ApplicationModel;
 
 
 namespace FirstTerraceSystems.Components.Pages
@@ -574,6 +575,46 @@ namespace FirstTerraceSystems.Components.Pages
 
         }
 
+        [JSInvokable]
+        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, int xAxisPixels, int yAxisPixels)
+
+        {
+
+            // Update the range for the symbol
+
+            //var startDateRange = DateTime.UtcNow.AddMilliseconds(startDate);
+            //var endDateRang = DateTime.UtcNow.co(endDate);
+
+            var startDateRang = UnixTimeStampToDateTime((long)startDate);
+            var endDateRang = UnixTimeStampToDateTime((long)endDate);
+
+
+            // Convert UTC to Eastern Time
+
+            //DateTime startDateEastern = TimeZoneInfo.ConvertTimeFromUtc(startDateRang, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+            //DateTime endDateEastern = TimeZoneInfo.ConvertTimeFromUtc(endDateRang, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+
+
+
+            // Get the last data point
+
+            var last = datasets[symbol][datasets[symbol].Count - 1];
+
+
+            // Filter the data by time range
+
+            var filtered = datasets[symbol].Where((x) => x.Date >= startDateRang && x.Date <= endDateRang && x.Price >= 0).ToList();
+
+
+
+            // Calculate the number of data points to display
+
+            filtered = FilterData(filtered, xAxisPixels, yAxisPixels);
+
+
+            return filtered;
+
+        }
 
         public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int xAxisPixels, int yAxisPixels)
 
