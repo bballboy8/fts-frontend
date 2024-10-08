@@ -603,13 +603,13 @@ namespace FirstTerraceSystems.Components.Pages
 
 
             // // // Fetch data in the old range but exclude data within the new range
-            // var filteredOldData = datasets[symbol]
-            //     .Where(x => x.Date >= oldStartDateRange && x.Date <= oldEndDateRange && (x.Date < startDateRange || x.Date > endDateRange) && x.Price >= 0)
-            //     .OrderBy(x => x.Date)
-            //     .ToList();
+            var filteredOldData = datasets[symbol]
+                .Where(x => x.Date >= oldStartDateRange && x.Date <= oldEndDateRange && (x.Date < startDateRange || x.Date > endDateRange) && x.Price >= 0)
+                .OrderBy(x => x.Date)
+                .ToList();
 
-            // // // Calculate the number of data points to display using FilterData function
-            // var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
+            // // Calculate the number of data points to display using FilterData function
+            var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
 
 
             // Fetch and sort additional data in the extended range (startDateRange to endDateRange)
@@ -620,12 +620,12 @@ namespace FirstTerraceSystems.Components.Pages
             var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
 
             // Combine both datasets (old and new data) ensuring there is no duplication
-            // var combinedFiltered = oldFiltered.Union(newFiltered).ToList();
+            var combinedFiltered = oldFiltered.Union(newFiltered).ToList();
 
-            // var finalFiltered = combinedFiltered.OrderBy(x => x.Date).ToList();
+            var finalFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
 
 
-            return newFiltered.ToList();
+            return finalFiltered.ToList();
 
         }
 
