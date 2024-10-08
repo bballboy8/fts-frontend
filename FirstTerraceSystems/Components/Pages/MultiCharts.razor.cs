@@ -17,8 +17,8 @@ namespace FirstTerraceSystems.Components.Pages
 
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 5000;
-        private const int PointSize = 50000;
+        private const int MarketFeedChunkSize = 500;
+        private const int PointSize = 1000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
 
@@ -576,43 +576,55 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
         [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, int xAxisPixels, int yAxisPixels)
+        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, double oldStartDate, double oldEndDate, int xAxisPixels, int yAxisPixels)
 
         {
 
-            // Update the range for the symbol
+            // Convert timestamps to DateTime objects
+            var startDateRange = UnixTimeStampToDateTime((long)startDate);
+            var endDateRange = UnixTimeStampToDateTime((long)endDate);
 
-            //var startDateRange = DateTime.UtcNow.AddMilliseconds(startDate);
-            //var endDateRang = DateTime.UtcNow.co(endDate);
+            var oldStartDateRange = UnixTimeStampToDateTime((long)oldStartDate);
+            var oldEndDateRange = UnixTimeStampToDateTime((long)oldEndDate);
 
-            var startDateRang = UnixTimeStampToDateTime((long)startDate);
-            var endDateRang = UnixTimeStampToDateTime((long)endDate);
+            // Check if datasets[symbol] contains data
+            if (datasets.ContainsKey(symbol) && datasets[symbol].Any())
+            {
+                // Get the minimum date present in the dataset
+                var minDateInDataset = datasets[symbol].Min(x => x.Date);
 
-
-            // Convert UTC to Eastern Time
-
-            //DateTime startDateEastern = TimeZoneInfo.ConvertTimeFromUtc(startDateRang, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-            //DateTime endDateEastern = TimeZoneInfo.ConvertTimeFromUtc(endDateRang, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-
-
-
-            // Get the last data point
-
-            var last = datasets[symbol][datasets[symbol].Count - 1];
-
-
-            // Filter the data by time range
-
-            var filtered = datasets[symbol].Where((x) => x.Date >= startDateRang && x.Date <= endDateRang && x.Price >= 0).ToList();
+                // Ensure startDateRange is not less than the minimum date in the dataset
+                if (startDateRange < minDateInDataset)
+                {
+                    startDateRange = minDateInDataset;
+                }
+            }
 
 
+            // // // Fetch data in the old range but exclude data within the new range
+            // var filteredOldData = datasets[symbol]
+            //     .Where(x => x.Date >= oldStartDateRange && x.Date <= oldEndDateRange && (x.Date < startDateRange || x.Date > endDateRange) && x.Price >= 0)
+            //     .OrderBy(x => x.Date)
+            //     .ToList();
 
-            // Calculate the number of data points to display
+            // // // Calculate the number of data points to display using FilterData function
+            // var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
 
-            filtered = FilterData(filtered, xAxisPixels, yAxisPixels);
+
+            // Fetch and sort additional data in the extended range (startDateRange to endDateRange)
+            var newData = datasets[symbol]
+                .Where(x => x.Date >= startDateRange && x.Date <= endDateRange && x.Price >= 0)
+                .OrderBy(x => x.Date)
+                .ToList();
+            var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
+
+            // Combine both datasets (old and new data) ensuring there is no duplication
+            // var combinedFiltered = oldFiltered.Union(newFiltered).ToList();
+
+            // var finalFiltered = combinedFiltered.OrderBy(x => x.Date).ToList();
 
 
-            return filtered;
+            return newFiltered.ToList();
 
         }
 
@@ -639,6 +651,10 @@ namespace FirstTerraceSystems.Components.Pages
 
             int numPointsToShow = Math.Min(totalPoints, xAxisPixels);
 
+            if (totalPoints <= numPointsToShow)
+            {
+                return data.ToList();
+            }
 
 
             // Determine step size for selecting points

@@ -28,10 +28,10 @@ namespace FirstTerraceSystems.Services
 
         public int InitialChartLayout { get; private set; } = 8;
         public List<ChartModal> InitialChartSymbols { get; private set; }
-      
+
 
         public async Task ChartModals()
-        {   
+        {
             List<ChartModal> chartModals = new List<ChartModal>();
             try
             {
@@ -110,7 +110,7 @@ namespace FirstTerraceSystems.Services
         public void SaveChartLayout()
         {
             string? json = JsonSerializer.Serialize(InitialChartSymbols);
-           // Preferences.Set(PKey_ChartSymbols, json);
+            // Preferences.Set(PKey_ChartSymbols, json);
             Preferences.Set(PKey_SavedChartLayout, InitialChartLayout);
         }
 

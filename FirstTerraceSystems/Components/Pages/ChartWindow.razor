@@ -12,7 +12,7 @@
 <div @ref="ER_ChartWindow"></div>
 
 @code {
-    private const int MarketFeedChunkSize = 20000;
+    private const int MarketFeedChunkSize = 500;
 
     [Parameter]
     public object? ChartIndx { get; set; }
@@ -31,7 +31,7 @@
     private Models.ChartModal ChartPageModal { get; set; } = new();
 
     private DotNetObjectReference<ChartWindow>? _dotChartWindowRef;
-    private const int PointSize = 50000;
+    private const int PointSize = 1000;
     protected override void OnInitialized()
     {
         base.OnInitialized();
