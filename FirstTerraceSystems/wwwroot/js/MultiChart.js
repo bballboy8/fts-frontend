@@ -1133,6 +1133,19 @@ async function refreshCharts(symbol, seriesData) {
       addPointToChart(chart, seriesData, false, false, true);
 
       chart.redraw();
+
+      // // Fetch the min and max x values from the updated series data
+      // const series = chart.series[0];
+      // if (series && series.data.length > 0) {
+      //   const minX = series.data[0].x; // First data point on the x-axis
+      //   const maxX = series.data[series.data.length - 1].x; // Last data point on the x-axis
+
+      //   // Set the new extremes on the x-axis based on the updated data
+      //   chart.xAxis[0].setExtremes(minX, maxX);
+
+      //   // // Redraw again after setting the new extremes
+      //   // chart.redraw();
+      // }
     }
   }, 50);
   //removeOldPoints(chart, 3);
@@ -1675,7 +1688,7 @@ async function setRangeByDate(
     );
 
     console.log("points filtered " + filtereddata.length);
-    setDataToChart(chart, filtereddata, startDate, endDate);
+    setDataToChart(chart, filtereddata);
   }
 }
 

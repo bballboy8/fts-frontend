@@ -60,7 +60,7 @@ namespace FirstTerraceSystems.Repositories
             {
                 //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
                 //         string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= @StartDateTime ORDER BY Date limit 300000";
-                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= '{startDateTime.ToString(AppSettings.DFormat_SQLite)}' ORDER BY Date limit 400000";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date   WHERE Date >= '{startDateTime.ToString(AppSettings.DFormat_SQLite)}' ORDER BY Date";
                 return await _connection.QueryAsync<MarketFeed>(sql);
             }
             catch (Exception ex)
@@ -68,21 +68,21 @@ namespace FirstTerraceSystems.Repositories
                 Console.WriteLine(ex.Message);
                 return [];
             }
-          
-           }
-        public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol1(string symbol, DateTime startDateTime, bool initialLoad = false,bool isDesc=false)
+
+        }
+        public async Task<IEnumerable<MarketFeed>> GetChartDataBySymbol1(string symbol, DateTime startDateTime, bool initialLoad = false, bool isDesc = false)
         {
             try
             {
                 string ord = "";
 
-                if (isDesc==true)
+                if (isDesc == true)
                 {
                     ord = "DESC";
                 }
-                
+
                 //string sql = $"SELECT TOP 500 * FROM symbol_{symbol} WHERE Date >= @StartDateTime ORDER BY Date";
-                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date WHERE Date >= @StartDateTime ORDER BY Date {ord}  limit 400000";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date WHERE Date >= @StartDateTime ORDER BY Date {ord}";
                 return await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite) });
             }
             catch (Exception ex)
@@ -241,13 +241,13 @@ namespace FirstTerraceSystems.Repositories
                             "Price FLOAT," +
                             "Size VARCHAR)");
 
-                      
+
                             connection.Execute($"CREATE INDEX IF NOT EXISTS idx_symbol_{symbol}_date ON symbol_{symbol}(Date)");
-                           
+
                             transaction.Commit();
                         }
                     }
-               
+
                 }
             }
             catch (Exception ex)
