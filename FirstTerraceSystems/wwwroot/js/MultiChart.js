@@ -1034,19 +1034,28 @@ async function getChartDataByLastFeedPoint(symbol, lastPoint) {
   );
 }
 
-async function getFilteredDataBySymbol(symbol, range = undefined, xAxisPixels = 0,
-    yAxisPixels = 0) {
+async function getFilteredDataBySymbol(symbol, range = undefined) {
   try {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync(
       "GetFilteredDataBySymbol",
       symbol,
-        range,
-        xAxisPixels,
-        yAxisPixels
+      range
     );
   } catch (error) {
     console.error("Error fetching filtered data: ", error);
   }
+}
+
+async function getFilteredDataBySymbol(symbol, range = undefined) {
+    try {
+        return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+            "GetFilteredDataBySymbol",
+            symbol,
+            range
+        );
+    } catch (error) {
+        console.error("Error fetching filtered data: ", error);
+    }
 }
 async function GetFilteredDataBySymbolAndDateRange(
   symbol,
