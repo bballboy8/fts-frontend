@@ -1514,90 +1514,60 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
 async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
   var totalCharts = $("#chartList .chart-box").length + 1;
 
-  //Reset Chart Box
-  var cssClass = "col-12";
-  if (totalCharts == 1) {
-    cssClass = "col-12";
-  } else if (totalCharts == 5) {
-    cssClass = "col-12";
-  } else if (totalCharts <= 4) {
-    cssClass = "col-6";
-  } else if (totalCharts <= 6) {
-    cssClass = "col-4";
-  } else if (totalCharts <= 8) {
-    cssClass = "col-3";
-  }
+    var cssClass = "col-12";
 
-  $("#chartList .chart-box")
-    .removeClass("col-3")
-    .removeClass("col-4")
-    .removeClass("col-6")
-    .removeClass("col-12");
-  $("#chartList .chart-box").addClass(cssClass);
+    if (totalCharts == 2 || totalCharts == 4) {
+        cssClass = "col-6";
+    } else if (totalCharts == 5) {
+        cssClass = "col-12";
+    } else if (totalCharts == 6) {
+        cssClass = "col-4";
+    } else if (totalCharts == 8) {
+        cssClass = "col-3";
+    }
 
-  var chartContainerId = "chart-" + chartIndx,
-    chartBoxClass = "chart-box-" + chartIndx;
-  var chartBox = $(
-    `<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
-  );
-
-  $("#chartList").append(chartBox);
-
-  var chartBoxes = $("#chartList").find(".chart-box");
-
-  chartBoxes.sort(function (a, b) {
-    var counterA = $(".chart-container", a).data("chart-id");
-    var counterB = $(".chart-container", b).data("chart-id");
-    return counterA - counterB;
-  });
-
-  if (totalCharts == 5) {
-    var chartListCol1 = $(
-      '<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'
-    );
-    var chartListCol2 = $(
-      '<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'
+    var chartContainerId = "chart-" + chartIndx,
+        chartBoxClass = "chart-box-" + chartIndx;
+    var chartBox = $(
+        `<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
     );
 
-    chartBoxes.slice(0, 3).appendTo(chartListCol2.find("#chartListCol2"));
-    chartBoxes.slice(3).appendTo(chartListCol1.find("#chartListCol1"));
+    if (totalCharts == 5) {
+        if ($("#chartList .chart-box").length < 3) {
+            $("#chartListCol2").append(chartBox);
+        } else {
+            $("#chartListCol1").append(chartBox);
+        }
+    } else {
+        $("#chartList").append(chartBox);
+    }
 
-    $("#chartList").append(chartListCol1).append(chartListCol2);
-  } else {
-    chartBoxes.appendTo("#chartList");
-    $("#chartListCol1").parent().remove();
-    $("#chartListCol2").parent().remove();
-  }
+    if (totalCharts == 5) {
+        if ($("#chartList .chart-box").length > 3) {
+            chartBox.addClass("chart-height-50");
+        } else {
+            chartBox.addClass("chart-height-33");
+        }
+    } else if (totalCharts > 2) {
+        $("#chartList .chart-box").removeClass("chart-height-100");
+        $("#chartList .chart-box").addClass("chart-height-50");
+    } else {
+        $("#chartList .chart-box").removeClass("chart-height-50");
+        $("#chartList .chart-box").addClass("chart-height-100");
+    }
 
-  if (totalCharts == 5) {
-    $("#chartListCol1 .chart-box")
-      .removeClass("chart-height-100")
-      .removeClass("chart-height-33")
-      .addClass("chart-height-50");
-    $("#chartListCol2 .chart-box")
-      .removeClass("chart-height-100")
-      .removeClass("chart-height-50")
-      .addClass("chart-height-33");
-  } else if (totalCharts > 2) {
-    $("#chartList .chart-box")
-      .removeClass("chart-height-100")
-      .removeClass("chart-height-33");
-    $("#chartList .chart-box").addClass("chart-height-50");
-  } else {
-    $("#chartList .chart-box")
-      .removeClass("chart-height-50")
-      .removeClass("chart-height-33");
-    $("#chartList .chart-box").addClass("chart-height-100");
-  }
+    var chart = addChart(totalCharts, chartContainerId, [], symbol);
 
-  let existingChart = getChartInstanceBySeriesName(symbol);
+    if (totalCharts == 1) {
+        removeWindowControlButtonsFromChart();
+    }
 
-  let chart = addChart(1, chartContainerId, [], symbol);
+    addWindowControlButtonsToChart();
+    var data = await getChartDataBySymbol(symbol, null);
+    setDataToChart(chart, data);
+    chart.hideLoading();
 
-  addWindowControlButtonsToChart();
-  var data = await getChartDataBySymbol(symbol, null);
-  setDataToChart(chart, data);
-  chart.hideLoading();
+
 }
 
 function getChartInstance(chartId) {
