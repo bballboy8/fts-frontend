@@ -1,4 +1,5 @@
 ﻿@using System.Text.Json
+@using Serilog.Core
 @inject StateContainerService StateContainer
 @inject WindowsSerivce WindowsSerivce
 @inject Repositories.MarketFeedRepository MarketFeedRepository
@@ -6,6 +7,7 @@
 @inject BsToastService Toast
 @inject ChartService ChartService
 @inject NasdaqHistoricalDataService HistoricalDataService
+
 @inject NasdaqService NasdaqService
 @implements IDisposable
 
@@ -29,7 +31,7 @@
     private ElementReference ER_ChartWindow { get; set; }
 
     private Models.ChartModal ChartPageModal { get; set; } = new();
-
+    private CancellationTokenSource _cancellationTokenSource = new();
     private DotNetObjectReference<ChartWindow>? _dotChartWindowRef;
     private const int PointSize = 1000;
     protected override void OnInitialized()
@@ -102,31 +104,125 @@
     [JSInvokable]
     public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
     {
-        if (!TickerRepository.IsTickerExists(symbol))
+        // if (!TickerRepository.IsTickerExists(symbol))
+        // {
+        //     Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
+        //     return null;
+        // }
+        // var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+        // MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(symbol);
+        // DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
+
+        // IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, symbol).ConfigureAwait(false);
+
+        // if (marketFeeds != null && marketFeeds.Any())
+        // {
+
+        //     MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, marketFeeds);
+        //     marketFeeds = null;
+        // }
+
+        // marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
+
+        // MultiCharts.datasets[symbol] = marketFeeds.ToList();
+        // var filtered = MultiCharts.FilterData(marketFeeds, PointSize);
+        // SymbolChanged(chartId, symbol);
+        // return filtered;
+
+        if (MultiCharts.datasets.ContainsKey(symbol))
         {
-            Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
-            return null;
+            var filtered = MultiCharts.FilterData(MultiCharts.datasets[symbol], PointSize);
+            SymbolChanged(chartId, symbol);
+            return filtered;
         }
+
+
         var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-        MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(symbol);
-        DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
-
-        IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, symbol).ConfigureAwait(false);
-
-        if (marketFeeds != null && marketFeeds.Any())
+        var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate, false, false).ConfigureAwait(false);
+        if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
         {
-
-            MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, marketFeeds);
-            marketFeeds = null;
+            MultiCharts.datasets[symbol] = dbmarketFeeds.ToList();
+            var filtered = MultiCharts.FilterData(dbmarketFeeds, PointSize);
+            SymbolChanged(chartId, symbol);
+            return filtered;
         }
+        else
+        {
+            var UTCDate = DateTime.UtcNow.AddHours(-1);
+            DateTime easternOneHour = TimeZoneInfo
+                .ConvertTimeFromUtc(
+                    UTCDate,
+                    TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
-        marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, defaultStartDate).ConfigureAwait(false);
 
-        MultiCharts.datasets[symbol] = marketFeeds.ToList();
-        var filtered = MultiCharts.FilterData(marketFeeds, PointSize);
-        SymbolChanged(chartId, symbol);
-        return filtered;
+            IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(easternOneHour, symbol).ConfigureAwait(false);
 
+            if (marketFeeds == null || marketFeeds.Count() == 0)
+            {
+                // Start a background task to load the last 3 days of data
+                var token = _cancellationTokenSource.Token;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, symbol).ConfigureAwait(false);
+
+                        if (token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
+                        {
+                            Loading._symbolSet.Add(symbol);
+                            MultiCharts.datasets[symbol] = threeDayMarketFeeds.ToList();
+                            await SendChartDataInChunks(symbol, MultiCharts.FilterData(threeDayMarketFeeds, PointSize));
+                            MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                }, token);
+
+                return marketFeeds; // Return the market feeds retrieved from the initial API call
+            }
+            else
+            {
+                MultiCharts.datasets[symbol] = marketFeeds.ToList();
+                var filteredData = MultiCharts.FilterData(marketFeeds, PointSize);
+                SymbolChanged(chartId, symbol);
+
+                var token = _cancellationTokenSource.Token;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, symbol).ConfigureAwait(false);
+
+                        if (token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
+                        {
+                            Loading._symbolSet.Add(symbol);
+                            MultiCharts.datasets[symbol] = threeDayMarketFeeds.ToList();
+                            await SendChartDataInChunks(symbol, MultiCharts.FilterData(threeDayMarketFeeds, PointSize));
+                            MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                }, token);
+
+                return filteredData;
+            }
+        }
     }
     [JSInvokable]
     public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, double oldStartDate, double oldEndDate, int xAxisPixels, int yAxisPixels)
