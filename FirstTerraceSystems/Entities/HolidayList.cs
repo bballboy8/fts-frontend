@@ -7,12 +7,12 @@ namespace FirstTerraceSystems.Entities
         [JsonPropertyName("year")]
         public int year { get; set; }
         [JsonPropertyName("holiday_name")]
-        public string holiday_name { get; set; }
+        public string? holiday_name { get; set; }
 
         [JsonPropertyName("date")]
-        public string date { get; set; }
+        public string? date { get; set; }
 
         [JsonPropertyName("date_time")]
-        public string date_time { get; set; }
+        public string? date_time { get; set; }
     }
 }

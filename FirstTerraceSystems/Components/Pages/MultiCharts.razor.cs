@@ -17,7 +17,7 @@ namespace FirstTerraceSystems.Components.Pages
 
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 500;
+        private const int MarketFeedChunkSize = 100000;
         private const int PointSize = 1000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
@@ -76,10 +76,8 @@ namespace FirstTerraceSystems.Components.Pages
                     await WebSocketClient.ListenUtp().ConfigureAwait(false);
 
 
-                    await Task.Run(async () =>
-                    {
-                        await UpdateUI();
-                    });
+                    await UpdateUI();
+
                 });
 
                 //await Task.WhenAll(Task1, Task2);
@@ -93,14 +91,12 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 List<Task> tasks = new();
 
-                //    symbolicDatas = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
-                //    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolicDatas);
-                //});
                 Logger.LogInformation("Starting InitialChartSymbols");
                 foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
 
                 {
                     tasks.Add(ChartTask(symbol, defaultStartDate));
+                    // await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
                 }
 
                 while (tasks.Any())
@@ -130,8 +126,6 @@ namespace FirstTerraceSystems.Components.Pages
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
                     await SendChartDataInChunks(chart.Symbol, marketFeeds);
-                    //    await JSRuntime.InvokeVoidAsync("setRange", chart.Symbol, 3 * 24 * 60 * 60 * 1000);
-
                     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                 }
                 catch (Exception ex)
@@ -181,24 +175,14 @@ namespace FirstTerraceSystems.Components.Pages
         public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
         {
             datasets[symbol] = marketFeeds.ToList();
-            var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
+            var chunks = FilterData(marketFeeds, 200000).Chunk(MarketFeedChunkSize);
 
             foreach (var chunk in chunks)
             {
                 try
                 {
-
                     // Invoke JavaScript function asynchronously with chunk of data
                     await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, false);
-
-                    var tempChunk = chunk;
-
-                    // Example: Set properties of tempChunk to null or dispose items within it
-                    tempChunk = null;
-
-                    // Force garbage collection to release memory
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
                 }
                 catch (Exception ex)
                 {
@@ -314,19 +298,15 @@ namespace FirstTerraceSystems.Components.Pages
                             // Filter the dataGot by Eastern time before adding to the collection
                             var filteredData = FilterByEasternTime(dataGot);
 
-                            lock (_lock)  // Use lock for thread safety
-                            {
-                                datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
+                            var newData = datasets[data.Key].Concat(dataGot).ToList();
+                            var filteredDataToAdd = collection.ContainsKey(data.Key) ? collection[data.Key].Concat(filteredData).ToList() : filteredData.ToList();
 
-                                if (collection.ContainsKey(data.Key))
-                                {
-                                    collection[data.Key].AddRange(filteredData);
-                                }
-                                else
-                                {
-                                    collection[data.Key] = filteredData.ToList();
-                                }
+                            lock (_lock)
+                            {
+                                datasets[data.Key] = newData;
+                                collection[data.Key] = filteredDataToAdd;
                             }
+
                         }
                     }
 
@@ -347,16 +327,20 @@ namespace FirstTerraceSystems.Components.Pages
                 await Task.Delay(1000);  // Non-blocking delay
                 OnWait = true;
 
+                // Get the list of visible symbols
+                var visibleSymbols = ChartService.InitialChartSymbols
+                                    .Where(x => x.IsVisible)
+                                    .Select(x => x.Symbol)
+                                    .ToHashSet(); // Use HashSet for fast lookup
+
                 lock (_lock)  // Ensure thread safety when accessing shared collection
                 {
                     foreach (var data in collection)
                     {
-                        if (data.Value.Count != 0)
+                        // Only send data for charts whose symbols are visible
+                        if (data.Value.Count != 0 && visibleSymbols.Contains(data.Key))
                         {
-
-
                             JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
-
                             collection[data.Key].Clear();
                         }
                     }
@@ -365,6 +349,7 @@ namespace FirstTerraceSystems.Components.Pages
                 OnWait = false;
             }
         }
+
 
 
         [JSInvokable]
@@ -397,19 +382,27 @@ namespace FirstTerraceSystems.Components.Pages
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
         {
-            // Cancel any ongoing background tasks
-            lock (_lock)
-            {
-                _cancellationTokenSource.Cancel();
-                _cancellationTokenSource.Dispose();
-                _cancellationTokenSource = new CancellationTokenSource();
-            }
 
             if (!TickerRepository.IsTickerExists(symbol))
             {
                 Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
                 return null;
             }
+
+            // Cancel any ongoing background tasks
+            CancellationTokenSource oldTokenSource;
+
+            lock (_lock)
+            {
+                oldTokenSource = _cancellationTokenSource;
+                _cancellationTokenSource = new CancellationTokenSource();
+            }
+
+            // Cancel and dispose the old token outside the lock
+            oldTokenSource.Cancel();
+            oldTokenSource.Dispose();
+
+
 
             if (datasets.ContainsKey(symbol))
             {
@@ -554,8 +547,6 @@ namespace FirstTerraceSystems.Components.Pages
 
             DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
-
-
             // Get the last data point
 
             var last = datasets[symbol][datasets[symbol].Count - 1];
@@ -668,42 +659,42 @@ namespace FirstTerraceSystems.Components.Pages
 
             var filteredData = FilterByEasternTime(data).Where((_, index) => index % step == 0).ToList();
 
-
+            return filteredData.ToList();
             // Additional filtering to ensure at least 10 distinct y-axis points for each time pixel
 
-            var groupedByTimePixel = filteredData
+            // var groupedByTimePixel = filteredData
 
-                .GroupBy(point => point.Date.Ticks / (TimeSpan.TicksPerMillisecond * xAxisPixels))
+            //     .GroupBy(point => point.Date.Ticks / (TimeSpan.TicksPerMillisecond * xAxisPixels))
 
-                .SelectMany(g =>
+            //     .SelectMany(g =>
 
-                {
+            //     {
 
-                    // If fewer than 10 points in this time group, show them all
+            //         // If fewer than 10 points in this time group, show them all
 
-                    if (g.Count() <= 10)
+            //         if (g.Count() <= 10)
 
-                        return g;
-
-
-
-                    // Otherwise, distribute points across y-axis
-
-                    var pointsByPriceRange = g
-
-                        .GroupBy(point => point.Price / (yAxisPixels * 10)) // Divide prices into y-axis pixels
-
-                        .SelectMany(pg => pg.Take(10)) // Take up to 10 per pixel group
-
-                        .Take(yAxisPixels);
+            //             return g;
 
 
-                    return pointsByPriceRange;
 
-                });
+            //         // Otherwise, distribute points across y-axis
+
+            //         var pointsByPriceRange = g
+
+            //             .GroupBy(point => point.Price / (yAxisPixels * 10)) // Divide prices into y-axis pixels
+
+            //             .SelectMany(pg => pg.Take(10)) // Take up to 10 per pixel group
+
+            //             .Take(yAxisPixels);
 
 
-            return groupedByTimePixel.OrderBy(x => x.Date).ToList();
+            //         return pointsByPriceRange;
+
+            //     });
+
+
+            // return groupedByTimePixel.OrderBy(x => x.Date).ToList();
 
         }
 

@@ -92,24 +92,24 @@ function addChart(
           var chart = this;
           // console.log("chart: ", chart);
 
-          // Check if there are no points or if xAxis or yAxis labels are empty
-          var isEmptyData = chart.series[0].data.length === 0;
-          var isEmptyXAxis =
-            !chart.xAxis[0].labelFormatter || chart.xAxis[0].ticks.length === 0;
-          var isEmptyYAxis =
-            !chart.yAxis[0].labelFormatter || chart.yAxis[0].ticks.length === 0;
+          // // Check if there are no points or if xAxis or yAxis labels are empty
+          // var isEmptyData = chart.series[0].data.length === 0;
+          // var isEmptyXAxis =
+          //   !chart.xAxis[0].labelFormatter || chart.xAxis[0].ticks.length === 0;
+          // var isEmptyYAxis =
+          //   !chart.yAxis[0].labelFormatter || chart.yAxis[0].ticks.length === 0;
 
-          if (isEmptyData || isEmptyXAxis || isEmptyYAxis) {
-            // Call setRange with '1m' configuration
-            setRange(chart.series[0].name, 1000); // '1m' corresponds to 60 * 1000 milliseconds
-          }
+          // if (isEmptyData || isEmptyXAxis || isEmptyYAxis) {
+          //   // Call setRange with '1m' configuration
+          //   setRange(chart.series[0].name, 1000); // '1m' corresponds to 60 * 1000 milliseconds
+          // }
 
           // Attach wheel event listener to the chart container
           Highcharts.addEvent(chart.container, "wheel", function (event) {
             event.preventDefault(); // Prevent page scroll only when inside the chart
             const delta = event.deltaY || event.wheelDelta;
             const zoomIn = delta < 0;
-            zoomChart(zoomIn, chart, undefined, symbol);
+            debouncedZoomChart(zoomIn, chart, undefined, symbol);
           });
 
           let chartWidth = chart.chartWidth;
@@ -289,7 +289,7 @@ function addChart(
             x: 460,
             y: 10,
             callback: function () {
-              zoomChart(true, chart, dotNetObject, symbol);
+              debouncedZoomChart(true, chart, dotNetObject, symbol);
             },
           });
 
@@ -298,7 +298,7 @@ function addChart(
             x: 500,
             y: 10,
             callback: function () {
-              zoomChart(false, chart, dotNetObject, symbol);
+              debouncedZoomChart(false, chart, dotNetObject, symbol);
             },
           });
 
@@ -615,7 +615,7 @@ function addChart(
               var isZoomIn = range < this.oldMax - this.oldMin; // Compare with the previous range
 
               // Call zoomChart with the appropriate parameters
-              zoomChart(isZoomIn, chart, undefined, symbol);
+              debouncedZoomChart(isZoomIn, chart, undefined, symbol);
             }
 
             if (
@@ -849,6 +849,11 @@ function removeChart(chart) {
 }
 
 function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
+  if (!chart.series[0].data || chart.series[0].data.length === 0) {
+    console.warn(`No data available for zooming on chart: ${symbol}`);
+    return; // Prevent zoom if no data is available
+  }
+
   var xAxis = chart.xAxis[0];
   var extremes = chart.xAxis[0].getExtremes();
   var range = extremes.max - extremes.min;
@@ -873,10 +878,16 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   newMin = Math.max(xAxis.dataMin, newMin);
   newMax = Math.min(xAxis.dataMax, newMax);
 
-  debouncedSetRangeByDate(symbol, newMin, newMax, oldMin, oldMax);
-  xAxis.setExtremes(newMin, newMax);
-  if (dotNetObject) {
-    dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
+  // Only apply zoom if the range is valid
+  if (newMin < newMax) {
+    debouncedSetRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
+    xAxis.setExtremes(newMin, newMax);
+
+    if (dotNetObject) {
+      dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
+    }
+  } else {
+    console.warn("Invalid zoom range. No zoom action performed.");
   }
 }
 
@@ -1024,41 +1035,31 @@ function setDataToChart(
 ) {
   if (seriesData.length < 1) return; // Return early if there isn't enough data
 
-  const series = chart.series[0];
   const dataPoints = [];
   const volumePoints = [];
-  let previousPrice = seriesData[0].price; // Initialize with the first price
+  let previousPrice = seriesData[0].price;
 
-  for (let i = 1; i < seriesData.length; i++) {
-    const data = seriesData[i];
-    const timeStamp = new Date(data.date).getTime();
-
-    // Use processDataPoint to create the data point object
+  seriesData.forEach((data, index) => {
     dataPoints.push(processDataPoint(data, previousPrice));
-
-    // Process volume points for the secondary series
     volumePoints.push({
-      x: timeStamp,
+      x: new Date(data.date).getTime(),
       y: Number(data.size),
       color:
         data.msgtype === "H"
           ? "yellow"
           : data.price > previousPrice
           ? "green"
-          : "red", // Set color conditionally
+          : "red",
     });
+    previousPrice = data.price;
+  });
 
-    previousPrice = data.price; // Update previous price for the next iteration
-  }
+  chart.series[0].setData(dataPoints, false); // Set data without redrawing
+  chart.series[1].setData(volumePoints, false); // Set data without redrawing
 
-  chart.series[0].setData([]);
-
-  // Update both series data and avoid immediate redraw
-  chart.series[0].setData(dataPoints, false, false);
-  chart.series[1].setData(volumePoints, false, false);
-  // Perform one redraw after all data is set
+  // Redraw once after all data is set
   chart.redraw();
-  // Set extremes only if there is more than one data point and update_extreme is true
+
   if (update_extreme && dataPoints.length > 1) {
     const minX = newmin !== 0 ? newmin : dataPoints[0].x;
     const maxX = newmax !== 0 ? newmax : dataPoints[dataPoints.length - 1].x;
@@ -1121,6 +1122,7 @@ function debounce(func, delay) {
     debounceTimer = setTimeout(() => func.apply(this, args), delay);
   };
 }
+const debouncedZoomChart = debounce(zoomChart, 200);
 const debouncedSetRange = debounce(setRange, 1000);
 const debouncedSetRangeByDate = debounce(setRangeByDate, 1000);
 
@@ -1514,60 +1516,58 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
 async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
   var totalCharts = $("#chartList .chart-box").length + 1;
 
-    var cssClass = "col-12";
+  var cssClass = "col-12";
 
-    if (totalCharts == 2 || totalCharts == 4) {
-        cssClass = "col-6";
-    } else if (totalCharts == 5) {
-        cssClass = "col-12";
-    } else if (totalCharts == 6) {
-        cssClass = "col-4";
-    } else if (totalCharts == 8) {
-        cssClass = "col-3";
-    }
+  if (totalCharts == 2 || totalCharts == 4) {
+    cssClass = "col-6";
+  } else if (totalCharts == 5) {
+    cssClass = "col-12";
+  } else if (totalCharts == 6) {
+    cssClass = "col-4";
+  } else if (totalCharts == 8) {
+    cssClass = "col-3";
+  }
 
-    var chartContainerId = "chart-" + chartIndx,
-        chartBoxClass = "chart-box-" + chartIndx;
-    var chartBox = $(
-        `<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
-    );
+  var chartContainerId = "chart-" + chartIndx,
+    chartBoxClass = "chart-box-" + chartIndx;
+  var chartBox = $(
+    `<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
+  );
 
-    if (totalCharts == 5) {
-        if ($("#chartList .chart-box").length < 3) {
-            $("#chartListCol2").append(chartBox);
-        } else {
-            $("#chartListCol1").append(chartBox);
-        }
+  if (totalCharts == 5) {
+    if ($("#chartList .chart-box").length < 3) {
+      $("#chartListCol2").append(chartBox);
     } else {
-        $("#chartList").append(chartBox);
+      $("#chartListCol1").append(chartBox);
     }
+  } else {
+    $("#chartList").append(chartBox);
+  }
 
-    if (totalCharts == 5) {
-        if ($("#chartList .chart-box").length > 3) {
-            chartBox.addClass("chart-height-50");
-        } else {
-            chartBox.addClass("chart-height-33");
-        }
-    } else if (totalCharts > 2) {
-        $("#chartList .chart-box").removeClass("chart-height-100");
-        $("#chartList .chart-box").addClass("chart-height-50");
+  if (totalCharts == 5) {
+    if ($("#chartList .chart-box").length > 3) {
+      chartBox.addClass("chart-height-50");
     } else {
-        $("#chartList .chart-box").removeClass("chart-height-50");
-        $("#chartList .chart-box").addClass("chart-height-100");
+      chartBox.addClass("chart-height-33");
     }
+  } else if (totalCharts > 2) {
+    $("#chartList .chart-box").removeClass("chart-height-100");
+    $("#chartList .chart-box").addClass("chart-height-50");
+  } else {
+    $("#chartList .chart-box").removeClass("chart-height-50");
+    $("#chartList .chart-box").addClass("chart-height-100");
+  }
 
-    var chart = addChart(totalCharts, chartContainerId, [], symbol);
+  var chart = addChart(totalCharts, chartContainerId, [], symbol);
 
-    if (totalCharts == 1) {
-        removeWindowControlButtonsFromChart();
-    }
+  if (totalCharts == 1) {
+    removeWindowControlButtonsFromChart();
+  }
 
-    addWindowControlButtonsToChart();
-    var data = await getChartDataBySymbol(symbol, null);
-    setDataToChart(chart, data);
-    chart.hideLoading();
-
-
+  addWindowControlButtonsToChart();
+  var data = await getChartDataBySymbol(symbol, null);
+  setDataToChart(chart, data);
+  chart.hideLoading();
 }
 
 function getChartInstance(chartId) {
@@ -1611,8 +1611,6 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
 async function setRange(symbol, range) {
   let chart = getChartInstanceBySeriesName(symbol);
   if (chart) {
-    //    let filtereddata = await getFilteredDataBySymbol(symbol, range, chart.chartWidth - 50, Math.floor((chart.chartHeight * 65) / 100));
-    //  console.log("setRange" + JSON.stringify(filtereddata));
     let filtereddata = await getFilteredDataBySymbol(
       symbol,
       range,

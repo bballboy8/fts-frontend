@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using Microsoft.Extensions.DependencyInjection;
 using FirstTerraceSystems.Services;
 
 namespace FirstTerraceSystems.Features
@@ -13,7 +11,18 @@ namespace FirstTerraceSystems.Features
         {
             builder.AddSingleton<DatabaseService>(serviceProvider =>
             {
+                // Get the database path
                 string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FTS.db");
+
+                // Check if the database file exists
+                // if (File.Exists(dbPath))
+                // {
+                //     // Delete the existing database file
+                //     File.Delete(dbPath);
+                //     Console.WriteLine("Existing database has been deleted.");
+                // }
+
+                // Initialize a new DatabaseService with the (possibly) new database
                 return new DatabaseService(dbPath);
             });
 
