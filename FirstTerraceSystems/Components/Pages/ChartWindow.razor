@@ -128,6 +128,58 @@
         return filtered;
 
     }
+    [JSInvokable]
+    public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, double oldStartDate, double oldEndDate, int xAxisPixels, int yAxisPixels)
+
+        {
+
+            // Convert timestamps to DateTime objects
+            var startDateRange = MultiCharts.UnixTimeStampToDateTime((long)startDate);
+            var endDateRange = MultiCharts.UnixTimeStampToDateTime((long)endDate);
+
+            var oldStartDateRange = MultiCharts.UnixTimeStampToDateTime((long)oldStartDate);
+            var oldEndDateRange = MultiCharts.UnixTimeStampToDateTime((long)oldEndDate);
+
+            // Check if datasets[symbol] contains data
+            if ( MultiCharts.datasets.ContainsKey(symbol) && MultiCharts.datasets[symbol].Any())
+            {
+                // Get the minimum date present in the dataset
+                var minDateInDataset = MultiCharts.datasets[symbol].Min(x => x.Date);
+
+                // Ensure startDateRange is not less than the minimum date in the dataset
+                if (startDateRange < minDateInDataset)
+                {
+                    startDateRange = minDateInDataset;
+                }
+            }
+
+
+            // // // Fetch data in the old range but exclude data within the new range
+            // var filteredOldData = datasets[symbol]
+            //     .Where(x => x.Date >= oldStartDateRange && x.Date <= oldEndDateRange && (x.Date < startDateRange || x.Date > endDateRange) && x.Price >= 0)
+            //     .OrderBy(x => x.Date)
+            //     .ToList();
+
+            // // // Calculate the number of data points to display using FilterData function
+            // var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
+
+
+            // Fetch and sort additional data in the extended range (startDateRange to endDateRange)
+            var newData = MultiCharts.datasets[symbol]
+                .Where(x => x.Date >= startDateRange && x.Date <= endDateRange && x.Price >= 0)
+                .OrderBy(x => x.Date)
+                .ToList();
+            var newFiltered = MultiCharts.FilterData(newData, xAxisPixels, yAxisPixels);
+
+            // Combine both datasets (old and new data) ensuring there is no duplication
+            // var combinedFiltered = oldFiltered.Union(newFiltered).ToList();
+
+            // var finalFiltered = combinedFiltered.OrderBy(x => x.Date).ToList();
+
+
+            return newFiltered.ToList();
+
+        }
 
     public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
     {
@@ -180,7 +232,7 @@
     }
 
     [JSInvokable]
-    public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
+    public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range, int xAxisPixels, int yAxisPixels )
     {
         MultiCharts.Ranges[symbol] = range;
         var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
@@ -190,7 +242,7 @@
       TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
         var last = MultiCharts.datasets[symbol][MultiCharts.datasets[symbol].Count - 1];
         var filtered = MultiCharts.datasets[symbol].Where((x) => x.Date >= eastern).ToList();
-        filtered = MultiCharts.FilterData(filtered, PointSize);
+        filtered = MultiCharts.FilterData(filtered, xAxisPixels, yAxisPixels);
         return filtered;
     }
 

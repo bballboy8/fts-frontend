@@ -149,11 +149,24 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
+        public static IEnumerable<MarketFeed> FilterByEasternTime(IEnumerable<MarketFeed> data)
+        {
+            // Get the current UTC time
+            var utcNow = DateTime.UtcNow;
+            // Convert UTC to Eastern Standard Time
+            DateTime currentEasternTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+
+            // Filter data points to only include those before the current Eastern Time
+            var filteredData = data.Where(x => x.Date < currentEasternTime);
+
+            return filteredData;
+        }
+
+
         public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
         {
-            var currentTime = DateTime.Now.TimeOfDay;
-            //data = data.Where((x) => x.Date.TimeOfDay < currentTime);
-            var filteredData = data;
+
+            var filteredData = FilterByEasternTime(data);
 
 
             if (numPoints > 0 && numPoints < filteredData.Count())
@@ -231,20 +244,6 @@ namespace FirstTerraceSystems.Components.Pages
             return [];
         }
 
-        /* [JSInvokable]
-         public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
-         {
-             Ranges[symbol] = range;
-             var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
-             DateTime eastern = TimeZoneInfo
-         .ConvertTimeFromUtc(
-           RangeDate,
-           TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-             var last = datasets[symbol][datasets[symbol].Count - 1];
-             var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
-             filtered = FilterData(filtered, PointSize);
-             return filtered;
-         }*/
         public static List<MarketFeed> FilteredDataBySymbol(string symbol, double range)
         {
 
@@ -254,7 +253,7 @@ namespace FirstTerraceSystems.Components.Pages
           RangeDate,
           TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
             var last = datasets[symbol][datasets[symbol].Count - 1];
-            var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+            var filtered = FilterByEasternTime(datasets[symbol]).Where((x) => x.Date >= eastern).ToList();
             filtered = FilterData(filtered, PointSize);
             return filtered;
         }
@@ -312,6 +311,8 @@ namespace FirstTerraceSystems.Components.Pages
                             {
                                 await Task.Delay(1000);  // Non-blocking delay
                             }
+                            // Filter the dataGot by Eastern time before adding to the collection
+                            var filteredData = FilterByEasternTime(dataGot);
 
                             lock (_lock)  // Use lock for thread safety
                             {
@@ -319,11 +320,11 @@ namespace FirstTerraceSystems.Components.Pages
 
                                 if (collection.ContainsKey(data.Key))
                                 {
-                                    collection[data.Key].AddRange(dataGot);
+                                    collection[data.Key].AddRange(filteredData);
                                 }
                                 else
                                 {
-                                    collection[data.Key] = dataGot;
+                                    collection[data.Key] = filteredData.ToList();
                                 }
                             }
                         }
@@ -665,7 +666,7 @@ namespace FirstTerraceSystems.Components.Pages
 
             // Filter data to have at least one point per x-axis pixel
 
-            var filteredData = data.Where((_, index) => index % step == 0).ToList();
+            var filteredData = FilterByEasternTime(data).Where((_, index) => index % step == 0).ToList();
 
 
             // Additional filtering to ensure at least 10 distinct y-axis points for each time pixel
@@ -702,7 +703,7 @@ namespace FirstTerraceSystems.Components.Pages
                 });
 
 
-            return groupedByTimePixel.ToList();
+            return groupedByTimePixel.OrderBy(x => x.Date).ToList();
 
         }
 
