@@ -92,15 +92,23 @@ function addChart(
           var chart = this;
           // console.log("chart: ", chart);
 
+          // Check if there are no points or if xAxis or yAxis labels are empty
+          var isEmptyData = chart.series[0].data.length === 0;
+          var isEmptyXAxis =
+            !chart.xAxis[0].labelFormatter || chart.xAxis[0].ticks.length === 0;
+          var isEmptyYAxis =
+            !chart.yAxis[0].labelFormatter || chart.yAxis[0].ticks.length === 0;
+
+          if (isEmptyData || isEmptyXAxis || isEmptyYAxis) {
+            // Call setRange with '1m' configuration
+            setRange(chart.series[0].name, 1000); // '1m' corresponds to 60 * 1000 milliseconds
+          }
+
           // Attach wheel event listener to the chart container
           Highcharts.addEvent(chart.container, "wheel", function (event) {
-            event.preventDefault(); // Prevent page scroll
-
-            // Determine if zooming in or out
-            var delta = event.deltaY || event.wheelDelta;
-            var zoomIn = delta < 0;
-
-            // Call zoomChart function based on scroll direction
+            event.preventDefault(); // Prevent page scroll only when inside the chart
+            const delta = event.deltaY || event.wheelDelta;
+            const zoomIn = delta < 0;
             zoomChart(zoomIn, chart, undefined, symbol);
           });
 
@@ -763,6 +771,7 @@ function removeChart(chart) {
   var chartId = chartContaner.data("chart-id");
   $(".chart-box.chart-box-" + chartId).remove();
   //$("#popup-chart-" + chartId).remove();
+  Highcharts.removeEvent(chart.container, "wheel"); // Remove wheel event listener
 
   chart.destroy();
   var totalCharts = $("#chartList .chart-box").length;
@@ -865,12 +874,10 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   newMax = Math.min(xAxis.dataMax, newMax);
 
   debouncedSetRangeByDate(symbol, newMin, newMax, oldMin, oldMax);
-  chart.redraw();
   xAxis.setExtremes(newMin, newMax);
   if (dotNetObject) {
     dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
   }
-  //   chart.redraw();
 }
 
 function removeWindowControlButtonsFromChart() {
@@ -1018,8 +1025,6 @@ function setDataToChart(
   if (seriesData.length < 1) return; // Return early if there isn't enough data
 
   const series = chart.series[0];
-  dataMap.clear();
-
   const dataPoints = [];
   const volumePoints = [];
   let previousPrice = seriesData[0].price; // Initialize with the first price
@@ -1027,8 +1032,6 @@ function setDataToChart(
   for (let i = 1; i < seriesData.length; i++) {
     const data = seriesData[i];
     const timeStamp = new Date(data.date).getTime();
-
-    dataMap.set(timeStamp, null);
 
     // Use processDataPoint to create the data point object
     dataPoints.push(processDataPoint(data, previousPrice));
@@ -1038,7 +1041,7 @@ function setDataToChart(
       x: timeStamp,
       y: Number(data.size),
       color:
-        data.msgtype == "H"
+        data.msgtype === "H"
           ? "yellow"
           : data.price > previousPrice
           ? "green"
@@ -1048,38 +1051,22 @@ function setDataToChart(
     previousPrice = data.price; // Update previous price for the next iteration
   }
 
-  // Update both series data without immediate redraw
-  series.setData([]);
+  chart.series[0].setData([]);
 
-  series.setData(dataPoints, false, false);
+  // Update both series data and avoid immediate redraw
+  chart.series[0].setData(dataPoints, false, false);
   chart.series[1].setData(volumePoints, false, false);
-
   // Perform one redraw after all data is set
   chart.redraw();
-
-  // Set extremes only if there is more than one data point
-  if ((dataPoints.length > 1) & update_extreme) {
-    if (newmin != 0) {
-      chart.xAxis[0].setExtremes(
-        dataPoints[0].x,
-        dataPoints[dataPoints.length - 1].x
-      );
-      // Perform one redraw after all data is set
-      chart.redraw();
-      chart.xAxis[0].setExtremes(newmin, newmax);
-      // Perform one redraw after all data is set
-      chart.redraw();
-    } else {
-      chart.xAxis[0].setExtremes(
-        dataPoints[0].x,
-        dataPoints[dataPoints.length - 1].x
-      );
-    }
+  // Set extremes only if there is more than one data point and update_extreme is true
+  if (update_extreme && dataPoints.length > 1) {
+    const minX = newmin !== 0 ? newmin : dataPoints[0].x;
+    const maxX = newmax !== 0 ? newmax : dataPoints[dataPoints.length - 1].x;
+    chart.xAxis[0].setExtremes(minX, maxX, false);
   }
 }
 
 //debugger
-let dataMap = new Map();
 function addPointToChart(
   chart,
   seriesData,
@@ -1134,10 +1121,9 @@ function debounce(func, delay) {
     debounceTimer = setTimeout(() => func.apply(this, args), delay);
   };
 }
-const debouncedSetRange = debounce(setRange, 300);
-const debouncedSetRangeByDate = debounce(setRangeByDate, 300);
+const debouncedSetRange = debounce(setRange, 1000);
+const debouncedSetRangeByDate = debounce(setRangeByDate, 1000);
 
-let debounceTimer;
 var counter2 = 0;
 async function refreshCharts(symbol, seriesData) {
   setTimeout(async function () {
@@ -1523,17 +1509,6 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
   addChart(1, chartContainerId, [], symbol, false, dotNetObject);
 
   removeWindowControlButtonsFromChart();
-
-  /*if (dataPoints) {
-          chart.series[0].setData(dataPoints, true, true)
-      } else {
-          getChartDataBySymbol(symbol).then((seriesData) => {
-              setDataToChart(chart, seriesData);
-              if (minPoint && maxPoint) {
-                  chart.xAxis[0].setExtremes(minPoint, maxPoint);
-              }
-          });
-      }*/
 }
 
 async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
@@ -1702,13 +1677,7 @@ async function setRangeByDate(
     );
 
     // console.log("points filtered " + filtereddata.length);
-    setDataToChart(
-      chart,
-      filtereddata,
-      startDate,
-      endDate,
-      (update_extreme = false)
-    );
+    setDataToChart(chart, filtereddata, (update_extreme = false));
   }
 }
 
