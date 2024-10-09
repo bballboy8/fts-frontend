@@ -276,7 +276,7 @@ function addChart(
               text: config.text,
               callback: function () {
                 setButtonActive(this);
-                setRange(symbol, config.duration);
+                debouncedSetRange(symbol, config.duration);
               },
               x: config.x,
               y: 10,
@@ -894,7 +894,7 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
 
   // Only apply zoom if the range is valid
   if (newMin < newMax) {
-    debouncedSetRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
+    setRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
     xAxis.setExtremes(newMin, newMax);
 
     if (dotNetObject) {
@@ -1579,8 +1579,8 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
   }
 
   addWindowControlButtonsToChart();
-  var data = await getChartDataBySymbol(symbol, null);
-  setDataToChart(chart, data);
+  // var data = await getChartDataBySymbol(symbol, null);
+  // setDataToChart(chart, data);
   chart.hideLoading();
 }
 
@@ -1622,6 +1622,18 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
   }
 }
 
+async function updateAllSymbols(symbols) {
+  for (let data of symbols) {
+    let chart = getChartInstanceBySeriesName(data.symbol);
+    if (chart) {
+      await setRange(data.symbol, 3 * 24 * 60 * 60 * 1000);
+
+      chart.redraw();
+      chart.hideLoading();
+    }
+  }
+}
+
 async function setRange(symbol, range) {
   let chart = getChartInstanceBySeriesName(symbol);
   if (chart) {
@@ -1634,6 +1646,7 @@ async function setRange(symbol, range) {
 
     // console.log("points filtered " + filtereddata.length);
     setDataToChart(chart, filtereddata);
+    chart.redraw();
   }
 }
 
