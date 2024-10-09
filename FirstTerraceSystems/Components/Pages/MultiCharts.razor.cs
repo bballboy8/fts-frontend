@@ -307,6 +307,155 @@ namespace FirstTerraceSystems.Components.Pages
             ChartService.UpdateSymbol(chartId, symbol);
         }
 
+        [JSInvokable]
+        public async Task RefreshChartBySymbol(string symbol)
+        {
+            IEnumerable<MarketFeed>? marketFeeds = null;
+            if (datasets.ContainsKey(symbol))
+                marketFeeds = datasets[symbol];
+            else
+                marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
+            await SendChartDataInChunks(symbol, marketFeeds).ConfigureAwait(false);
+            //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
+            marketFeeds = null;
+        }
+
+        [JSInvokable]
+        public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
+        {
+            // Cancel any ongoing background tasks
+            lock (_lock)
+            {
+                _cancellationTokenSource.Cancel();
+                _cancellationTokenSource.Dispose();
+                _cancellationTokenSource = new CancellationTokenSource();
+            }
+
+            if (!TickerRepository.IsTickerExists(symbol))
+            {
+                Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
+                return null;
+            }
+
+            if (datasets.ContainsKey(symbol))
+            {
+                var filtered = FilterData(datasets[symbol], PointSize);
+                SymbolChanged(chartId, symbol);
+                return filtered;
+            }
+
+
+            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            // var defaultStartDate=   DateTime.Now.AddHours(-10);
+            Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate, false, false).ConfigureAwait(false);
+            //  dbmarketFeeds = dbmarketFeeds.OrderBy((x) => x.Date);
+            if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
+            {
+                datasets[symbol] = dbmarketFeeds.ToList();
+                var filtered = FilterData(dbmarketFeeds, PointSize);
+                SymbolChanged(chartId, symbol);
+                return filtered;
+            }
+            else
+            {
+                var UTCDate = DateTime.UtcNow.AddHours(-1);
+                DateTime easternOneHour = TimeZoneInfo
+                    .ConvertTimeFromUtc(
+                        UTCDate,
+                        TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+
+
+                Logger.LogInformation($"Starting API call for symbol for 1 hour: {symbol}");
+                IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(easternOneHour, symbol).ConfigureAwait(false);
+                Logger.LogInformation($"Got Response from API for symbol for 1 hour: {symbol}");
+
+                if (marketFeeds == null || marketFeeds.Count() == 0)
+                {
+                    // Start a background task to load the last 3 days of data
+                    var token = _cancellationTokenSource.Token;
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            Logger.LogInformation($"Starting background task to load 3-day data for symbol: {symbol}");
+                            var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, symbol).ConfigureAwait(false);
+
+                            if (token.IsCancellationRequested)
+                            {
+                                Logger.LogInformation($"Background task canceled for symbol: {symbol}");
+                                return;
+                            }
+
+                            if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
+                            {
+                                Loading._symbolSet.Add(symbol);
+                                datasets[symbol] = threeDayMarketFeeds.ToList();
+                                await SendChartDataInChunks(symbol, FilterData(threeDayMarketFeeds, PointSize));
+                                Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
+                                MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            Logger.LogInformation($"Background task was canceled for symbol: {symbol}");
+                        }
+                    }, token);
+
+                    return marketFeeds; // Return the market feeds retrieved from the initial API call
+                }
+                else
+                {
+                    datasets[symbol] = marketFeeds.ToList();
+                    var filteredData = FilterData(marketFeeds, PointSize);
+                    SymbolChanged(chartId, symbol);
+
+                    var token = _cancellationTokenSource.Token;
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            Logger.LogInformation($"Starting background task to load 3-day data for symbol: {symbol}");
+                            var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, symbol).ConfigureAwait(false);
+
+                            if (token.IsCancellationRequested)
+                            {
+                                Logger.LogInformation($"Background task canceled for symbol: {symbol}");
+                                return;
+                            }
+
+                            if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
+                            {
+                                Loading._symbolSet.Add(symbol);
+                                datasets[symbol] = threeDayMarketFeeds.ToList();
+                                await SendChartDataInChunks(symbol, FilterData(threeDayMarketFeeds, PointSize));
+                                Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
+                                MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            Logger.LogInformation($"Background task was canceled for symbol: {symbol}");
+                        }
+                    }, token);
+
+                    return filteredData;
+                }
+            }
+        }
+
+        [JSInvokable]
+        public static async Task<object?> DragedChartWindow(IJSObjectReference jsObject, bool isMaximizeClicked, object chartId, object minPoint, object maxPoint, string symbol)
+        {
+            StateContainerService.IsAllowCloseAllWindows = false;
+            StateContainerService.IsMainPage = false;
+            StateContainerService.IsMaximizeClikedForChart = isMaximizeClicked;
+            ChartWindowPage? chartWindow = new ChartWindowPage(jsObject, chartId, minPoint, maxPoint, symbol);
+            Window? window = new Window(chartWindow);
+            Application.Current?.OpenWindow(window);
+            return await Task.FromResult(chartId).ConfigureAwait(false);
+        }
+
         public async ValueTask DisposeAsync()
         {
             _dotNetMualtiChatsRef?.Dispose();
@@ -399,7 +548,7 @@ namespace FirstTerraceSystems.Components.Pages
             var finalFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
 
 
-            return finalFiltered.ToList();
+            return finalFiltered;
 
         }
 
