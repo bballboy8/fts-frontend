@@ -948,7 +948,7 @@ async function getChartDataByLastFeedPoint(symbol, lastPoint) {
   );
 }
 
-async function getFilteredDataBySymbol(
+async function getFilteredDataBySymbol(chartId,
   symbol,
   range = undefined,
   xAxisPixels = 0,
@@ -956,7 +956,7 @@ async function getFilteredDataBySymbol(
 ) {
   try {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync(
-      "GetFilteredDataBySymbol",
+        "GetFilteredDataBySymbol", chartId,
       symbol,
       range,
       xAxisPixels,
@@ -1636,8 +1636,8 @@ async function updateAllSymbols(symbols) {
 
 async function setRange(symbol, range) {
   let chart = getChartInstanceBySeriesName(symbol);
-  if (chart) {
-    let filtereddata = await getFilteredDataBySymbol(
+    if (chart) {
+        let filtereddata = await getFilteredDataBySymbol(chart.renderTo.id,
       symbol,
       range,
       chart.xAxis[0].width,
