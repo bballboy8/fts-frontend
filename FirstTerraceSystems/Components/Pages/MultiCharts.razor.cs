@@ -624,7 +624,7 @@ namespace FirstTerraceSystems.Components.Pages
 
         {
 
-            var currentTime = DateTime.Now.TimeOfDay;
+            // var currentTime = DateTime.Now.TimeOfDay;
 
 
             if (PointSize > xAxisPixels)

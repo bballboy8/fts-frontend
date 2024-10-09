@@ -605,6 +605,20 @@ function addChart(
           afterSetExtremes: function (e) {
             var chart = this.chart;
 
+            if (e.trigger === "zoom" || e.trigger === "pan") {
+              var symbol = chart.series[0].name;
+
+              // After zoom, ensure the points maintain their colors
+              var data = chart.series[0].data;
+              data.forEach(function (point) {
+                if (point.y > previousPrice) {
+                  point.update({ color: "green" });
+                } else {
+                  point.update({ color: "red" });
+                }
+              });
+            }
+
             // Check if the event is triggered by zoom or pan
             if (e.trigger === "zoom" || e.trigger === "pan") {
               // Get the chart symbol (assuming it's the first series' name)
@@ -875,8 +889,8 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
     }
   }
 
-  newMin = Math.max(xAxis.dataMin, newMin);
-  newMax = Math.min(xAxis.dataMax, newMax);
+  // newMin = Math.max(xAxis.dataMin, newMin);
+  // newMax = Math.min(xAxis.dataMax, newMax);
 
   // Only apply zoom if the range is valid
   if (newMin < newMax) {
@@ -1122,7 +1136,7 @@ function debounce(func, delay) {
     debounceTimer = setTimeout(() => func.apply(this, args), delay);
   };
 }
-const debouncedZoomChart = debounce(zoomChart, 200);
+const debouncedZoomChart = debounce(zoomChart, 1000);
 const debouncedSetRange = debounce(setRange, 1000);
 const debouncedSetRangeByDate = debounce(setRangeByDate, 1000);
 

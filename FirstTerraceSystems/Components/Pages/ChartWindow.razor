@@ -336,7 +336,7 @@
     .ConvertTimeFromUtc(
       RangeDate,
       TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-        var last = MultiCharts.datasets[symbol][MultiCharts.datasets[symbol].Count - 1];
+        @* var last = MultiCharts.datasets[symbol][MultiCharts.datasets[symbol].Count - 1]; *@
         var filtered = MultiCharts.datasets[symbol].Where((x) => x.Date >= eastern).ToList();
         filtered = MultiCharts.FilterData(filtered, xAxisPixels, yAxisPixels);
         return filtered;
