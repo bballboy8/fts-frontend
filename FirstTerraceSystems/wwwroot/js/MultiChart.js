@@ -90,19 +90,30 @@ function addChart(
       events: {
         load: function () {
           var chart = this;
+          // console.log("chart: ", chart);
 
-          console.log("chart: ", chart);
-          /*    chart1.yAxis[0].update({
-                            min: chart1.series[0].dataMin,
-                            max: chart1.series[0].dataMax
-                        });
-                    this.yAxis[0].setExtremes(this.series[0].dataMin, this.series[0].dataMax,false);*/
+          // // Check if there are no points or if xAxis or yAxis labels are empty
+          // var isEmptyData = chart.series[0].data.length === 0;
+          // var isEmptyXAxis =
+          //   !chart.xAxis[0].labelFormatter || chart.xAxis[0].ticks.length === 0;
+          // var isEmptyYAxis =
+          //   !chart.yAxis[0].labelFormatter || chart.yAxis[0].ticks.length === 0;
+
+          // if (isEmptyData || isEmptyXAxis || isEmptyYAxis) {
+          //   // Call setRange with '1m' configuration
+          //   setRange(chart.series[0].name, 1000); // '1m' corresponds to 60 * 1000 milliseconds
+          // }
+
+          // Attach wheel event listener to the chart container
+          Highcharts.addEvent(chart.container, "wheel", function (event) {
+            event.preventDefault(); // Prevent page scroll only when inside the chart
+            const delta = event.deltaY || event.wheelDelta;
+            const zoomIn = delta < 0;
+            debouncedZoomChart(zoomIn, chart, undefined, symbol);
+          });
+
           let chartWidth = chart.chartWidth;
           chart.showLoading();
-
-          //set min and max to avoid y-axis points from dissapearing when zoomed in or out
-
-          ///
 
           chart.ButtonNamespace = {};
           chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
@@ -161,7 +172,7 @@ function addChart(
                   chart.showLoading();
                   symbol = existingChart.series[0].name;
                   chart.series[0].setData(existingChart.series[0].options.data);
-                  console.log("existing");
+                  // console.log("existing");
                   chart.series[0].update({
                     name: symbol,
                   });
@@ -184,14 +195,14 @@ function addChart(
                 } else {
                   chart.showLoading();
 
-                  console.log("place" + chart.series[0].name);
+                  // console.log("place" + chart.series[0].name);
                   updateChartSymbol(chart.renderTo.id, symbol).then(
                     (seriesData) => {
-                      console.log("place1");
+                      // console.log("place1");
                       if (seriesData) {
-                        console.log("place3");
+                        // console.log("place3");
                         if (seriesData.length > 0) {
-                          console.log("dont change data");
+                          // console.log("dont change data");
                           setDataToChart(chart, seriesData);
 
                           chart.series[0].update({
@@ -260,13 +271,12 @@ function addChart(
             },
           ];
 
-          var counter1 = 0;
           buttonConfigs.forEach((config) => {
             chart.ButtonNamespace[config.text] = addButtonToChart(chart, {
               text: config.text,
               callback: function () {
                 setButtonActive(this);
-                setRange(symbol, config.duration);
+                debouncedSetRange(symbol, config.duration);
               },
               x: config.x,
               y: 10,
@@ -279,7 +289,7 @@ function addChart(
             x: 460,
             y: 10,
             callback: function () {
-              zoomChart(true, chart, dotNetObject);
+              debouncedZoomChart(true, chart, dotNetObject, symbol);
             },
           });
 
@@ -288,7 +298,7 @@ function addChart(
             x: 500,
             y: 10,
             callback: function () {
-              zoomChart(false, chart, dotNetObject);
+              debouncedZoomChart(false, chart, dotNetObject, symbol);
             },
           });
 
@@ -408,9 +418,6 @@ function addChart(
             },
           });
         },
-        //redraw: function () {
-        //    var chart = this;
-        //},
         render: function () {
           var chart = this;
 
@@ -439,7 +446,7 @@ function addChart(
                 ) {
                   {
                     Checker = true;
-                    console.log("isDlayout");
+                    // console.log("isDlayout");
                   }
                 }
               }
@@ -564,28 +571,6 @@ function addChart(
     },
     tooltip: {
       shared: false,
-
-      /*       formatter: function () {
-                       return [
-                           `<b>${Highcharts.dateFormat(
-                               "%A, %e %b. %H:%M:%S.%L",
-                               this.x,
-                               false
-                           )}</b>`,
-                           ...(this.points
-                               ? this.points.map(
-                                   (point) => {
-                                       var formatednumber = Highcharts.numberFormat(point.y / 10000, 2) + "";
-                                       if (point.series.name == "Volume") {
-                                           formatednumber = point.y
-                                       }
-       
-                                       return `${point.series.name}: ${formatednumber}`
-                                   }
-                               )
-                               : []),
-                       ];
-                   },*/
     },
     plotOptions: {
       scatter: {
@@ -600,17 +585,6 @@ function addChart(
           },
         },
       },
-      //column: {
-      //    label: {
-      //        format: 'Volume'
-      //    },
-      //    tooltip: {
-      //        pointFormatter: function () {
-      //            console.log('lower', this.x)
-      //            return this.y
-      //        }
-      //    }
-      //},
       series: {
         turboThreshold: 0,
         animation: true,
@@ -629,54 +603,44 @@ function addChart(
       {
         events: {
           afterSetExtremes: function (e) {
-            //if (!updatingCharts[symbol])
-            //    handleExtremesChange(symbol, this.chart, e.min, e.max);
-            // Remove points that are outside the new extremes
-            /*series.data.forEach(function (point) {
-                                        if (point.x >= e.min && point.x <= e.max) {
-                                            point.remove(false);
-                                        }
-                                    });*/
-            const values = [];
-            var tchart = this.chart;
-            //    tchart.yAxis[0].setExtremes(e.min / 10000, e.max/10000, true,true);
-            console.log(tchart.series[0].dataMax);
-            //
-            /*         if (!(typeof tchart.series[0].dataMax == 'undefined')) {
-                                         tchart.yAxis[0].setExtremes(tchart.series[0].dataMin, tchart.series[0].dataMax, true, true);
-                                         console.log(tchart.series[0].dataMin + "JK" + tchart.series[0].dataMax);
-                                         //  tchart.redraw();
-                                     } else {
-                                         this.chart.series[0].points.forEach(point => {
-                                             if (point.visible) {
-                                                 //      console.log(point);
-             
-                                                 values.push(point.y)
-                                             }
-                                         });
-                                         var _min = Math.min(...values);
-                                         console.log(_min + "hjhj");
-                                         tchart.yAxis[0].setExtremes(_min, Math.max(...values), false, true);
-                                         //   tchart.redraw();
-                                     }*/
+            var chart = this.chart;
+
+            if (e.trigger === "zoom" || e.trigger === "pan") {
+              var symbol = chart.series[0].name;
+
+              // After zoom, ensure the points maintain their colors
+              var data = chart.series[0].data;
+              data.forEach(function (point) {
+                if (point.y > previousPrice) {
+                  point.update({ color: "green" });
+                } else {
+                  point.update({ color: "red" });
+                }
+              });
+            }
+
+            // Check if the event is triggered by zoom or pan
+            if (e.trigger === "zoom" || e.trigger === "pan") {
+              // Get the chart symbol (assuming it's the first series' name)
+              var symbol = chart.series[0].name;
+
+              // Determine if it's a zoom-in or zoom-out based on the new range
+              var range = e.max - e.min;
+              var isZoomIn = range < this.oldMax - this.oldMin; // Compare with the previous range
+
+              // Call zoomChart with the appropriate parameters
+              debouncedZoomChart(isZoomIn, chart, undefined, symbol);
+            }
+
             if (
-              !(typeof tchart.series[0].dataMax == "undefined") &&
-              !(typeof tchart.series[0].dataMin == "undefined")
+              !(typeof chart.series[0].dataMax == "undefined") &&
+              !(typeof chart.series[0].dataMin == "undefined")
             ) {
-              tchart.yAxis[0].setExtremes(
-                tchart.series[0].dataMin,
-                tchart.series[0].dataMax,
+              chart.yAxis[0].setExtremes(
+                chart.series[0].dataMin,
+                chart.series[0].dataMax,
                 false,
                 false
-              );
-              console.log(
-                tchart.series[0].dataMin + "xchanged" + tchart.series[0].dataMax
-              );
-            } else {
-              console.log(
-                tchart.series[0].dataMin +
-                  "-xchanged-" +
-                  tchart.series[0].dataMax
               );
             }
           },
@@ -688,55 +652,10 @@ function addChart(
         breaks: plotbreaks,
         //offset: 0,
         labels: {
-          style: { color: fontColor, msrginRight: 5 },
+          style: { color: fontColor, marginRight: 5 },
           padding: 5,
           allowOverlap: false,
           step: 2,
-          //formatter: function () {
-          //    var hideValue = false;
-          //    var xdate = new Date(this.pos)
-          //    var dayOfWeek = xdate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-
-          //    if (xdate.getHours() > 20 || xdate.getHours() < 4) {
-          //        hideValue = true;
-          //    }
-          //    //if (dayOfWeek == 6 || dayOfWeek == 7) {
-          //    //    hideValue = true;
-          //    //}
-          //    //plotBands.push({
-          //    //    color: "rgba(68, 170, 213, 0.1)", // Light blue shading
-          //    //    from: new Date(
-          //    //        date.getFullYear(),
-          //    //        date.getMonth(),
-          //    //        date.getDate(),
-          //    //        20,
-          //    //        0
-          //    //    ), // Start of the day
-          //    //    to: new Date(
-          //    //        date.getFullYear(),
-          //    //        date.getMonth(),
-          //    //        date.getDate() + 3,
-          //    //        4,
-          //    //        0
-          //    //    ), // End of the day
-          //    //    zIndex: 3,
-          //    //}); plotLines.push({
-          //    //    color: "red",
-          //    //    width: 2,
-          //    //    value: new Date(
-          //    //        date.getFullYear(),
-          //    //        date.getMonth(),
-          //    //        date.getDate(),
-          //    //        20,
-          //    //        0
-          //    //    ), // 8 PM
-          //    //    zIndex: 5,
-          //    //});
-
-          //    if (!hideValue) {
-          //        return Highcharts.dateFormat(this.dateTimeLabelFormat, this.pos)
-          //    }
-          //}
         },
         dateTimeLabelFormats: {
           second: "%H:%M:%S.%L",
@@ -775,7 +694,7 @@ function addChart(
           afterSetExtremes: function (e) {
             const values = [];
 
-            console.log(e.max + "ychanged");
+            // console.log(e.max + "ychanged");
           },
         },
       },
@@ -786,11 +705,7 @@ function addChart(
           x: 5,
           style: {
             color: fontColor,
-          } /*,
-                    formatter: function () {
-
-                        return (Highcharts.numberFormat(this.value / 1000, 0) + "k");
-                    }*/,
+          },
         },
         title: {
           text: "Volume",
@@ -801,7 +716,6 @@ function addChart(
         offset: 1,
         lineWidth: 2,
         formatter: function () {
-          console.log("forth: ", this);
           return Highcharts.numberFormat(this.value / 1000, 2);
         },
       },
@@ -861,25 +775,6 @@ function addChart(
 }
 
 const updatingCharts = {};
-// function handleExtremesChange(symbol, chart, min, max) {
-//   setTimeout(async function () {
-//     updatingCharts[symbol] = true;
-//     /*for (let i = chart.series[0].data.length - 1; i >= 0; i--) {
-//                 let point = chart.series[0].data[i];
-//                 if (point.x >= min && point.x <= max) {
-//                     console.log("point to be remove");
-//                     point.remove();
-//                 }
-//             }*/
-//     let filterData = await getExtremeDataBySymbol(
-//       chart.series[0].name,
-//       min,
-//       max
-//     );
-//     addPointToChart(chart, filterData, false, false, false);
-//     updatingCharts[symbol] = false;
-//   }, 0);
-// }
 
 function removeChart(chart) {
   if ($("#chartList .chart-box").length == 1) {
@@ -890,6 +785,7 @@ function removeChart(chart) {
   var chartId = chartContaner.data("chart-id");
   $(".chart-box.chart-box-" + chartId).remove();
   //$("#popup-chart-" + chartId).remove();
+  Highcharts.removeEvent(chart.container, "wheel"); // Remove wheel event listener
 
   chart.destroy();
   var totalCharts = $("#chartList .chart-box").length;
@@ -966,28 +862,47 @@ function removeChart(chart) {
   }
 }
 
-function zoomChart(zoomIn, chart, dotNetObject = undefined) {
+function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
+  if (!chart.series[0].data || chart.series[0].data.length === 0) {
+    console.warn(`No data available for zooming on chart: ${symbol}`);
+    return; // Prevent zoom if no data is available
+  }
+
   var xAxis = chart.xAxis[0];
   var extremes = chart.xAxis[0].getExtremes();
   var range = extremes.max - extremes.min;
+  var oldMin = extremes.min;
+  var oldMax = extremes.max;
+
   var newMin, newMax;
 
   if (zoomIn) {
     newMin = extremes.min + range * 0.2;
     newMax = extremes.max - range * 0.2;
   } else {
-    newMin = extremes.min - range * 0.2;
-    newMax = extremes.max + range * 0.2;
+    if (range == 0) {
+      newMin = oldMin - oldMin * 0.1; // or some small offset
+      newMax = oldMax + oldMax * 0.1;
+    } else {
+      newMin = extremes.min - range * 0.2;
+      newMax = extremes.max + range * 0.2;
+    }
   }
 
-  newMin = Math.max(xAxis.dataMin, newMin);
-  newMax = Math.min(xAxis.dataMax, newMax);
-  xAxis.setExtremes(newMin, newMax);
+  // newMin = Math.max(xAxis.dataMin, newMin);
+  // newMax = Math.min(xAxis.dataMax, newMax);
 
-  if (dotNetObject) {
-    dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
+  // Only apply zoom if the range is valid
+  if (newMin < newMax) {
+    setRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
+    xAxis.setExtremes(newMin, newMax);
+
+    if (dotNetObject) {
+      dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
+    }
+  } else {
+    console.warn("Invalid zoom range. No zoom action performed.");
   }
-  chart.redraw();
 }
 
 function removeWindowControlButtonsFromChart() {
@@ -1033,17 +948,6 @@ async function getChartDataByLastFeedPoint(symbol, lastPoint) {
   );
 }
 
-async function getFilteredDataBySymbol(symbol, range = undefined) {
-  try {
-    return await ChatAppInterop.dotnetReference.invokeMethodAsync(
-      "GetFilteredDataBySymbol",
-      symbol,
-      range
-    );
-  } catch (error) {
-    console.error("Error fetching filtered data: ", error);
-  }
-}
 async function getFilteredDataBySymbol(
   symbol,
   range = undefined,
@@ -1055,6 +959,31 @@ async function getFilteredDataBySymbol(
       "GetFilteredDataBySymbol",
       symbol,
       range,
+      xAxisPixels,
+      yAxisPixels
+    );
+  } catch (error) {
+    console.error("Error fetching filtered data: ", error);
+  }
+}
+
+async function GetFilteredDataBySymbolAndDateRange(
+  symbol,
+  startDate,
+  endDate,
+  oldStartDate,
+  oldEndDate,
+  xAxisPixels = 0,
+  yAxisPixels = 0
+) {
+  try {
+    return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+      "GetFilteredDataBySymbolAndDateRange",
+      symbol,
+      startDate,
+      endDate,
+      oldStartDate,
+      oldEndDate,
       xAxisPixels,
       yAxisPixels
     );
@@ -1111,60 +1040,48 @@ function processDataChart(data) {
   return [[new Date(data.date).getTime(), Number(data.size)]];
 }
 
-function setDataToChart(chart, seriesData) {
+function setDataToChart(
+  chart,
+  seriesData,
+  newmin = 0,
+  newmax = 0,
+  update_extreme = true
+) {
   if (seriesData.length < 1) return; // Return early if there isn't enough data
-
-  const series = chart.series[0];
-  dataMap.clear();
 
   const dataPoints = [];
   const volumePoints = [];
-  let previousPrice = seriesData[0].price; // Initialize with the first price
+  let previousPrice = seriesData[0].price;
 
-  for (let i = 1; i < seriesData.length; i++) {
-    const data = seriesData[i];
-    const timeStamp = new Date(data.date).getTime();
-
-    dataMap.set(timeStamp, null);
-
-    // Use processDataPoint to create the data point object
+  seriesData.forEach((data, index) => {
     dataPoints.push(processDataPoint(data, previousPrice));
-
-    // Process volume points for the secondary series
     volumePoints.push({
-      x: timeStamp,
+      x: new Date(data.date).getTime(),
       y: Number(data.size),
       color:
-        data.msgtype == "H"
+        data.msgtype === "H"
           ? "yellow"
           : data.price > previousPrice
           ? "green"
-          : "red", // Set color conditionally
+          : "red",
     });
+    previousPrice = data.price;
+  });
 
-    previousPrice = data.price; // Update previous price for the next iteration
-  }
+  chart.series[0].setData(dataPoints, false); // Set data without redrawing
+  chart.series[1].setData(volumePoints, false); // Set data without redrawing
 
-  // Update both series data without immediate redraw
-  series.setData([]);
-
-  series.setData(dataPoints, false, false);
-  chart.series[1].setData(volumePoints, false, false);
-
-  // Perform one redraw after all data is set
+  // Redraw once after all data is set
   chart.redraw();
 
-  // Set extremes only if there is more than one data point
-  if (dataPoints.length > 1) {
-    chart.xAxis[0].setExtremes(
-      dataPoints[0].x,
-      dataPoints[dataPoints.length - 1].x
-    );
+  if (update_extreme && dataPoints.length > 1) {
+    const minX = newmin !== 0 ? newmin : dataPoints[0].x;
+    const maxX = newmax !== 0 ? newmax : dataPoints[dataPoints.length - 1].x;
+    chart.xAxis[0].setExtremes(minX, maxX, false);
   }
 }
 
 //debugger
-let dataMap = new Map();
 function addPointToChart(
   chart,
   seriesData,
@@ -1176,7 +1093,7 @@ function addPointToChart(
   let lastPoint = null;
   let series = chart.series[0];
   let volumeSeries = chart.series[1];
-  console.log(chart);
+  // console.log(chart);
   seriesData.slice(1).forEach((data, index) => {
     const previousPrice = seriesData[index].price; // Get the previous price
     const currentPrice = data.price; // Get the current price
@@ -1202,91 +1119,6 @@ function addPointToChart(
   });
 }
 
-//function addPointToChart(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
-//    if (seriesData.length < 1) return;
-//    let lastPoint = null;
-//    let series = chart.series[0];
-//    let volumeSeries = chart.series[1];
-//    seriesData.slice(0).forEach((data, index) => {
-//        const previousPrice = seriesData[index].price; // Get the previous price
-//        const currentPrice = data.price; // Get the current price
-
-//        // Create the point for the main series
-//        const point = processDataPoint(data, previousPrice);
-
-//        // Add the volume data to the volume series with color based on the price comparison
-//        if (data.size) {
-//            const volumePoint = {
-//                x: new Date(data.date).getTime(),
-//                y: Number(data.size),
-//                color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
-//            };
-//            volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
-//        }
-//        series.addPoint(point, redraw, animateOnUpdate);
-//        // Update the main series with the combined existing and new data using setData
-//        chart.series[0].setData(newMainSeriesData, redraw, animateOnUpdate, true);
-//    });
-//}
-
-//function addPointToChart2(chart, seriesData, redraw = false, animateOnUpdate = false, isAddVolume = false) {
-//    if (seriesData.length < 1) return;
-//    let lastPoint = null;
-//    let series = chart.series[0];
-//    let volumeSeries = chart.series[1];
-//    //seriesData.slice(0).forEach((data, index) => {
-//    //    const previousPrice = seriesData[index].price; // Get the previous price
-//    //    const currentPrice = data.price; // Get the current price
-
-//    //    // Create the point for the main series
-//    //    const point = processDataPoint(data, previousPrice);
-
-//    //    // Add the volume data to the volume series with color based on the price comparison
-//    //    if (data.size) {
-//    //        const volumePoint = {
-//    //            x: new Date(data.date).getTime(),
-//    //            y: Number(data.size),
-//    //            color: currentPrice > previousPrice ? 'green' : 'red', // Set color conditionally
-//    //        };
-//    //        volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
-//    //    }
-//    //    series.addPoint(point, redraw, animateOnUpdate);
-
-//    //});
-//    //series.(seriesData, redraw, animateOnUpdate);
-
-//    let existingMainSeriesData = chart.series[0].data.map((point) => ({
-//        x: point.x,
-//        y: point.y,
-//    }));
-//    //let existingVolumeSeriesData = chart.series[1].data.map((point) => ({
-//    //    x: point.x,
-//    //    y: point.y,
-//    //    color: point.color,
-//    //}));
-//    let combinedList = [...existingMainSeriesData, ...seriesData];
-//    chart.series[0].setData([], true, animateOnUpdate, true);;
-//    //chart.redraw();
-//    chart.series[0].setData(combinedList, true, animateOnUpdate, true);
-//    //chart.redraw();
-//}
-
-// function removeOldPoints(chart, daysToKeep) {
-//   var now = Date.now();
-//   var cutoffTime = now - daysToKeep * 24 * 60 * 60 * 1000;
-//   var series = chart.series[0];
-//   var data = series.options.data;
-
-//   for (let i = data.length - 1; i >= 0; i--) {
-//     if (data[i].x.getTime() < cutoffTime) {
-//       //if (data[i].x < cutoffTime) {
-//       series.removePoint(i, false);
-//     } else {
-//       break;
-//     }
-//   }
-// }
-
 async function RefreshChartBySymbol() {
   for (let chart of Highcharts.charts) {
     if (!chart) continue;
@@ -1297,7 +1129,17 @@ async function RefreshChartBySymbol() {
     );
   }
 }
-let debounceTimer;
+function debounce(func, delay) {
+  let debounceTimer;
+  return function (...args) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+const debouncedZoomChart = debounce(zoomChart, 1000);
+const debouncedSetRange = debounce(setRange, 1000);
+const debouncedSetRangeByDate = debounce(setRangeByDate, 1000);
+
 var counter2 = 0;
 async function refreshCharts(symbol, seriesData) {
   setTimeout(async function () {
@@ -1307,6 +1149,19 @@ async function refreshCharts(symbol, seriesData) {
       addPointToChart(chart, seriesData, false, false, true);
 
       chart.redraw();
+
+      // // Fetch the min and max x values from the updated series data
+      // const series = chart.series[0];
+      // if (series && series.data.length > 0) {
+      //   const minX = series.data[0].x; // First data point on the x-axis
+      //   const maxX = series.data[series.data.length - 1].x; // Last data point on the x-axis
+
+      //   // Set the new extremes on the x-axis based on the updated data
+      //   chart.xAxis[0].setExtremes(minX, maxX);
+
+      //   // // Redraw again after setting the new extremes
+      //   // chart.redraw();
+      // }
     }
   }, 50);
   //removeOldPoints(chart, 3);
@@ -1670,42 +1525,22 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
   addChart(1, chartContainerId, [], symbol, false, dotNetObject);
 
   removeWindowControlButtonsFromChart();
-
-  /*if (dataPoints) {
-          chart.series[0].setData(dataPoints, true, true)
-      } else {
-          getChartDataBySymbol(symbol).then((seriesData) => {
-              setDataToChart(chart, seriesData);
-              if (minPoint && maxPoint) {
-                  chart.xAxis[0].setExtremes(minPoint, maxPoint);
-              }
-          });
-      }*/
 }
 
 async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
   var totalCharts = $("#chartList .chart-box").length + 1;
 
-  //Reset Chart Box
   var cssClass = "col-12";
-  if (totalCharts == 1) {
-    cssClass = "col-12";
+
+  if (totalCharts == 2 || totalCharts == 4) {
+    cssClass = "col-6";
   } else if (totalCharts == 5) {
     cssClass = "col-12";
-  } else if (totalCharts <= 4) {
-    cssClass = "col-6";
-  } else if (totalCharts <= 6) {
+  } else if (totalCharts == 6) {
     cssClass = "col-4";
-  } else if (totalCharts <= 8) {
+  } else if (totalCharts == 8) {
     cssClass = "col-3";
   }
-
-  $("#chartList .chart-box")
-    .removeClass("col-3")
-    .removeClass("col-4")
-    .removeClass("col-6")
-    .removeClass("col-12");
-  $("#chartList .chart-box").addClass(cssClass);
 
   var chartContainerId = "chart-" + chartIndx,
     chartBoxClass = "chart-box-" + chartIndx;
@@ -1713,62 +1548,39 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
     `<div class="chart-box ${chartBoxClass} ${cssClass}"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
   );
 
-  $("#chartList").append(chartBox);
-
-  var chartBoxes = $("#chartList").find(".chart-box");
-
-  chartBoxes.sort(function (a, b) {
-    var counterA = $(".chart-container", a).data("chart-id");
-    var counterB = $(".chart-container", b).data("chart-id");
-    return counterA - counterB;
-  });
-
   if (totalCharts == 5) {
-    var chartListCol1 = $(
-      '<div class="col-sm-8"><div id="chartListCol1" class="row"></div></div>'
-    );
-    var chartListCol2 = $(
-      '<div class="col-sm-4"><div id="chartListCol2" class="row"></div></div>'
-    );
-
-    chartBoxes.slice(0, 3).appendTo(chartListCol2.find("#chartListCol2"));
-    chartBoxes.slice(3).appendTo(chartListCol1.find("#chartListCol1"));
-
-    $("#chartList").append(chartListCol1).append(chartListCol2);
+    if ($("#chartList .chart-box").length < 3) {
+      $("#chartListCol2").append(chartBox);
+    } else {
+      $("#chartListCol1").append(chartBox);
+    }
   } else {
-    chartBoxes.appendTo("#chartList");
-    $("#chartListCol1").parent().remove();
-    $("#chartListCol2").parent().remove();
+    $("#chartList").append(chartBox);
   }
 
   if (totalCharts == 5) {
-    $("#chartListCol1 .chart-box")
-      .removeClass("chart-height-100")
-      .removeClass("chart-height-33")
-      .addClass("chart-height-50");
-    $("#chartListCol2 .chart-box")
-      .removeClass("chart-height-100")
-      .removeClass("chart-height-50")
-      .addClass("chart-height-33");
+    if ($("#chartList .chart-box").length > 3) {
+      chartBox.addClass("chart-height-50");
+    } else {
+      chartBox.addClass("chart-height-33");
+    }
   } else if (totalCharts > 2) {
-    $("#chartList .chart-box")
-      .removeClass("chart-height-100")
-      .removeClass("chart-height-33");
+    $("#chartList .chart-box").removeClass("chart-height-100");
     $("#chartList .chart-box").addClass("chart-height-50");
   } else {
-    $("#chartList .chart-box")
-      .removeClass("chart-height-50")
-      .removeClass("chart-height-33");
+    $("#chartList .chart-box").removeClass("chart-height-50");
     $("#chartList .chart-box").addClass("chart-height-100");
   }
 
-  let existingChart = getChartInstanceBySeriesName(symbol);
+  var chart = addChart(totalCharts, chartContainerId, [], symbol);
 
-  let chart = addChart(1, chartContainerId, [], symbol);
+  if (totalCharts == 1) {
+    removeWindowControlButtonsFromChart();
+  }
 
   addWindowControlButtonsToChart();
-  var data = await getChartDataBySymbol(symbol, null);
-  setDataToChart(chart, data);
+  // var data = await getChartDataBySymbol(symbol, null);
+  // setDataToChart(chart, data);
   chart.hideLoading();
 }
 
@@ -1810,11 +1622,21 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
   }
 }
 
+async function updateAllSymbols(symbols) {
+  for (let data of symbols) {
+    let chart = getChartInstanceBySeriesName(data.symbol);
+    if (chart) {
+      await setRange(data.symbol, 3 * 24 * 60 * 60 * 1000);
+
+      chart.redraw();
+      chart.hideLoading();
+    }
+  }
+}
+
 async function setRange(symbol, range) {
   let chart = getChartInstanceBySeriesName(symbol);
   if (chart) {
-    //    let filtereddata = await getFilteredDataBySymbol(symbol, range, chart.chartWidth - 50, Math.floor((chart.chartHeight * 65) / 100));
-    //  console.log("setRange" + JSON.stringify(filtereddata));
     let filtereddata = await getFilteredDataBySymbol(
       symbol,
       range,
@@ -1822,8 +1644,35 @@ async function setRange(symbol, range) {
       chart.yAxis[0].height
     );
 
-    console.log("points filtered " + filtereddata.length);
+    // console.log("points filtered " + filtereddata.length);
     setDataToChart(chart, filtereddata);
+    chart.redraw();
+  }
+}
+
+async function setRangeByDate(
+  symbol,
+  startDate,
+  endDate,
+  oldStartDate,
+  oldEndDate
+) {
+  let chart = getChartInstanceBySeriesName(symbol);
+  if (chart) {
+    //    let filtereddata = await getFilteredDataBySymbol(symbol, range, chart.chartWidth - 50, Math.floor((chart.chartHeight * 65) / 100));
+    //  console.log("setRange" + JSON.stringify(filtereddata));
+    let filtereddata = await GetFilteredDataBySymbolAndDateRange(
+      symbol,
+      startDate,
+      endDate,
+      oldStartDate,
+      oldEndDate,
+      chart.xAxis[0].width,
+      chart.yAxis[0].height
+    );
+
+    // console.log("points filtered " + filtereddata.length);
+    setDataToChart(chart, filtereddata, (update_extreme = false));
   }
 }
 

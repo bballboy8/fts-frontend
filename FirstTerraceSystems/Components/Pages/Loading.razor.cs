@@ -10,53 +10,42 @@ namespace FirstTerraceSystems.Components.Pages
         private int progress = 0;
         public static HashSet<string> _symbolSet = new HashSet<string>();
 
-        int intCompletedTasks = 0, totlalTasks = 0;
+        int intCompletedTasks = 0, totalTasks = 0;
         protected override async Task OnInitializedAsync()
         {
             Task tickerTask = TickerTask();
 
-            List<Task> tasks = [tickerTask];
-            List<Task> nonAwaitableTasks = [tickerTask];
-
+            List<Task> tasks = new List<Task> { tickerTask };
+            totalTasks += 1;
+            List<Task> nonAwaitableTasks = new List<Task> { };
             DateTime currentDate = DateTime.Now;
-            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(1);
-            DateTime defaultStartDateForBackground = DateTime.Now.GetPastBusinessDay(2);
+            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            DateTime defaultStartDateForBackground = DateTime.Now.GetPastBusinessDay(3);
             await ChartService.ChartModals();
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
             IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(500);
 
-
             foreach (ChartModal chart in recordsToFetch)
             {
-                totlalTasks = totlalTasks + 4;
+                totalTasks += 1;
                 Task chartTask = ChartTask(chart, defaultStartDate);
                 tasks.Add(chartTask);
                 _symbolSet.Add(chart.Symbol);
             }
-            //defaultStartDate = currentDate;
-            //currentDate = DateTime.Now;
 
             while (tasks.Any())
             {
                 Task completedTask = await Task.WhenAny(tasks);
                 intCompletedTasks++;
-                UpdateProgress(intCompletedTasks, totlalTasks);
+                await UpdateProgress(intCompletedTasks, totalTasks);  // Update progress incrementally
                 tasks.Remove(completedTask);
             }
-
+            await UpdateProgress(totalTasks, totalTasks);
             await Task.Delay(1000);
-
 
             _ = Task.Run(async () =>
             {
                 await Task.Delay(60000);
-                //var batchSize = 250;
-                //var batches = recordsToFetchInBackGround
-                //    .Select((chart, index) => new { chart, index })
-                //    .GroupBy(x => x.index / batchSize)
-                //    .Select(group => group.Select(x => x.chart).ToList())
-                //    .ToList();
-                // Start all chart tasks
                 foreach (ChartModal chart in recordsToFetchInBackGround)
                 {
                     Task chartTask = ChartTask(chart, defaultStartDate);
@@ -66,7 +55,6 @@ namespace FirstTerraceSystems.Components.Pages
                 defaultStartDate = currentDate;
                 currentDate = DateTime.Now;
 
-                // Monitor the completion of tasks
                 while (nonAwaitableTasks.Any())
                 {
                     Task completedTask = await Task.WhenAny(nonAwaitableTasks);
@@ -74,70 +62,6 @@ namespace FirstTerraceSystems.Components.Pages
                     nonAwaitableTasks.Remove(completedTask);
                 }
             });
-
-            #region Parallel Call
-            //_ = Task.Run(async () =>
-            //{
-            //    await Task.Delay(60000);
-            //    var batchSize = 250;
-            //    var batches = recordsToFetchInBackGround
-            //        .Select((chart, index) => new { chart, index })
-            //        .GroupBy(x => x.index / batchSize)
-            //        .Select(group => group.Select(x => x.chart).ToList())
-            //        .ToList();
-
-            //    foreach (var batch in batches)
-            //    {
-            //         Start tasks for the current batch
-            //        var tasks = batch.Select(async chart =>
-            //        {
-            //            await ChartTask(chart, defaultStartDate);
-            //            _symbolSet.Add(chart.Symbol);
-            //        });
-
-            //         Await the completion of all tasks in the current batch
-            //        await Task.WhenAll(tasks);
-            //    }
-            //});
-
-
-
-            //_ = Task.Run(async () =>
-            //{
-            //    await Task.Delay(60000);
-            //    var batchSize = 250;
-            //    var batches = recordsToFetchInBackGround
-            //        .Select((chart, index) => new { chart, index })
-            //        .GroupBy(x => x.index / batchSize)
-            //        .Select(group => group.Select(x => x.chart).ToList())
-            //        .ToList();
-            //    foreach (var batch in batches)
-            //    {
-            //        var nonAwaitableTasks = new List<Task>();
-            //        var options = new ParallelOptions()
-            //        {
-            //            MaxDegreeOfParallelism = 20
-            //        };
-
-            //        await Parallel.ForEachAsync(batch, options, async (chart, ct) =>
-            //        {
-            //            Task chartTask = ChartTask(chart, defaultStartDate);
-            //            nonAwaitableTasks.Add(chartTask);
-            //            _symbolSet.Add(chart.Symbol);
-            //        });
-
-            //        // Monitor the completion of tasks in the current batch
-            //        while (nonAwaitableTasks.Any())
-            //        {
-            //            Task completedTask = await Task.WhenAny(nonAwaitableTasks);
-            //            intCompletedTasks++;
-            //            nonAwaitableTasks.Remove(completedTask);
-            //        }
-            //    }
-            //});
-
-            #endregion
-
 
             WindowsSerivce.UnlockWindowResize();
 
@@ -171,35 +95,42 @@ namespace FirstTerraceSystems.Components.Pages
             try
             {
                 MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(chart.Symbol);
-                UpdateProgress(intCompletedTasks, totlalTasks);
                 DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
                 Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
                 IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
 
-                UpdateProgress(intCompletedTasks, totlalTasks);
                 Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
 
                 if (marketFeeds != null && marketFeeds.Any())
                 {
                     Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {chart.Symbol}");
                     MarketFeedRepository.InsertMarketFeedDataFromApi(chart.Symbol, marketFeeds);
-                    UpdateProgress(intCompletedTasks, totlalTasks);
                     Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
-                    marketFeeds = null;
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"For : {chart.Symbol} ");
+                Logger.LogError(ex, $"For : {chart.Symbol}");
             }
         }
 
-        private void UpdateProgress(int completedTasks, int totalTasks)
+        // Helper method to increment progress smoothly to the target
+        private async Task IncrementProgressTo(int targetProgress)
         {
-            progress = (completedTasks * 100) / totalTasks;
-            StateHasChanged();
+            while (progress < targetProgress)
+            {
+                progress++;  // Increment progress by 1%
+                StateHasChanged();  // Update the UI
+                await Task.Delay(50);  // Small delay to make the animation smooth
+            }
+        }
+
+        // UpdateProgress now uses IncrementProgressTo to increment the progress smoothly
+        private async Task UpdateProgress(int completedTasks, int totalTasks)
+        {
+            int targetProgress = (completedTasks * 100) / totalTasks;
+            await IncrementProgressTo(targetProgress);  // Smoothly increment to the new target progress
         }
     }
 }
-
