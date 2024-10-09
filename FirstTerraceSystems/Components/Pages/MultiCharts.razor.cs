@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using BlazorBootstrap;
 using FirstTerraceSystems.Entities;
@@ -8,15 +9,18 @@ using FirstTerraceSystems.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
+
 namespace FirstTerraceSystems.Components.Pages
 {
+
+
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 100000;
-        private const int PointSize = 1000;
+        private const int MarketFeedChunkSize = 5000;
+        private const int PointSize = 50000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
-
+     static bool reduceSteps = false;
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
         public static ConcurrentDictionary<string, List<MarketFeed>> datasets = new();
         private ConcurrentDictionary<string, List<MarketFeed>> collection = new();
@@ -41,20 +45,18 @@ namespace FirstTerraceSystems.Components.Pages
                 await JSRuntime.InvokeVoidAsync("ChatAppInterop.setDotNetReference", _dotNetMualtiChatsRef);
                 IsLoading = true;
                 preloadService.Show(SpinnerColor.Light, "Loading data...");
-
                 await Task.Run(async () =>
                 {
-                    await MainThread.InvokeOnMainThreadAsync(async () =>
+
+                    MainThread.BeginInvokeOnMainThread(async () =>
                     {
-                        await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols.Where(x => x.IsVisible));
+                        await JSRuntime.InvokeVoidAsync("loadDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols.Where(x => x.IsVisible == true));
+                        // Code to run on the main thread
                     });
 
+
                     await UpdateAndRenderChartsAsync();
-                    await MainThread.InvokeOnMainThreadAsync(async () =>
-                    {
-                        await JSRuntime.InvokeVoidAsync("updateAllSymbols", ChartService.InitialChartSymbols.Where(x => x.IsVisible));
-                    });
-                    await MainThread.InvokeOnMainThreadAsync(() => preloadService.Hide());
+                    MainThread.BeginInvokeOnMainThread(() => { preloadService.Hide(); });
                     IsLoading = false;
                     Logger.LogInformation($"Connecting WebSocketClient");
 
@@ -62,14 +64,24 @@ namespace FirstTerraceSystems.Components.Pages
                     await WebSocketClient.ConnectCta().ConfigureAwait(false);
                     Logger.LogInformation($"Connected WebSocketClient");
 
+
+                    // WebSocketClient.ActionRealDataReceived += OnRealDataReceived;
+
                     WebSocketClient.ActionReferenceChart += RefreshCharts;
 
                     Logger.LogInformation($"Listening WebSocketClient");
+
                     await WebSocketClient.ListenCta().ConfigureAwait(false);
                     await WebSocketClient.ListenUtp().ConfigureAwait(false);
 
-                    await UpdateUI();
+
+                    await Task.Run(async () =>
+                    {
+                        await UpdateUI();
+                    });
                 });
+
+                //await Task.WhenAll(Task1, Task2);
             }
         }
 
@@ -80,8 +92,12 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 List<Task> tasks = new();
 
+                //    symbolicDatas = await SymbolicRepository.GetChartDataBySymbol(chart.Symbol);
+                //    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", chart.Symbol, symbolicDatas);
+                //});
                 Logger.LogInformation("Starting InitialChartSymbols");
                 foreach (var symbol in ChartService.InitialChartSymbols.Where(a => a.IsVisible))
+
                 {
                     tasks.Add(ChartTask(symbol, defaultStartDate));
                 }
@@ -91,10 +107,11 @@ namespace FirstTerraceSystems.Components.Pages
                     Task completedTask = await Task.WhenAny(tasks);
                     tasks.Remove(completedTask);
                 }
+
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error in UpdateAndRenderChartsAsync");
+                Logger.LogInformation(ex, $"Error in UpdateAndRenderChartsAsync");
             }
 
             Logger.LogInformation($"End InitialChartSymbols");
@@ -104,14 +121,16 @@ namespace FirstTerraceSystems.Components.Pages
         {
             try
             {
-                Logger.LogInformation($"Getting 3-day Historical Data from SQL Lite for symbol: {chart.Symbol}");
+                Logger.LogInformation($"Getting 3day Historical Data to SQL Lite for symbol: {chart.Symbol}");
                 var marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
-                Logger.LogInformation($"Got 3-day Historical Data from SQL Lite for symbol: {chart.Symbol}, total: {marketFeeds.Count()}");
+                Logger.LogInformation($"Got 3day Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
 
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
-                    await SendChartDataInChunks(chart.Symbol, marketFeeds, false);
+                    await SendChartDataInChunks(chart.Symbol, marketFeeds);
+                    //    await JSRuntime.InvokeVoidAsync("setRange", chart.Symbol, 3 * 24 * 60 * 60 * 1000);
+
                     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                 }
                 catch (Exception ex)
@@ -125,107 +144,146 @@ namespace FirstTerraceSystems.Components.Pages
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"For : {chart.Symbol}");
+                Logger.LogError(ex, $"For : {chart.Symbol} ");
             }
-        }
-
-        public static IEnumerable<MarketFeed> FilterByEasternTime(IEnumerable<MarketFeed> data)
-        {
-            var utcNow = DateTime.UtcNow;
-            DateTime currentEasternTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-            return data.Where(x => x.Date < currentEasternTime);
         }
 
         public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int numPoints)
         {
-            var filteredData = FilterByEasternTime(data);
+            var currentTime = DateTime.Now.TimeOfDay;
+            //data = data.Where((x) => x.Date.TimeOfDay < currentTime);
+            var filteredData = data;
+
 
             if (numPoints > 0 && numPoints < filteredData.Count())
             {
                 var step = Math.Max(1, filteredData.Count() / numPoints);
-                return filteredData.Where((_, index) => index % step == 0).ToList();
+                if (reduceSteps == true)
+                {
+                    step = 1;
+                    reduceSteps = false;
+                }
+                return filteredData.Where((_, index) => index % step == 0).Take(numPoints).ToList();
             }
 
-            return filteredData.ToList();
+            return data.ToList();
         }
 
-        public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds, bool load_data_in_chart = true)
+        public async Task SendChartDataInChunks(string symbol, IEnumerable<MarketFeed> marketFeeds)
         {
             datasets[symbol] = marketFeeds.ToList();
-            if (load_data_in_chart)
+            var chunks = FilterData(marketFeeds, PointSize).Chunk(MarketFeedChunkSize);
+
+            foreach (var chunk in chunks)
             {
-                var chunks = FilterData(marketFeeds, 10000).Chunk(MarketFeedChunkSize);
-
-                foreach (var chunk in chunks)
-                {
-                    try
-                    {
-                        await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, $"For: {symbol}");
-                    }
-                }
-
                 try
                 {
-                    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, null, true);
+
+                    // Invoke JavaScript function asynchronously with chunk of data
+                    await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, chunk, false);
+
+                    var tempChunk = chunk;
+
+                    // Example: Set properties of tempChunk to null or dispose items within it
+                    tempChunk = null;
+
+                    // Force garbage collection to release memory
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, $"Error indicating all data loaded for symbol: {symbol}");
+                    // Handle exceptions
+                    Logger.LogError(ex, $"For: {symbol}");
                 }
             }
 
+            try
+            {
+                // After all chunks are sent, indicate that all data is loaded
+                await JSRuntime.InvokeVoidAsync("setDataToChartBySymbol", symbol, null, true);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error indicating all data loaded for symbol: {symbol}");
+            }
         }
 
         public static DateTime UnixTimeStampToDateTime(double unixTimeStamp)
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds(Convert.ToInt64(unixTimeStamp)).LocalDateTime;
-        }
+            // Convert Unix timestamp to UTC DateTime
+            DateTime utcDateTime = DateTimeOffset.FromUnixTimeMilliseconds(Convert.ToInt64(unixTimeStamp)).LocalDateTime;
 
+            return utcDateTime;
+        }
+   
         [JSInvokable]
         public IEnumerable<MarketFeed>? GetExtremeDataBySymbol(string symbol, JsonElement? minElement, JsonElement? maxElement)
         {
             if (minElement == null || maxElement == null)
-                return Enumerable.Empty<MarketFeed>();
-
+                return [];
             long? min = minElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(minElement?.GetDouble()) : (long?)null;
             long? max = maxElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(maxElement?.GetDouble()) : (long?)null;
-
-            var startDate = UnixTimeStampToDateTime(min.GetValueOrDefault());
-            var endDate = UnixTimeStampToDateTime(max.GetValueOrDefault());
-
+            var startDate = UnixTimeStampToDateTime((long)min);
+            var endDate = UnixTimeStampToDateTime((long)max);
             if (datasets.ContainsKey(symbol))
             {
-                var extremeData = datasets[symbol].Where(x => x.Date >= startDate && x.Date <= endDate).ToList();
-                return FilterData(extremeData, 300);
+                var extremeData = datasets[symbol].FindAll((x) => x.Date >= startDate && x.Date <= endDate);
+                reduceSteps = true;
+                var filteredData = FilterData(extremeData, PointSize);
+                return filteredData;
             }
-
-            return Enumerable.Empty<MarketFeed>();
+            return [];
         }
 
+        /* [JSInvokable]
+         public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range)
+         {
+             Ranges[symbol] = range;
+             var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+             DateTime eastern = TimeZoneInfo
+         .ConvertTimeFromUtc(
+           RangeDate,
+           TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+             var last = datasets[symbol][datasets[symbol].Count - 1];
+             var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+             filtered = FilterData(filtered, PointSize);
+             return filtered;
+         }*/
         public static List<MarketFeed> FilteredDataBySymbol(string symbol, double range)
         {
+
             var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
-            DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-            var filtered = datasets[symbol].Where(x => x.Date >= eastern).ToList();
-            return FilterData(filtered, PointSize);
+            DateTime eastern = TimeZoneInfo
+        .ConvertTimeFromUtc(
+          RangeDate,
+          TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+            var last = datasets[symbol][datasets[symbol].Count - 1];
+            var filtered = datasets[symbol].Where((x) => x.Date >= eastern).ToList();
+            filtered = FilterData(filtered, PointSize);
+            return filtered;
         }
 
         private async Task InitializedDataBaseAsync()
         {
             if (!TickerRepository.IsTickerTableExists())
             {
-                Logger.LogInformation("Starting API call for GetTickers");
-                var tickers = await NasdaqService.NasdaqGetTickersAsync();
-                Logger.LogInformation("Got Response from API GetTickers");
-                Logger.LogInformation("Inserting Tickers To SQLite DB");
+                Logger.LogInformation($"Starting API call for GetTickers");
+                IEnumerable<NasdaqTicker>? tickers = await NasdaqService.NasdaqGetTickersAsync();
+                Logger.LogInformation($"Got Response from API GetTickers");
+                Logger.LogInformation($"Inserting Tickers To  SQLite DB");
                 TickerRepository.InsertRecords(tickers);
-                Logger.LogInformation("Inserted Tickers To SQLite DB");
+                Logger.LogInformation($"Inserted Tickers To  SQLite DB");
+                tickers = null;
             }
         }
+
+        /*   private async Task OnRealDataReceived(NasdaqResponse? response)
+           {
+               //await Task.Run(async() => { 
+               // await MarketFeedRepository.InsertLiveMarketFeedDataFromSocket(response);
+               // }).ConfigureAwait(true);
+           }*/
 
         private async Task RefreshCharts(NasdaqResponse? response)
         {
@@ -233,31 +291,51 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 try
                 {
+                    //Logger.LogInformation($"...............Socket call start...............");
+                    //Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
+
                     foreach (var data in datasets)
                     {
-                        var groupedData = response.Data
-                            .Select(d => new MarketFeed(response.Headers, d))
+                        IEnumerable<IGrouping<string?, MarketFeed>>? groupedData = response.Data
+                            .Select(data => new MarketFeed(response.Headers, data))
                             .GroupBy(mf => mf.Symbol);
 
                         var dataGot = groupedData.FirstOrDefault(x => x.Key == data.Key)?.ToList();
 
+                        //Logger.LogInformation("...................System.............................");
+                        //Logger.LogInformation($"...................{data.Key}.............................");
+                        //Logger.LogInformation("...................end.............................");
+
+                        //Logger.LogInformation("...................socket.............................");
+                        //Logger.LogInformation($"...............{JsonSerializer.Serialize(groupedData)}...............");
+                        //Logger.LogInformation("...................end.............................");
+
                         if (dataGot != null)
                         {
+
                             if (OnWait)
-                                await Task.Delay(1000);
+                            {
+                                await Task.Delay(1000);  // Non-blocking delay
+                            }
 
-                            var filteredData = FilterByEasternTime(dataGot);
-
-                            lock (_lock)
+                            lock (_lock)  // Use lock for thread safety
                             {
                                 datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
-                                if (!collection.ContainsKey(data.Key))
-                                    collection[data.Key] = filteredData.ToList();
+
+                                if (collection.ContainsKey(data.Key))
+                                {
+                                    collection[data.Key].AddRange(dataGot);
+                                }
                                 else
-                                    collection[data.Key].AddRange(filteredData);
+                                {
+                                    collection[data.Key] = dataGot;
+                                }
                             }
                         }
                     }
+
+                    Logger.LogInformation($"...............Socket call end...............");
+                    Logger.LogInformation($"{DateTime.Now:HH:mm:ss.fff}");
                 }
                 catch (Exception ex)
                 {
@@ -270,21 +348,19 @@ namespace FirstTerraceSystems.Components.Pages
         {
             while (true)
             {
-                await Task.Delay(1000);
+                await Task.Delay(1000);  // Non-blocking delay
                 OnWait = true;
 
-                var visibleSymbols = ChartService.InitialChartSymbols
-                                    .Where(x => x.IsVisible)
-                                    .Select(x => x.Symbol)
-                                    .ToHashSet();
-
-                lock (_lock)
+                lock (_lock)  // Ensure thread safety when accessing shared collection
                 {
                     foreach (var data in collection)
                     {
-                        if (data.Value.Count != 0 && visibleSymbols.Contains(data.Key))
+                        if (data.Value.Count != 0)
                         {
+
+
                             JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
+
                             collection[data.Key].Clear();
                         }
                     }
@@ -294,11 +370,13 @@ namespace FirstTerraceSystems.Components.Pages
             }
         }
 
+
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
         {
             var filtered = FilterData(datasets[symbol], PointSize);
             return filtered;
+
         }
 
         [JSInvokable]
@@ -337,7 +415,7 @@ namespace FirstTerraceSystems.Components.Pages
                 return null;
             }
 
-            if (datasets.ContainsKey(symbol))
+           if (datasets.ContainsKey(symbol))
             {
                 var filtered = FilterData(datasets[symbol], PointSize);
                 SymbolChanged(chartId, symbol);
@@ -460,6 +538,7 @@ namespace FirstTerraceSystems.Components.Pages
         {
             _dotNetMualtiChatsRef?.Dispose();
 
+            //   WebSocketClient.ActionRealDataReceived -= OnRealDataReceived;//Commented out because it's not in use
             WebSocketClient.ActionReferenceChart -= RefreshCharts;
             await WebSocketClient.CloseCta();
             await WebSocketClient.CloseUtp();
@@ -478,6 +557,8 @@ namespace FirstTerraceSystems.Components.Pages
             // Convert UTC to Eastern Time
 
             DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+
+
 
             // Get the last data point
 
@@ -499,64 +580,12 @@ namespace FirstTerraceSystems.Components.Pages
 
         }
 
-        [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, double oldStartDate, double oldEndDate, int xAxisPixels, int yAxisPixels)
-
-        {
-
-            // Convert timestamps to DateTime objects
-            var startDateRange = UnixTimeStampToDateTime((long)startDate);
-            var endDateRange = UnixTimeStampToDateTime((long)endDate);
-
-            var oldStartDateRange = UnixTimeStampToDateTime((long)oldStartDate);
-            var oldEndDateRange = UnixTimeStampToDateTime((long)oldEndDate);
-
-            // Check if datasets[symbol] contains data
-            if (datasets.ContainsKey(symbol) && datasets[symbol].Any())
-            {
-                // Get the minimum date present in the dataset
-                var minDateInDataset = datasets[symbol].Min(x => x.Date);
-
-                // Ensure startDateRange is not less than the minimum date in the dataset
-                if (startDateRange < minDateInDataset)
-                {
-                    startDateRange = minDateInDataset;
-                }
-            }
-
-
-            // // // Fetch data in the old range but exclude data within the new range
-            var filteredOldData = datasets[symbol]
-                .Where(x => x.Date >= oldStartDateRange && x.Date <= oldEndDateRange && (x.Date < startDateRange || x.Date > endDateRange) && x.Price >= 0)
-                .OrderBy(x => x.Date)
-                .ToList();
-
-            // // Calculate the number of data points to display using FilterData function
-            var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
-
-
-            // Fetch and sort additional data in the extended range (startDateRange to endDateRange)
-            var newData = datasets[symbol]
-                .Where(x => x.Date >= startDateRange && x.Date <= endDateRange && x.Price >= 0)
-                .OrderBy(x => x.Date)
-                .ToList();
-            var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
-
-            // Combine both datasets (old and new data) ensuring there is no duplication
-            var combinedFiltered = oldFiltered.Union(newFiltered).ToList();
-
-            var finalFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
-
-
-            return finalFiltered;
-
-        }
 
         public static List<MarketFeed> FilterData(IEnumerable<MarketFeed> data, int xAxisPixels, int yAxisPixels)
 
         {
 
-            // var currentTime = DateTime.Now.TimeOfDay;
+            var currentTime = DateTime.Now.TimeOfDay;
 
 
             if (PointSize > xAxisPixels)
@@ -575,10 +604,6 @@ namespace FirstTerraceSystems.Components.Pages
 
             int numPointsToShow = Math.Min(totalPoints, xAxisPixels);
 
-            if (totalPoints <= numPointsToShow)
-            {
-                return data.ToList();
-            }
 
 
             // Determine step size for selecting points
@@ -589,44 +614,47 @@ namespace FirstTerraceSystems.Components.Pages
 
             // Filter data to have at least one point per x-axis pixel
 
-            var filteredData = FilterByEasternTime(data).Where((_, index) => index % step == 0).ToList();
+            var filteredData = data.Where((_, index) => index % step == 0).ToList();
 
-            return filteredData.ToList();
+
             // Additional filtering to ensure at least 10 distinct y-axis points for each time pixel
 
-            // var groupedByTimePixel = filteredData
+            var groupedByTimePixel = filteredData
 
-            //     .GroupBy(point => point.Date.Ticks / (TimeSpan.TicksPerMillisecond * xAxisPixels))
+                .GroupBy(point => point.Date.Ticks / (TimeSpan.TicksPerMillisecond * xAxisPixels))
 
-            //     .SelectMany(g =>
+                .SelectMany(g =>
 
-            //     {
+                {
 
-            //         // If fewer than 10 points in this time group, show them all
+                    // If fewer than 10 points in this time group, show them all
 
-            //         if (g.Count() <= 10)
+                    if (g.Count() <= 10)
 
-            //             return g;
-
-
-
-            //         // Otherwise, distribute points across y-axis
-
-            //         var pointsByPriceRange = g
-
-            //             .GroupBy(point => point.Price / (yAxisPixels * 10)) // Divide prices into y-axis pixels
-
-            //             .SelectMany(pg => pg.Take(10)) // Take up to 10 per pixel group
-
-            //             .Take(yAxisPixels);
+                        return g;
 
 
-            //         return pointsByPriceRange;
 
-            //     });
+                    // Otherwise, distribute points across y-axis
+
+                    var pointsByPriceRange = g
+
+                        .GroupBy(point => point.Price / (yAxisPixels * 10)) // Divide prices into y-axis pixels
+
+                        .SelectMany(pg => pg.Take(10)) // Take up to 10 per pixel group
+
+                        .Take(yAxisPixels);
 
 
-            // return groupedByTimePixel.OrderBy(x => x.Date).ToList();
+                    return pointsByPriceRange;
+
+                });
+
+
+            //    var fff = groupedByTimePixel.ToList().OrderBy(p => p.Date).ToList();
+            var newlist= groupedByTimePixel.ToList();
+         newlist.Sort((a, b) => a.Date.CompareTo(b.Date));
+            return newlist;
 
         }
 
