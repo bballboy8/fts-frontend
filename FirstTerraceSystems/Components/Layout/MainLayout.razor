@@ -190,7 +190,7 @@
         await JSRuntime.InvokeVoidAsync("createDashboard", ChartService.InitialChartLayout, ChartService.InitialChartSymbols);
         StateContainerService.IsAllowCloseAllWindows = true;
         WindowsSerivce.CloseAllOpenedWindows();
-        await JSRuntime.InvokeVoidAsync("RefreshChartBySymbol");
+        await JSRuntime.InvokeVoidAsync("updateAllSymbols", ChartService.InitialChartSymbols.Where(x => x.IsVisible));
     }
 
     public void Dispose()
