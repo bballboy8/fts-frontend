@@ -884,13 +884,35 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   var newMin, newMax;
 
   if (zoomIn) {
+    // Zoom in by reducing the range by 20%
     newMin = extremes.min + range * 0.2;
     newMax = extremes.max - range * 0.2;
   } else {
-    if (range == 0) {
-      newMin = oldMin - oldMin * 0.1; // or some small offset
-      newMax = oldMax + oldMax * 0.1;
+    // Zoom out logic for small ranges (like minutes)
+    if (range <= 1000 * 60) {
+      // If range is less than or equal to 5 minutes (in milliseconds)
+      // Expand the range significantly, using hours or days for zooming out
+      newMin = oldMin - 1000 * 30; // Zoom out by 1 hour
+      newMax = oldMax + 1000 * 30;
+    } else if (range <= 1000 * 60 * 5) {
+      // If range is less than or equal to 5 minutes (in milliseconds)
+      // Expand the range significantly, using hours or days for zooming out
+      newMin = oldMin - 1000 * 60 * 10; // Zoom out by 1 hour
+      newMax = oldMax + 1000 * 60 * 10;
+    } else if (range <= 1000 * 60 * 60) {
+      // If range is less than or equal to 1 hour
+      newMin = oldMin - 1000 * 60 * 30; // Zoom out by 2 hours
+      newMax = oldMax + 1000 * 60 * 30;
+    } else if (range <= 1000 * 60 * 60 * 6) {
+      // If range is less than or equal to 1 day
+      newMin = oldMin - 1000 * 60 * 60 * 6; // Zoom out by 1 day
+      newMax = oldMax + 1000 * 60 * 60 * 6;
+    } else if (range <= 1000 * 60 * 60 * 24) {
+      // If range is less than or equal to 1 day
+      newMin = oldMin - 1000 * 60 * 60 * 24; // Zoom out by 1 day
+      newMax = oldMax + 1000 * 60 * 60 * 24;
     } else {
+      // For larger ranges, expand by 20% as usual
       newMin = extremes.min - range * 0.2;
       newMax = extremes.max + range * 0.2;
     }
@@ -902,8 +924,14 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   // Only apply zoom if the range is valid
   if (newMin < newMax) {
     setRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
+    // Get the current time and calculate the timestamp for 4 days ago
+    var currentTime = new Date().getTime();
+    var fourDaysAgo = currentTime - 4 * 24 * 60 * 60 * 1000; // 4 days in milliseconds
+
     // Ensure newMin is >= dataMin and newMax is <= dataMax
-    newMin = Math.max(chart.xAxis[0].dataMin, newMin);
+    if (newMin < fourDaysAgo) {
+      newMin = Math.max(chart.xAxis[0].dataMin, newMin);
+    }
     newMax = Math.min(chart.xAxis[0].dataMax, newMax);
     xAxis.setExtremes(newMin, newMax);
 
