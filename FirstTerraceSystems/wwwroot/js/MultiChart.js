@@ -109,7 +109,8 @@ function addChart(
             event.preventDefault(); // Prevent page scroll only when inside the chart
             const delta = event.deltaY || event.wheelDelta;
             const zoomIn = delta < 0;
-            debouncedZoomChart(zoomIn, chart, undefined, symbol);
+            if (zoomIn) debouncedZoomChart(zoomIn, chart, undefined, symbol);
+            else debouncedZoomChart_zommOut(zoomIn, chart, undefined, symbol);
           });
 
           let chartWidth = chart.chartWidth;
@@ -884,13 +885,65 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   var newMin, newMax;
 
   if (zoomIn) {
+    // Zoom in by reducing the range by 20%
     newMin = extremes.min + range * 0.2;
     newMax = extremes.max - range * 0.2;
   } else {
-    if (range == 0) {
-      newMin = oldMin - oldMin * 0.1; // or some small offset
-      newMax = oldMax + oldMax * 0.1;
+    // Zoom out logic based on the specified ranges
+    if (range <= 1000 * 30) {
+      // Less than or equal to 30 seconds
+      newMin = oldMin - 1000 * 15; // Zoom out by 15 seconds
+      newMax = oldMax + 1000 * 15;
+    } else if (range <= 1000 * 60) {
+      // Less than or equal to 1 minute
+      newMin = oldMin - 1000 * 30; // Zoom out by 30 seconds
+      newMax = oldMax + 1000 * 30;
+    } else if (range <= 1000 * 60 * 3) {
+      // Less than or equal to 3 minutes
+      newMin = oldMin - 1000 * 60 * 1.5; // Zoom out by 1.5 minutes
+      newMax = oldMax + 1000 * 60 * 1.5;
+    } else if (range <= 1000 * 60 * 5) {
+      // Less than or equal to 5 minutes
+      newMin = oldMin - 1000 * 60 * 2.5; // Zoom out by 2.5 minutes
+      newMax = oldMax + 1000 * 60 * 2.5;
+    } else if (range <= 1000 * 60 * 15) {
+      // Less than or equal to 15 minutes
+      newMin = oldMin - 1000 * 60 * 7.5; // Zoom out by 7.5 minutes
+      newMax = oldMax + 1000 * 60 * 7.5;
+    } else if (range <= 1000 * 60 * 30) {
+      // Less than or equal to 30 minutes
+      newMin = oldMin - 1000 * 60 * 15; // Zoom out by 15 minutes
+      newMax = oldMax + 1000 * 60 * 15;
+    } else if (range <= 1000 * 60 * 60) {
+      // Less than or equal to 1 hour
+      newMin = oldMin - 1000 * 60 * 30; // Zoom out by 30 minutes
+      newMax = oldMax + 1000 * 60 * 30;
+    } else if (range <= 1000 * 60 * 60 * 3) {
+      // Less than or equal to 3 hours
+      newMin = oldMin - 1000 * 60 * 60 * 1.5; // Zoom out by 1.5 hours
+      newMax = oldMax + 1000 * 60 * 60 * 1.5;
+    } else if (range <= 1000 * 60 * 60 * 6) {
+      // Less than or equal to 6 hours
+      newMin = oldMin - 1000 * 60 * 60 * 3; // Zoom out by 3 hours
+      newMax = oldMax + 1000 * 60 * 60 * 3;
+    } else if (range <= 1000 * 60 * 60 * 12) {
+      // Less than or equal to 12 hours
+      newMin = oldMin - 1000 * 60 * 60 * 6; // Zoom out by 6 hours
+      newMax = oldMax + 1000 * 60 * 60 * 6;
+    } else if (range <= 1000 * 60 * 60 * 18) {
+      // Less than or equal to 18 hours
+      newMin = oldMin - 1000 * 60 * 60 * 9; // Zoom out by 9 hours
+      newMax = oldMax + 1000 * 60 * 60 * 9;
+    } else if (range <= 1000 * 60 * 60 * 24) {
+      // Less than or equal to 24 hours
+      newMin = oldMin - 1000 * 60 * 60 * 12; // Zoom out by 12 hours
+      newMax = oldMax + 1000 * 60 * 60 * 12;
+    } else if (range <= 1000 * 60 * 60 * 36) {
+      // Less than or equal to 36 hours
+      newMin = oldMin - 1000 * 60 * 60 * 18; // Zoom out by 18 hours
+      newMax = oldMax + 1000 * 60 * 60 * 18;
     } else {
+      // For larger ranges, expand by 20% as usual
       newMin = extremes.min - range * 0.2;
       newMax = extremes.max + range * 0.2;
     }
@@ -902,10 +955,21 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   // Only apply zoom if the range is valid
   if (newMin < newMax) {
     setRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
+    // Get the current time and calculate the timestamp for 4 days ago
+    var currentTime = new Date().getTime();
+    var fourDaysAgo = currentTime - 4 * 24 * 60 * 60 * 1000; // 4 days in milliseconds
+
     // Ensure newMin is >= dataMin and newMax is <= dataMax
-    newMin = Math.max(chart.xAxis[0].dataMin, newMin);
+    if (newMin < fourDaysAgo) {
+      newMin = Math.max(chart.xAxis[0].dataMin, newMin);
+    }
     newMax = Math.min(chart.xAxis[0].dataMax, newMax);
-    xAxis.setExtremes(newMin, newMax);
+    // xAxis.setExtremes(newMin, newMax);
+    // Smooth animation (optional for better UX)
+    chart.xAxis[0].update({ min: newMin, max: newMax }, true, {
+      duration: 300, // Animation duration in milliseconds for smooth zoom
+      easing: "easeOutQuad", // Use an easing function for smoother transitions
+    });
 
     if (dotNetObject) {
       dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
@@ -1147,6 +1211,8 @@ function debounce(func, delay) {
   };
 }
 const debouncedZoomChart = debounce(zoomChart, 1000);
+const debouncedZoomChart_zommOut = debounce(zoomChart, 300);
+
 const debouncedSetRange = debounce(setRange, 1000);
 const debouncedSetRangeByDate = debounce(setRangeByDate, 1000);
 
