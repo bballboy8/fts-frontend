@@ -1,4 +1,3 @@
-//debugger
 Highcharts.setOptions({
   global: {
     useUTC: false,
@@ -45,28 +44,38 @@ ChatAppInterop.setDotNetReference = function (dotnetReference) {
   ChatAppInterop.dotnetReference = dotnetReference;
 };
 
-var symbolData = {};
-function filterData(data, numPoints, startDate, endDate) {
-  let filteredData = data;
-  if (startDate && endDate) {
-    filteredData = data.filter(
-      (point) =>
-        new Date(point.date).getTime() >= startDate &&
-        new Date(point.date).getTime() <= endDate
-    );
+var canZoomOnHandleExtreme = false;
+var ChartZooomActivate = [];
+function SetChartZoomActivate(chart, value) {
+  if (ChartZooomActivate.length == 0) {
+    ChartZooomActivate.push({ name: chart.container.id, active: value });
+  } else {
+    var results = ChartZooomActivate.some((p) => p.name == chart.container.id);
+    if (results == true) {
+      var index = ChartZooomActivate.findIndex(
+        (z) => z.name == chart.container.id
+      );
+      ChartZooomActivate[index].active = value;
+    } else {
+      ChartZooomActivate.push({ name: chart.container.id, active: value });
+    }
   }
-  if (filteredData.length <= numPoints) {
-    return filteredData;
-  }
-
-  // Select a specified number of points evenly distributed
-  const step = filteredData.length / numPoints;
-  const result = [];
-  for (let i = 0; i < numPoints; i++) {
-    result.push(filteredData[Math.floor(i * step)]);
-  }
-  return result;
 }
+function FindChartZoomActivate(chart) {
+  var value1 = ChartZooomActivate.find((z) => z.name == chart.container.id);
+  if (value1 != null) {
+    return value1.active;
+  }
+  return false;
+}
+onwheel = function (event) {
+  canZoomOnHandleExtreme = true;
+};
+onmouseleave = function () {
+  canZoomOnHandleExtreme = false;
+};
+
+var symbolData = {};
 
 function addChart(
   totalCharts,
@@ -86,10 +95,11 @@ function addChart(
       borderWidth: 1,
       animation: false,
       borderColor: "#5B6970",
-
       events: {
         load: function () {
           var chart = this;
+          SetChartZoomActivate(chart, false);
+
           // console.log("chart: ", chart);
 
           // // Check if there are no points or if xAxis or yAxis labels are empty
@@ -107,9 +117,23 @@ function addChart(
           // Attach wheel event listener to the chart container
           Highcharts.addEvent(chart.container, "wheel", function (event) {
             event.preventDefault(); // Prevent page scroll only when inside the chart
+
             const delta = event.deltaY || event.wheelDelta;
             const zoomIn = delta < 0;
-            debouncedZoomChart(zoomIn, chart, undefined, symbol);
+            var extremes = chart.xAxis[0].getExtremes();
+            if (
+              !(typeof extremes.userMin == "undefined") &&
+              !(typeof extremes.userMax == "undefined")
+            ) {
+              SetChartZoomActivate(chart, true);
+              debouncedZoomChart(
+                zoomIn,
+                chart,
+                undefined,
+                symbol,
+                (isWheel = true)
+              );
+            }
           });
 
           let chartWidth = chart.chartWidth;
@@ -153,7 +177,7 @@ function addChart(
               var btn = divInput.find("#btnUpdateChartSymbol");
               var cancelBtn = divInput.find("#btnCancelChartSymbol");
               cancelBtn.on("click", function () {
-                var dvInput = $(this).closest("#dvSymbolInput");
+                $(this).closest("#dvSymbolInput");
                 $("#dvSymbolInput").remove();
               });
               btn.on("click", function () {
@@ -195,7 +219,6 @@ function addChart(
                 } else {
                   chart.showLoading();
 
-                  // console.log("place" + chart.series[0].name);
                   updateChartSymbol(chart.renderTo.id, symbol).then(
                     (seriesData) => {
                       // console.log("place1");
@@ -605,39 +628,21 @@ function addChart(
           afterSetExtremes: function (e) {
             var chart = this.chart;
             if (e.trigger === "zoom" || e.trigger === "pan") {
-              var symbol = chart.series[0].name;
-
-              // After zoom, ensure the points maintain their colors
-              var data = chart.series[0].data;
-
-              // Initialize the previous price with the first data point's y value or a default value
-              var previousPrice = data.length > 0 ? data[0].y : 0;
-
-              data.forEach(function (point, index) {
-                // Compare the current point's y value with the previous one
-                if (index > 0 && point.y > previousPrice) {
-                  point.update({ color: "green" });
-                } else {
-                  point.update({ color: "red" });
-                }
-
-                // Update previousPrice for the next iteration
-                previousPrice = point.y;
-              });
+              SetChartZoomActivate(chart, true);
             }
 
-            // Check if the event is triggered by zoom or pan
-            if (e.trigger === "zoom" || e.trigger === "pan") {
-              // Get the chart symbol (assuming it's the first series' name)
-              var symbol = chart.series[0].name;
+            // // Check if the event is triggered by zoom or pan
+            // if (e.trigger === "zoom" || e.trigger === "pan") {
+            //   // Get the chart symbol (assuming it's the first series' name)
+            //   var symbol = chart.series[0].name;
 
-              // Determine if it's a zoom-in or zoom-out based on the new range
-              var range = e.max - e.min;
-              var isZoomIn = range < this.oldMax - this.oltdMin; // Compare with the previous range
+            //   // Determine if it's a zoom-in or zoom-out based on the new range
+            //   var range = e.max - e.min;
+            //   var isZoomIn = range < this.oldMax - this.oltdMin; // Compare with the previous range
 
-              // Call zoomChart with the appropriate parameters
-              debouncedZoomChart(isZoomIn, chart, undefined, symbol);
-            }
+            //   // Call zoomChart with the appropriate parameters
+            //   debouncedZoomChart(isZoomIn, chart, undefined, symbol);
+            // }
 
             if (
               !(typeof chart.series[0].dataMax == "undefined") &&
@@ -792,7 +797,7 @@ function removeChart(chart) {
   var chartId = chartContaner.data("chart-id");
   $(".chart-box.chart-box-" + chartId).remove();
   //$("#popup-chart-" + chartId).remove();
-  Highcharts.removeEvent(chart.container, "wheel"); // Remove wheel event listener
+  // Highcharts.removeEvent(chart.container, "wheel"); // Remove wheel event listener
 
   chart.destroy();
   var totalCharts = $("#chartList .chart-box").length;
@@ -869,7 +874,13 @@ function removeChart(chart) {
   }
 }
 
-function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
+function zoomChart(
+  zoomIn,
+  chart,
+  dotNetObject = undefined,
+  symbol,
+  isWheel = false
+) {
   if (!chart.series[0].data || chart.series[0].data.length === 0) {
     console.warn(`No data available for zooming on chart: ${symbol}`);
     return; // Prevent zoom if no data is available
@@ -882,6 +893,9 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   var oldMax = extremes.max;
 
   var newMin, newMax;
+
+  var userMin = extremes.userMin;
+  var userMax = extremes.userMax;
 
   if (zoomIn) {
     newMin = extremes.min + range * 0.2;
@@ -896,19 +910,24 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
     }
   }
 
+  if (oldMin > userMin > newMin) newMin = userMin;
+  if (oldMax > userMax < newMax) newMax = userMax;
+
   // newMin = Math.max(xAxis.dataMin, newMin);
   // newMax = Math.min(xAxis.dataMax, newMax);
 
   // Only apply zoom if the range is valid
   if (newMin < newMax) {
     setRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
-    // Ensure newMin is >= dataMin and newMax is <= dataMax
-    newMin = Math.max(chart.xAxis[0].dataMin, newMin);
-    newMax = Math.min(chart.xAxis[0].dataMax, newMax);
-    xAxis.setExtremes(newMin, newMax);
-
-    if (dotNetObject) {
-      dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
+    if (true) {
+      // Ensure newMin is >= dataMin and newMax is <= dataMax
+      newMin = Math.max(chart.xAxis[0].dataMin, newMin);
+      newMax = Math.min(chart.xAxis[0].dataMax, newMax);
+      xAxis.setExtremes(newMin, newMax, false);
+      // chart.redraw();
+      if (!isWheel && dotNetObject) {
+        dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
+      }
     }
   } else {
     console.warn("Invalid zoom range. No zoom action performed.");
@@ -1050,13 +1069,7 @@ function processDataChart(data) {
   return [[new Date(data.date).getTime(), Number(data.size)]];
 }
 
-function setDataToChart(
-  chart,
-  seriesData,
-  newmin = 0,
-  newmax = 0,
-  update_extreme = true
-) {
+function setDataToChart(chart, seriesData, update_extreme = true) {
   if (seriesData.length < 1) return; // Return early if there isn't enough data
 
   const dataPoints = [];
@@ -1078,15 +1091,16 @@ function setDataToChart(
     previousPrice = data.price;
   });
 
+  // chart.series[0].setData([]);
+  // chart.series[1].setData([]);
   chart.series[0].setData(dataPoints, false); // Set data without redrawing
   chart.series[1].setData(volumePoints, false); // Set data without redrawing
 
-  // Redraw once after all data is set
-  chart.redraw();
-
   if (update_extreme && dataPoints.length > 1) {
-    const minX = newmin !== 0 ? newmin : dataPoints[0].x;
-    const maxX = newmax !== 0 ? newmax : dataPoints[dataPoints.length - 1].x;
+    // Redraw once after all data is set
+    chart.redraw();
+    const minX = dataPoints[0].x;
+    const maxX = dataPoints[dataPoints.length - 1].x;
     chart.xAxis[0].setExtremes(minX, maxX, false);
   }
 }
@@ -1157,8 +1171,10 @@ async function refreshCharts(symbol, seriesData) {
     if (chart) {
       //    console.log("refresh" + JSON.stringify(seriesData) + "ley "+symbol);
       addPointToChart(chart, seriesData, false, false, true);
-
-      chart.redraw();
+      if (!FindChartZoomActivate(chart)) {
+        // console.log("Chart is not zommed!");
+        chart.redraw();
+      }
 
       // // Fetch the min and max x values from the updated series data
       // const series = chart.series[0];
@@ -1646,6 +1662,7 @@ async function updateAllSymbols(symbols) {
 
 async function setRange(symbol, range) {
   let chart = getChartInstanceBySeriesName(symbol);
+
   if (chart) {
     let filtereddata = await getFilteredDataBySymbol(
       symbol,
@@ -1657,6 +1674,9 @@ async function setRange(symbol, range) {
     // console.log("points filtered " + filtereddata.length);
     setDataToChart(chart, filtereddata);
     chart.redraw();
+    if (filtereddata.length > 0) {
+      SetChartZoomActivate(chart, false);
+    }
   }
 }
 
@@ -1682,7 +1702,7 @@ async function setRangeByDate(
     );
 
     // console.log("points filtered " + filtereddata.length);
-    setDataToChart(chart, filtereddata, (update_extreme = false));
+    setDataToChart(chart, filtereddata, false);
   }
 }
 

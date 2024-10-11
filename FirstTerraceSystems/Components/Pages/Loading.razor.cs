@@ -68,6 +68,7 @@ namespace FirstTerraceSystems.Components.Pages
             NavigationManager.NavigateTo("/multi-charts");
         }
 
+
         private async Task TickerTask()
         {
             try

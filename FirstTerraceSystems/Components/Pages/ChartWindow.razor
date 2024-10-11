@@ -61,7 +61,6 @@
         {
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
             await JSRuntime.InvokeVoidAsync("popoutChartWindow", _dotChartWindowRef, ER_ChartWindow, ChartIndx, Symbol);
-
             IEnumerable<MarketFeed>? marketFeeds = MultiCharts.datasets[Symbol];
             await SendChartDataInChunks(Symbol, marketFeeds);
 
