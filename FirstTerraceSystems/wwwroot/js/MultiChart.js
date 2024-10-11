@@ -214,6 +214,25 @@ function addChart(
                           chart.ButtonNamespace.symbolButton.attr({
                             title: `XNYS: ${symbol}`,
                           });
+
+
+                            if (!(typeof chart.series[0].dataMin == 'undefined') && !(typeof chart.series[0].dataMax == 'undefined')) {
+                                chart.yAxis[0].setExtremes(chart.series[0].dataMin, chart.series[0].dataMax);
+                                chart.redraw();
+                            } else {
+                          
+                                var sortedData = seriesData.sort((pointA, pointB) => { return pointA.price - pointB.price });
+                               // console.log(sortedData);
+                                var firstmin = sortedData[0].price;
+                                var lastmax = sortedData[sortedData.length - 1].price;
+                                console.log(firstmin + ">" + lastmax);
+                                chart.yAxis[0].setExtremes(firstmin, lastmax);
+                                chart.yAxis[0].update({ min: firstmin, max: lastmax });
+                           chart.redraw();
+                             //   console.log(chart);
+                            }
+
+
                         }
                         chart.hideLoading();
                       } else {
@@ -604,7 +623,7 @@ function addChart(
         events: {
           afterSetExtremes: function (e) {
             var chart = this.chart;
-            if (e.trigger === "zoom" || e.trigger === "pan") {
+          /*  if (e.trigger === "zoom" || e.trigger === "pan") {
               var symbol = chart.series[0].name;
 
               // After zoom, ensure the points maintain their colors
@@ -613,7 +632,7 @@ function addChart(
               // Initialize the previous price with the first data point's y value or a default value
               var previousPrice = data.length > 0 ? data[0].y : 0;
 
-              data.forEach(function (point, index) {
+            data.forEach(function (point, index) {
                 // Compare the current point's y value with the previous one
                 if (index > 0 && point.y > previousPrice) {
                   point.update({ color: "green" });
@@ -624,7 +643,7 @@ function addChart(
                 // Update previousPrice for the next iteration
                 previousPrice = point.y;
               });
-            }
+            }*/
 
             // Check if the event is triggered by zoom or pan
             if (e.trigger === "zoom" || e.trigger === "pan") {
@@ -699,8 +718,13 @@ function addChart(
         resize: { enabled: true },
         events: {
           afterSetExtremes: function (e) {
-            const values = [];
+                const values = [];
+                var chart = this.chart;
+                if (typeof e.max !== "undefined" && typeof e.min !== "undefined") {
+                    //      handleExtremesChange(symbol, this.chart, e.min, e.max);
+                    chart.yAxis[0].setExtremes(e.min);
 
+                }
             // console.log(e.max + "ychanged");
           },
         },
@@ -744,7 +768,7 @@ function addChart(
           },
         },
         data: [],
-        boostThreshold: 10000,
+        boostThreshold: 1,
         turboThreshold: 0,
       },
       {
@@ -766,7 +790,7 @@ function addChart(
     },
     boost: {
       enabled: true,
-      useGPUTranslations: true,
+      useGPUTranslations: false,
     },
     accessibility: {
       highContrastTheme: null,

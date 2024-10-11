@@ -12,8 +12,8 @@ namespace FirstTerraceSystems.Components.Pages
 {
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 100000;
-        private const int PointSize = 1000;
+        private const int MarketFeedChunkSize = 5000;
+        private const int PointSize = 20000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
 
