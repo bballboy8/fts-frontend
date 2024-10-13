@@ -604,18 +604,25 @@ function addChart(
         events: {
           afterSetExtremes: function (e) {
             var chart = this.chart;
-
             if (e.trigger === "zoom" || e.trigger === "pan") {
               var symbol = chart.series[0].name;
 
               // After zoom, ensure the points maintain their colors
               var data = chart.series[0].data;
-              data.forEach(function (point) {
-                if (point.y > previousPrice) {
+
+              // Initialize the previous price with the first data point's y value or a default value
+              var previousPrice = data.length > 0 ? data[0].y : 0;
+
+              data.forEach(function (point, index) {
+                // Compare the current point's y value with the previous one
+                if (index > 0 && point.y > previousPrice) {
                   point.update({ color: "green" });
                 } else {
                   point.update({ color: "red" });
                 }
+
+                // Update previousPrice for the next iteration
+                previousPrice = point.y;
               });
             }
 
@@ -626,7 +633,7 @@ function addChart(
 
               // Determine if it's a zoom-in or zoom-out based on the new range
               var range = e.max - e.min;
-              var isZoomIn = range < this.oldMax - this.oldMin; // Compare with the previous range
+              var isZoomIn = range < this.oldMax - this.oltdMin; // Compare with the previous range
 
               // Call zoomChart with the appropriate parameters
               debouncedZoomChart(isZoomIn, chart, undefined, symbol);
@@ -895,6 +902,9 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   // Only apply zoom if the range is valid
   if (newMin < newMax) {
     setRangeByDate(symbol, newMin, newMax, extremes.min, extremes.max);
+    // Ensure newMin is >= dataMin and newMax is <= dataMax
+    newMin = Math.max(chart.xAxis[0].dataMin, newMin);
+    newMax = Math.min(chart.xAxis[0].dataMax, newMax);
     xAxis.setExtremes(newMin, newMax);
 
     if (dotNetObject) {
@@ -948,7 +958,7 @@ async function getChartDataByLastFeedPoint(symbol, lastPoint) {
   );
 }
 
-async function getFilteredDataBySymbol(chartId,
+async function getFilteredDataBySymbol(
   symbol,
   range = undefined,
   xAxisPixels = 0,
@@ -956,7 +966,7 @@ async function getFilteredDataBySymbol(chartId,
 ) {
   try {
     return await ChatAppInterop.dotnetReference.invokeMethodAsync(
-        "GetFilteredDataBySymbol", chartId,
+      "GetFilteredDataBySymbol",
       symbol,
       range,
       xAxisPixels,
@@ -1636,8 +1646,8 @@ async function updateAllSymbols(symbols) {
 
 async function setRange(symbol, range) {
   let chart = getChartInstanceBySeriesName(symbol);
-    if (chart) {
-        let filtereddata = await getFilteredDataBySymbol(chart.renderTo.id,
+  if (chart) {
+    let filtereddata = await getFilteredDataBySymbol(
       symbol,
       range,
       chart.xAxis[0].width,

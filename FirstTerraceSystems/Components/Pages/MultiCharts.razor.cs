@@ -465,33 +465,25 @@ namespace FirstTerraceSystems.Components.Pages
             await WebSocketClient.CloseUtp();
         }
         [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string chartId, string symbol, double range, int xAxisPixels, int yAxisPixels)
+        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range, int xAxisPixels, int yAxisPixels)
         {
-            var filtered = new List<MarketFeed>();
-            if (datasets.ContainsKey(symbol))
-            {
-                // Update the range for the symbol
-                Ranges[symbol] = range;
+            var filtered = await GetChartData(symbol);
 
-                var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+            // Update the range for the symbol
+            Ranges[symbol] = range;
 
-                // Convert UTC to Eastern Time
-                DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+            var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
 
-                // Get the last data point
-                var last = datasets[symbol].LastOrDefault();
+            // Convert UTC to Eastern Time
+            DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
-                // Filter the data by time range
-                filtered = datasets[symbol].Where((x) => x.Date >= eastern && x.Price >= 0).ToList();
-            }
-            else
-            {
-                var chartData = await GetChartData(chartId, symbol);
-                if (chartData != null)
-                {
-                    filtered = chartData.ToList();
-                }
-            }
+            // Get the last data point
+            var last = filtered.LastOrDefault();
+
+            // Filter the data by time range
+            filtered = filtered.Where((x) => x.Date >= eastern && x.Price >= 0).ToList();
+
+
 
             // Calculate the number of data points to display
             filtered = FilterData(filtered, xAxisPixels, yAxisPixels);
@@ -650,54 +642,32 @@ namespace FirstTerraceSystems.Components.Pages
         //    return await GetChartData(chartId, symbol);
         //}
 
-        private async Task<IEnumerable<MarketFeed>?> GetChartData(string chartId, string symbol)
+        private async Task<IEnumerable<MarketFeed>?> GetChartData(string symbol)
         {
-            if (datasets.ContainsKey(symbol))
+
+
+            if (!datasets.ContainsKey(symbol) || !datasets[symbol].Any())
             {
-                var filtered = FilterData(datasets[symbol], PointSize);
-                SymbolChanged(chartId, symbol);
-                return filtered;
-            }
+                var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+                Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
+                var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate, false, false).ConfigureAwait(false);
 
-            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-            Logger.LogInformation($"Getting 3-day Historical Data to SQL Lite for symbol: {symbol}");
-            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate, false, false).ConfigureAwait(false);
-
-            if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
-            {
-                datasets[symbol] = dbmarketFeeds.ToList();
-                var filtered = FilterData(dbmarketFeeds, PointSize);
-                SymbolChanged(chartId, symbol);
-                return filtered;
-            }
-            else
-            {
-                var UTCDate = DateTime.UtcNow.AddHours(-1);
-                DateTime easternOneHour = TimeZoneInfo
-                    .ConvertTimeFromUtc(
-                        UTCDate,
-                        TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-
-                Logger.LogInformation($"Starting API call for symbol for 1 hour: {symbol}");
-                IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(easternOneHour, symbol).ConfigureAwait(false);
-                Logger.LogInformation($"Got Response from API for symbol for 1 hour: {symbol}");
-
-                if (marketFeeds == null || marketFeeds.Count() == 0)
+                if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
                 {
-                    return await LoadThreeDayData(chartId, symbol, defaultStartDate);
+                    datasets[symbol] = dbmarketFeeds.ToList();
+                    var filtered = FilterData(dbmarketFeeds, PointSize);
+                    return filtered;
                 }
                 else
                 {
-                    datasets[symbol] = marketFeeds.ToList();
-                    var filteredData = FilterData(marketFeeds, PointSize);
-                    SymbolChanged(chartId, symbol);
-                    await LoadThreeDayData(chartId, symbol, defaultStartDate);
-                    return filteredData;
+                    await LoadThreeDayData(symbol, defaultStartDate);
                 }
             }
+            return datasets[symbol];
+
         }
 
-        private async Task<IEnumerable<MarketFeed>?> LoadThreeDayData(string chartId, string symbol, DateTime defaultStartDate)
+        private async Task<IEnumerable<MarketFeed>?> LoadThreeDayData(string symbol, DateTime defaultStartDate)
         {
             var token = _cancellationTokenSource.Token;
             await Task.Run(async () =>
@@ -717,7 +687,6 @@ namespace FirstTerraceSystems.Components.Pages
                     {
                         Loading._symbolSet.Add(symbol);
                         datasets[symbol] = threeDayMarketFeeds.ToList();
-                        await SendChartDataInChunks(symbol, FilterData(threeDayMarketFeeds, PointSize));
                         Logger.LogInformation($"Adding 3-day Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
                         MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
                     }
