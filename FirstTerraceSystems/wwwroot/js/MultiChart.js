@@ -1463,7 +1463,7 @@ function loadDashboard(totalCharts, initialChartSymbols) {
       //    zIndex: 3,
       //});
       plotLines.push({
-        color: "red",
+        color: "white",
         width: 2,
         value: new Date(
           date.getFullYear(),
@@ -1500,7 +1500,7 @@ function loadDashboard(totalCharts, initialChartSymbols) {
     } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
       // 8 PM EST/EDT on the current day
       plotLines.push({
-        color: "red",
+        color: "white",
         width: 2,
         value: new Date(
           date.getFullYear(),
@@ -1595,10 +1595,111 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     chartBoxClass = "chart-box-" + chartIndx;
   var chartBox = $(
     `<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
-  );
+    );
+
+
+
   $(element).append(chartBox);
 
-  addChart(1, chartContainerId, [], symbol, false, dotNetObject);
+
+
+    var chart = addChart(1, chartContainerId, [], symbol, false, dotNetObject);
+
+    var endDate = new Date(); // Current date and time
+
+    // Calculate the start date as 3 days before the current date
+    var startDate = new Date();
+    startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
+
+    for (
+        var date = new Date(startDate);
+        date <= endDate;
+        date.setDate(date.getDate() + 1)
+    ) {
+        var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        if (dayOfWeek === 5) {
+            plotLines.push({
+                color: "white",
+                width: 2,
+                value: new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate(),
+                    20,
+                    0
+                ), // 8 PM
+                zIndex: 5,
+            });
+
+            var todate = new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate(),
+                4,
+                0
+            );
+            todate.setDate(todate.getDate() + 3);
+            plotbreaks.push({
+                from: Math.floor(
+                    new Date(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        20,
+                        0
+                    ).getTime()
+                ), // 20170131
+                to: Math.floor(todate.getTime()), // 20180101
+                breakSize: 0,
+            });
+            //console.log("pb:" + plotbreaks[0]);
+        } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
+            // 8 PM EST/EDT on the current day
+            plotLines.push({
+                color: "white",
+                width: 2,
+                value: new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate(),
+                    20,
+                    0
+                ), // 8 PM
+                zIndex: 5,
+            });
+            var todate = new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate(),
+                4,
+                0
+            );
+            todate.setDate(todate.getDate() + 1);
+
+            plotbreaks.push({
+                from: Math.floor(
+                    new Date(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        20,
+                        0
+                    ).getTime()
+                ), // 20170131
+                to: Math.floor(todate.getTime()), // 20180101
+                breakSize: 0,
+            });
+        }
+    }
+
+
+    // Add plotLines and plotBands to the chart
+    chart.xAxis[0].update({
+        plotLines: plotLines,
+        plotBands: plotBands,
+        breaks: plotbreaks,
+    });
 
   removeWindowControlButtonsFromChart();
 }
