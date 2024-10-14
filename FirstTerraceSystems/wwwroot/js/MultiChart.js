@@ -45,6 +45,37 @@ ChatAppInterop.setDotNetReference = function (dotnetReference) {
   ChatAppInterop.dotnetReference = dotnetReference;
 };
 
+var canZoomOnHandleExtreme = false;
+var ChartZooomActivate = [];
+function SetChartZoomActivate(chart, value) {
+  if (ChartZooomActivate.length == 0) {
+    ChartZooomActivate.push({ name: chart.container.id, active: value });
+  } else {
+    var results = ChartZooomActivate.some((p) => p.name == chart.container.id);
+    if (results == true) {
+      var index = ChartZooomActivate.findIndex(
+        (z) => z.name == chart.container.id
+      );
+      ChartZooomActivate[index].active = value;
+    } else {
+      ChartZooomActivate.push({ name: chart.container.id, active: value });
+    }
+  }
+}
+function FindChartZoomActivate(chart) {
+  var value1 = ChartZooomActivate.find((z) => z.name == chart.container.id);
+  if (value1 != null) {
+    return value1.active;
+  }
+  return false;
+}
+onwheel = function (event) {
+  canZoomOnHandleExtreme = true;
+};
+onmouseleave = function () {
+  canZoomOnHandleExtreme = false;
+};
+
 var symbolData = {};
 function filterData(data, numPoints, startDate, endDate) {
   let filteredData = data;
@@ -90,6 +121,8 @@ function addChart(
       events: {
         load: function () {
           var chart = this;
+          SetChartZoomActivate(chart, false);
+
           // console.log("chart: ", chart);
 
           // // Check if there are no points or if xAxis or yAxis labels are empty
@@ -109,6 +142,7 @@ function addChart(
             event.preventDefault(); // Prevent page scroll only when inside the chart
             const delta = event.deltaY || event.wheelDelta;
             const zoomIn = delta < 0;
+            SetChartZoomActivate(chart, true);
             if (zoomIn) debouncedZoomChart(zoomIn, chart, undefined, symbol);
             else debouncedZoomChart_zommOut(zoomIn, chart, undefined, symbol);
           });
@@ -154,7 +188,7 @@ function addChart(
               var btn = divInput.find("#btnUpdateChartSymbol");
               var cancelBtn = divInput.find("#btnCancelChartSymbol");
               cancelBtn.on("click", function () {
-                var dvInput = $(this).closest("#dvSymbolInput");
+                $(this).closest("#dvSymbolInput");
                 $("#dvSymbolInput").remove();
               });
               btn.on("click", function () {
@@ -580,6 +614,7 @@ function addChart(
         tooltip: {
           pointFormatter: function () {
             //   console.log("upper: ", this.x);
+            // var date = new Date(this.x);
             return [
               `<b>${symbol} ${Highcharts.numberFormat(this.y / 10000, 2)}</b>`,
             ];
@@ -606,6 +641,7 @@ function addChart(
           afterSetExtremes: function (e) {
             var chart = this.chart;
             if (e.trigger === "zoom" || e.trigger === "pan") {
+              SetChartZoomActivate(chart, true);
               var symbol = chart.series[0].name;
 
               // After zoom, ensure the points maintain their colors
@@ -872,12 +908,13 @@ function removeChart(chart) {
 
 function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   if (!chart.series[0].data || chart.series[0].data.length === 0) {
+    setRange(symbol, 3 * 24 * 60 * 60 * 1000);
     console.warn(`No data available for zooming on chart: ${symbol}`);
     return; // Prevent zoom if no data is available
   }
 
   var xAxis = chart.xAxis[0];
-  var extremes = chart.xAxis[0].getExtremes();
+  var extremes = xAxis.getExtremes();
   var range = extremes.max - extremes.min;
   var oldMin = extremes.min;
   var oldMax = extremes.max;
@@ -949,8 +986,17 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
     }
   }
 
-  // newMin = Math.max(xAxis.dataMin, newMin);
-  // newMax = Math.min(xAxis.dataMax, newMax);
+  // Calculate the 4 AM timestamp for the last three business days
+  var lastThreeBusinessDays = getLastThreeBusinessDays();
+
+  // Ensure newMin is not less than the timestamp of the last three business days at 4 AM
+  newMin = Math.max(newMin, lastThreeBusinessDays);
+
+  // Ensure the difference between newMin and newMax is at least 5 seconds
+  if (zoomIn && newMax - newMin < 5000) {
+    // If the range is less than 5 seconds, adjust newMax to be 5 seconds greater than newMin
+    newMax = newMin + 5000; // Set newMax to newMin + 5 seconds
+  }
 
   // Only apply zoom if the range is valid
   if (newMin < newMax) {
@@ -977,6 +1023,29 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   } else {
     console.warn("Invalid zoom range. No zoom action performed.");
   }
+}
+
+// Function to get the 4 AM timestamp of the last three business days
+function getLastThreeBusinessDays() {
+  const today = new Date();
+  const lastThreeBusinessDays = [];
+
+  for (let i = 0; i < 3; i++) {
+    let date = new Date(today);
+    date.setDate(today.getDate() - (i + 1)); // Go back i+1 days
+
+    // Skip weekends
+    while (date.getDay() === 0 || date.getDay() === 6) {
+      date.setDate(date.getDate() - 1); // Move back one day if it's a weekend
+    }
+
+    // Set time to 4 AM
+    date.setHours(4, 0, 0, 0);
+    lastThreeBusinessDays.push(date.getTime());
+  }
+
+  // Return the minimum timestamp of the last three business days at 4 AM
+  return Math.min(...lastThreeBusinessDays);
 }
 
 function removeWindowControlButtonsFromChart() {
@@ -1223,6 +1292,10 @@ async function refreshCharts(symbol, seriesData) {
     if (chart) {
       //    console.log("refresh" + JSON.stringify(seriesData) + "ley "+symbol);
       addPointToChart(chart, seriesData, false, false, true);
+      // if (!FindChartZoomActivate(chart)) {
+      //   // console.log("Chart is not zommed!");
+      //   chart.redraw();
+      // }
 
       chart.redraw();
 
@@ -1350,7 +1423,11 @@ function createDashboard(totalCharts, initialChartSymbols) {
 
   chartList.html("");
 
-  charts.forEach((c) => c.destroy());
+  charts.forEach((c) => {
+    if (c) {
+      c.destroy();
+    }
+  });
 
   if (totalCharts == 5) {
     chartList
@@ -1365,12 +1442,10 @@ function createDashboard(totalCharts, initialChartSymbols) {
         )
       );
   }
-
+  // Create a Set to keep track of seen symbols
+  let seenSymbols = new Set();
   for (let indx = 1; indx <= totalCharts; indx++) {
     let symbolInfo = initialChartSymbols[indx - 1];
-    // Create a Set to keep track of seen symbols
-    let seenSymbols = new Set();
-
     // Iterate over the first 8 records of initialChartSymbols and remove duplicates (Task 86cw3n1ph)
     for (let i = 0; i < 8; i++) {
       let symbolInfo = initialChartSymbols[i];
@@ -1386,7 +1461,7 @@ function createDashboard(totalCharts, initialChartSymbols) {
         seenSymbols.add(symbolInfo.symbol);
       }
     }
-    let chart = addChartBox(totalCharts, indx, symbolInfo.symbol);
+    addChartBox(totalCharts, indx, symbolInfo.symbol);
   }
 }
 
@@ -1416,9 +1491,67 @@ Date.prototype.addDays = function (days) {
   return date;
 };
 
+function generatePlotLinesAndBreaks(startDate, endDate) {
+  const plotLines = []; // Array to store vertical lines
+  const plotbreaks = []; // Array to store breaks
+
+  // Iterate over each day in the date range
+  for (
+    var date = new Date(startDate);
+    date <= endDate;
+    date.setDate(date.getDate() + 1)
+  ) {
+    var dayOfWeek = date.getDay(); // Get the day of the week
+
+    // Add vertical line at 8 PM on weekdays (Monday to Friday)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      plotLines.push({
+        color: "white", // Color of the line
+        width: 2, // Width of the line
+        value: new Date( // Value where to draw the line
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          20, // 8 PM
+          0 // 0 minutes
+        ),
+        zIndex: 5, // z-index for stacking order
+      });
+
+      // Calculate the 'todate' for breaks
+      var todate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        4,
+        0
+      );
+      if (dayOfWeek != 5) {
+        todate.setDate(todate.getDate() + 1); // Move to the next day (for weekdays)
+      } else {
+        todate.setDate(todate.getDate() + 3); // Move to Monday (for Friday)
+      }
+
+      plotbreaks.push({
+        from: Math.floor(
+          new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            20,
+            0
+          ).getTime()
+        ), // 8 PM
+        to: Math.floor(todate.getTime()), // 'todate'
+        breakSize: 0, // Size of the break
+      });
+    }
+  }
+
+  return { plotLines, plotbreaks }; // Return both arrays
+}
+
 function loadDashboard(totalCharts, initialChartSymbols) {
-  //   totalCharts = 1;
-  // Assuming your data starts and ends on specific dates
   var endDate = new Date(); // Current date and time
 
   // Calculate the start date as 3 days before the current date
@@ -1434,135 +1567,13 @@ function loadDashboard(totalCharts, initialChartSymbols) {
     return localDate.getTime() + utcOffset + offset;
   }
 
-  // Iterate over each day in the date range
-  for (
-    var date = new Date(startDate);
-    date <= endDate;
-    date.setDate(date.getDate() + 1)
-  ) {
-    var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  // Call the function to get new plotLines and plotbreaks
+  const { plotLines: newPlotLines, plotbreaks: newPlotbreaks } =
+    generatePlotLinesAndBreaks(startDate, endDate);
 
-    if (dayOfWeek === 5) {
-      // Cover the whole day as a plotBand for weekends
-      //plotBands.push({
-      //    color: "rgba(68, 170, 213, 0.1)", // Light blue shading
-      //    from: new Date(
-      //        date.getFullYear(),
-      //        date.getMonth(),
-      //        date.getDate(),
-      //        20,
-      //        0
-      //    ), // Start of the day
-      //    to: new Date(
-      //        date.getFullYear(),
-      //        date.getMonth(),
-      //        date.getDate() + 3,
-      //        4,
-      //        0
-      //    ), // End of the day
-      //    zIndex: 3,
-      //});
-      plotLines.push({
-        color: "white",
-        width: 2,
-        value: new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate(),
-          20,
-          0
-        ), // 8 PM
-        zIndex: 5,
-      });
-
-      var todate = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        4,
-        0
-      );
-      todate.setDate(todate.getDate() + 3);
-      plotbreaks.push({
-        from: Math.floor(
-          new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            20,
-            0
-          ).getTime()
-        ), // 20170131
-        to: Math.floor(todate.getTime()), // 20180101
-        breakSize: 0,
-      });
-      //console.log("pb:" + plotbreaks[0]);
-    } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
-      // 8 PM EST/EDT on the current day
-      plotLines.push({
-        color: "white",
-        width: 2,
-        value: new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate(),
-          20,
-          0
-        ), // 8 PM
-        zIndex: 5,
-      });
-
-      ////// 4 AM EST/EDT on the next day
-      //plotLines.push({
-      //    color: "green",
-      //    width: 2,
-      //    value: new Date(
-      //        date.getFullYear(),
-      //        date.getMonth(),
-      //        date.getDate() ,
-      //        13,
-      //        0
-      //    ), // 4 AM
-      //    zIndex: 5,
-      //});
-
-      //var todate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 13, 0);
-      ////todate.setDate(todate.getDate() + 3)
-      //plotbreaks.push({
-      //    from: 1727764838000,//Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0).getTime() / 1000), // 20170131
-      //    to: 1727770238000,//todate, // 20180101
-      //    breakSize: 0
-      //});
-      var todate = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        4,
-        0
-      );
-      todate.setDate(todate.getDate() + 1);
-
-      plotbreaks.push({
-        from: Math.floor(
-          new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            20,
-            0
-          ).getTime()
-        ), // 20170131
-        to: Math.floor(todate.getTime()), // 20180101
-        breakSize: 0,
-      });
-
-      //console.log("pbf:" + plotbreaks[0].from);
-      //console.log("pbt:" + plotbreaks[0].to);
-      //console.log("pbdw:" + dayOfWeek);
-      //console.log("pbtf:" + new Date(date.getFullYear(), date.getMonth(), date.getDate(), 20, 0));
-      //console.log("pbtt:" + todate);
-    }
-  }
+  // Clear existing arrays and assign new values
+  plotLines = newPlotLines; // Assign the new plot lines to the existing variable
+  plotbreaks = newPlotbreaks; // Assign the new plot breaks to the existing variable
 
   localStorage.setItem("chartCount", null);
   let chartList = $("#chartList");
@@ -1582,10 +1593,8 @@ function loadDashboard(totalCharts, initialChartSymbols) {
   }
 
   initialChartSymbols.slice(0, totalCharts).forEach((chartSymbol, index) => {
-    const chart = addChartBox(totalCharts, index + 1, chartSymbol.symbol);
+    addChartBox(totalCharts, index + 1, chartSymbol.symbol);
   });
-  //var seriesData = await getChartDataBySymbol(rec.symbol);
-  //setDataToChart(chart, seriesData);
 }
 
 function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
@@ -1595,111 +1604,28 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     chartBoxClass = "chart-box-" + chartIndx;
   var chartBox = $(
     `<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
-    );
-
-
+  );
 
   $(element).append(chartBox);
 
+  var chart = addChart(1, chartContainerId, [], symbol, false, dotNetObject);
 
+  var endDate = new Date(); // Current date and time
 
-    var chart = addChart(1, chartContainerId, [], symbol, false, dotNetObject);
+  // Calculate the start date as 3 days before the current date
+  var startDate = new Date();
+  startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
 
-    var endDate = new Date(); // Current date and time
+  // Call the function to get new plotLines and plotbreaks
+  const { plotLines: newPlotLines, plotbreaks: newPlotbreaks } =
+    generatePlotLinesAndBreaks(startDate, endDate);
 
-    // Calculate the start date as 3 days before the current date
-    var startDate = new Date();
-    startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
-
-    for (
-        var date = new Date(startDate);
-        date <= endDate;
-        date.setDate(date.getDate() + 1)
-    ) {
-        var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-
-        if (dayOfWeek === 5) {
-            plotLines.push({
-                color: "white",
-                width: 2,
-                value: new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    20,
-                    0
-                ), // 8 PM
-                zIndex: 5,
-            });
-
-            var todate = new Date(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                4,
-                0
-            );
-            todate.setDate(todate.getDate() + 3);
-            plotbreaks.push({
-                from: Math.floor(
-                    new Date(
-                        date.getFullYear(),
-                        date.getMonth(),
-                        date.getDate(),
-                        20,
-                        0
-                    ).getTime()
-                ), // 20170131
-                to: Math.floor(todate.getTime()), // 20180101
-                breakSize: 0,
-            });
-            //console.log("pb:" + plotbreaks[0]);
-        } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
-            // 8 PM EST/EDT on the current day
-            plotLines.push({
-                color: "white",
-                width: 2,
-                value: new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    20,
-                    0
-                ), // 8 PM
-                zIndex: 5,
-            });
-            var todate = new Date(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                4,
-                0
-            );
-            todate.setDate(todate.getDate() + 1);
-
-            plotbreaks.push({
-                from: Math.floor(
-                    new Date(
-                        date.getFullYear(),
-                        date.getMonth(),
-                        date.getDate(),
-                        20,
-                        0
-                    ).getTime()
-                ), // 20170131
-                to: Math.floor(todate.getTime()), // 20180101
-                breakSize: 0,
-            });
-        }
-    }
-
-
-    // Add plotLines and plotBands to the chart
-    chart.xAxis[0].update({
-        plotLines: plotLines,
-        plotBands: plotBands,
-        breaks: plotbreaks,
-    });
+  // Add plotLines and plotBands to the chart
+  chart.xAxis[0].update({
+    plotLines: newPlotLines,
+    plotBands: plotBands,
+    breaks: newPlotbreaks,
+  });
 
   removeWindowControlButtonsFromChart();
 }
@@ -1824,6 +1750,9 @@ async function setRange(symbol, range) {
     // console.log("points filtered " + filtereddata.length);
     setDataToChart(chart, filtereddata);
     chart.redraw();
+    if (filtereddata.length > 0) {
+      SetChartZoomActivate(chart, false);
+    }
   }
 }
 
@@ -1847,9 +1776,8 @@ async function setRangeByDate(
       chart.xAxis[0].width,
       chart.yAxis[0].height
     );
-
-    // console.log("points filtered " + filtereddata.length);
-    setDataToChart(chart, filtereddata, (update_extreme = false));
+    if (filtereddata.length > 0)
+      setDataToChart(chart, filtereddata, (update_extreme = false));
   }
 }
 
