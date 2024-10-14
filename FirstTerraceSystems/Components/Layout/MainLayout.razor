@@ -112,14 +112,19 @@
         var coreMarketStartTime = new TimeSpan(9, 30, 0); // 9:30 AM
         var coreMarketEndTime = new TimeSpan(16, 0, 0);   // 4:00 PM
         var timeOfDay = estTime.TimeOfDay;
+        var dayOfWeek = estTime.DayOfWeek;
 
-        if (timeOfDay >= coreMarketStartTime && timeOfDay <= coreMarketEndTime)
+        if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
         {
-            MarketStatus = "Open";
+            MarketStatus = "Closed"; // Market is closed on weekends
+        }
+        else if (timeOfDay >= coreMarketStartTime && timeOfDay <= coreMarketEndTime)
+        {
+            MarketStatus = "Open"; // Market is open during core hours on weekdays
         }
         else
         {
-            MarketStatus = "Closed";
+            MarketStatus = "Closed"; // Market is closed outside of core hours
         }
 
         // if (holidayList.Where(x => DateTime.Parse(x.date_time).Date == estTime.Date).Any())
