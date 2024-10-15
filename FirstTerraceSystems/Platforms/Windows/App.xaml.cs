@@ -4,6 +4,9 @@ using Microsoft.Maui.Handlers;
 using FirstTerraceSystems.Services;
 using FirstTerraceSystems.Platforms.Windows.Extensions;
 using Microsoft.UI;
+using Microsoft.JSInterop;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.AspNetCore.Components;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -19,6 +22,8 @@ namespace FirstTerraceSystems.WinUI
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
+        public static DateTime startDateDeactivated { get; private set; }
+        [Inject] private IJSRuntime JSRuntime { get; set; }
         public App()
         {
             this.InitializeComponent();
@@ -78,10 +83,17 @@ namespace FirstTerraceSystems.WinUI
 
             if (access == Microsoft.Maui.Networking.NetworkAccess.None || access == Microsoft.Maui.Networking.NetworkAccess.Unknown)
             {
+                var UTCDate = DateTime.UtcNow;
+                startDateDeactivated = TimeZoneInfo
+                    .ConvertTimeFromUtc(
+                        UTCDate,
+                        TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+                Console.WriteLine("Deactivated");
                 Console.WriteLine("No internet connection.");
             }
             else if (access == Microsoft.Maui.Networking.NetworkAccess.Internet)
             {
+                //JSRuntime?.InvokeVoidAsync("refreshAllChartsIfOffline", startDateDeactivated);
                 Console.WriteLine("Internet connection available.");
             }
         }

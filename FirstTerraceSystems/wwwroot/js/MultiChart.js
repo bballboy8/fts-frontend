@@ -1739,15 +1739,14 @@ async function updateAllSymbols(symbols) {
 
 async function refreshAllChartsIfOffline(startdate) {
   let charts = Highcharts.charts.filter((hc) => hc);
-
   for (let chart of charts) {
     if (chart) {
       chart.showLoading();
       try {
         return await ChatAppInterop.dotnetReference.invokeMethodAsync(
-          "GetFilteredDataBySymbol",
+          "RefreshDataBasedOnStartDate",
           symbol,
-          range,
+          startdate,
           xAxisPixels,
           yAxisPixels
         );

@@ -1,11 +1,15 @@
 ﻿using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using System.Net.WebSockets;
 
 namespace FirstTerraceSystems
 {
     public partial class App : Application
     {
+        public static DateTime startDateDeactivated { get; private set; }
+        [Inject] private IJSRuntime JSRuntime { get; set; }
         public App()
         {
             InitializeComponent();
@@ -50,16 +54,23 @@ namespace FirstTerraceSystems
 
             window.Deactivated += (s, e) =>
             {
+               
                 Console.WriteLine("Deactivated");
             };
 
             window.Resumed += (s, e) =>
             {
+                //JSRuntime?.InvokeVoidAsync("refreshAllChartsIfOffline", startDateDeactivated);
                 Console.WriteLine("Resumed");
             };
 
             window.Stopped += (s, e) =>
             {
+                var UTCDate = DateTime.UtcNow;
+                startDateDeactivated = TimeZoneInfo
+                    .ConvertTimeFromUtc(
+                        UTCDate,
+                        TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
                 Console.WriteLine("Stopped");
             };
 
