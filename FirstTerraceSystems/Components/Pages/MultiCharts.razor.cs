@@ -491,6 +491,38 @@ namespace FirstTerraceSystems.Components.Pages
             return filtered;
         }
 
+
+        public async Task<IEnumerable<MarketFeed>?> RefreshDataBasedOnStartDate(string symbol, double startDate, int xAxisPixels, int yAxisPixels)
+        {
+
+            // Convert timestamps to DateTime objects
+            var startDateRange = UnixTimeStampToDateTime((long)startDate);
+
+            var filtered = await GetChartData(symbol);
+
+            // // // Fetch data in the old range but exclude data within the new range
+            var filteredOldData = datasets[symbol]
+                .Where(x => x.Date < startDateRange && x.Price >= 0)
+                .OrderBy(x => x.Date)
+                .ToList();
+
+            // // Calculate the number of data points to display using FilterData function
+            var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
+
+            // add logic here and call api
+            var newData = oldFiltered;
+            var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
+
+            // Combine both datasets (old and new data) ensuring there is no duplication
+            var combinedFiltered = oldFiltered.Union(newFiltered).ToList();
+
+            var finalFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
+
+
+            return finalFiltered;
+
+        }
+
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, double oldStartDate, double oldEndDate, int xAxisPixels, int yAxisPixels)
 

@@ -1737,6 +1737,36 @@ async function updateAllSymbols(symbols) {
   }
 }
 
+async function refreshAllChartsIfOffline(startdate) {
+  let charts = Highcharts.charts.filter((hc) => hc);
+
+  for (let chart of charts) {
+    if (chart) {
+      chart.showLoading();
+      try {
+        return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+          "GetFilteredDataBySymbol",
+          symbol,
+          range,
+          xAxisPixels,
+          yAxisPixels
+        );
+      } catch (error) {
+        console.error("Error fetching filtered data: ", error);
+      }
+      filtereddata;
+      setDataToChart(chart, filtereddata);
+      chart.redraw();
+      if (filtereddata.length > 0) {
+        SetChartZoomActivate(chart, false);
+      }
+
+      chart.redraw();
+      chart.hideLoading();
+    }
+  }
+}
+
 async function setRange(symbol, range) {
   let chart = getChartInstanceBySeriesName(symbol);
   if (chart) {
