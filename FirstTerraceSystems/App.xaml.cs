@@ -15,6 +15,7 @@ namespace FirstTerraceSystems
 
         protected override void OnResume()
         {
+
             base.OnResume();
         }
 
@@ -50,6 +51,16 @@ namespace FirstTerraceSystems
             window.Deactivated += (s, e) =>
             {
                 Console.WriteLine("Deactivated");
+            };
+
+            window.Resumed += (s, e) =>
+            {
+                Console.WriteLine("Resumed");
+            };
+
+            window.Stopped += (s, e) =>
+            {
+                Console.WriteLine("Stopped");
             };
 
             return window;
