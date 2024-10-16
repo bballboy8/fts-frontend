@@ -22,7 +22,7 @@ namespace FirstTerraceSystems.WinUI
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
-        public static DateTime startDateDeactivated { get; private set; }
+        public static DateTime startDateDeactivated { get; private set; } = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
         [Inject] private IJSRuntime JSRuntime { get; set; }
         public App()
         {
@@ -83,10 +83,9 @@ namespace FirstTerraceSystems.WinUI
 
             if (access == Microsoft.Maui.Networking.NetworkAccess.None || access == Microsoft.Maui.Networking.NetworkAccess.Unknown)
             {
-                var UTCDate = DateTime.UtcNow;
                 startDateDeactivated = TimeZoneInfo
                     .ConvertTimeFromUtc(
-                        UTCDate,
+                        DateTime.UtcNow,
                         TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
                 Console.WriteLine("Deactivated");
                 Console.WriteLine("No internet connection.");

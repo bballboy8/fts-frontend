@@ -1738,22 +1738,22 @@ async function updateAllSymbols(symbols) {
 }
 
 async function refreshAllChartsIfOffline(startdate) {
-  let charts = Highcharts.charts.filter((hc) => hc);
+    let charts = Highcharts.charts.filter((hc) => hc);
+    debugger;
   for (let chart of charts) {
     if (chart) {
       chart.showLoading();
       try {
-        return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+        filtereddata = await ChatAppInterop.dotnetReference.invokeMethodAsync(
           "RefreshDataBasedOnStartDate",
-          symbol,
+          chart.series[0].name,
           startdate,
-          xAxisPixels,
-          yAxisPixels
+          chart.xAxis[0].width,
+          chart.yAxis[0].height
         );
       } catch (error) {
         console.error("Error fetching filtered data: ", error);
       }
-      filtereddata;
       setDataToChart(chart, filtereddata);
       chart.redraw();
       if (filtereddata.length > 0) {

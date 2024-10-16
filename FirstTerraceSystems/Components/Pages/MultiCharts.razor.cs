@@ -492,42 +492,41 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
         [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> RefreshDataBasedOnStartDate(string symbol, double startDate, int xAxisPixels, int yAxisPixels)
+        public async Task<IEnumerable<MarketFeed>?> RefreshDataBasedOnStartDate(string symbol, DateTime startDate, int xAxisPixels, int yAxisPixels)
         {
-            // Convert timestamps to DateTime objects
-            var startDateRange = UnixTimeStampToDateTime((long)startDate);
 
             // Check if datasets[symbol] contains data
-            if (datasets.ContainsKey(symbol) && datasets[symbol].Any())
-            {
-                // Get the minimum date present in the dataset
-                var minDateInDataset = datasets[symbol].Min(x => x.Date);
+            //if (datasets.ContainsKey(symbol) && datasets[symbol].Any())
+            //{
+            //    // Get the minimum date present in the dataset
+            //    var minDateInDataset = datasets[symbol].Min(x => x.Date);
 
-                // Ensure startDateRange is not less than the minimum date in the dataset
-                if (startDateRange < minDateInDataset)
-                {
-                    startDateRange = minDateInDataset;
-                }
-            }
+            //    // Ensure startDateRange is not less than the minimum date in the dataset
+            //    if (startDate < minDateInDataset)
+            //    {
+            //        startDate = minDateInDataset;
+            //    }
+            //}
 
             // Fetch and filter data in the old range but exclude data within the new range
             var filteredOldData = datasets[symbol]
-                .Where(x => x.Date < startDateRange && x.Price >= 0)
+                .Where(x => x.Date < startDate && x.Price >= 0)
                 .OrderBy(x => x.Date);
 
             // Calculate the number of data points to display using FilterData function
             var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
 
+            // Set startDate to 4 AM on the desired date in EST
+            DateTime startDateAtFourAM = new DateTime(startDate.Year, startDate.Month, startDate.Day, 4, 0, 0);
+
             // Fetch and sort additional data in the extended range (startDateRange to endDateRange)
-            var newData = await NasdaqService.NasdaqGetDataAsync(startDateRange, symbol);
+            var newData = await NasdaqService.NasdaqGetDataAsync(startDateAtFourAM, symbol);
 
             // Filter and combine both datasets (old and new data) ensuring there is no duplication
-            var combinedFiltered = oldFiltered.Union(newData.Where(x => x.Date >= startDateRange));
+            var combinedFiltered = oldFiltered.Union(newData.Where(x => x.Date >= startDate));
             var finalFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date);
 
             return finalFiltered;
-
-
         }
 
 

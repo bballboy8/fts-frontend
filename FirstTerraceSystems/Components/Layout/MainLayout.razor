@@ -18,8 +18,15 @@
     <main>
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register") && !NavigationManager.Uri.Contains("loading"))
         {
-            <div id="headbar" class="top-row px-4">
 
+           
+
+            <div id="headbar" class="top-row px-4">
+                <div class="market-time" style="border: 2px solid; padding-bottom: 20px !important; margin-bottom:20px !important; display: inline-block;">
+                    <button @onclick="RefreshContent" style="border: 2px solid; padding: 6px 8px; cursor: pointer; border-radius: 4px;">
+                        Refresh
+                    </button>
+                </div>
                 @* Display options code here *@
                 <div @ref="Er_DisplayOptions" class="dropdown" id="dropdownDisplayOptions">
                     <button class="btn btn-secondary dropdown-toggle layout-btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -196,6 +203,11 @@
         StateContainerService.IsAllowCloseAllWindows = true;
         WindowsSerivce.CloseAllOpenedWindows();
         await JSRuntime.InvokeVoidAsync("updateAllSymbols", ChartService.InitialChartSymbols.Where(x => x.IsVisible));
+    }
+
+    private async Task RefreshContent()
+    {
+        await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", App.startDateDeactivated);
     }
 
     public void Dispose()

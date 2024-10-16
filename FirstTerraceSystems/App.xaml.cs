@@ -8,7 +8,7 @@ namespace FirstTerraceSystems
 {
     public partial class App : Application
     {
-        public static DateTime startDateDeactivated { get; private set; }
+        public static DateTime startDateDeactivated { get; private set; } = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
         [Inject] private IJSRuntime JSRuntime { get; set; }
         public App()
         {
