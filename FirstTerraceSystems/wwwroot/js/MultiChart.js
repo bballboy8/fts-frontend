@@ -119,6 +119,10 @@ function addChart(
       borderColor: "#5B6970",
 
       events: {
+        selection: function (event) {
+          // Prevent default zoom behavior (box selection)
+          return false;
+        },
         load: function () {
           var chart = this;
           SetChartZoomActivate(chart, false);
@@ -713,6 +717,7 @@ function addChart(
         lineWidth: 0,
         opposite: false,
         tickPixelInterval: 160,
+        minRange: 60 * 1000,
       },
     ],
     yAxis: [
@@ -1020,6 +1025,9 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
     if (dotNetObject) {
       dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
     }
+
+    // chart.xAxis.min = chart.xAxis[0].dataMin;
+    // chart.xAxis.max = chart.xAxis[0].dataMax;
   } else {
     console.warn("Invalid zoom range. No zoom action performed.");
   }
@@ -1174,8 +1182,9 @@ function processDataPoint(data, previousPrice) {
   return {
     primaryKey: data.id,
     x: timeStamp, // Use the computed timestamp
-    y: data.price,
-    color: color, // Use the computed color
+    y: data.price == 0 ? previousPrice : data.price,
+    color: color, // Use the computed color,
+    marker: { enabled: data.price == 0 ? false : true },
   };
 }
 
@@ -1198,16 +1207,18 @@ function setDataToChart(
 
   seriesData.forEach((data, index) => {
     dataPoints.push(processDataPoint(data, previousPrice));
-    volumePoints.push({
-      x: new Date(data.date).getTime(),
-      y: Number(data.size),
-      color:
-        data.msgtype === "H"
-          ? "yellow"
-          : data.price > previousPrice
-          ? "green"
-          : "red",
-    });
+    if (data.size && Number(data.size) > 0) {
+      volumePoints.push({
+        x: new Date(data.date).getTime(),
+        y: Number(data.size),
+        color:
+          data.msgtype === "H"
+            ? "yellow"
+            : data.price > previousPrice
+            ? "green"
+            : "red",
+      });
+    }
     previousPrice = data.price;
   });
 
@@ -1236,6 +1247,22 @@ function addPointToChart(
   let lastPoint = null;
   let series = chart.series[0];
   let volumeSeries = chart.series[1];
+
+  // Case for handling a single point with price 0
+  if (seriesData.length === 1 && seriesData[0].price === 0) {
+    const data = seriesData[0]; // Get the single data point
+    const lastPoint = series.data[series.data.length - 1]; // Get the last point in the series
+    // Process the point with price 0 and add it if last point is different
+    const point = processDataPoint(data, lastPoint.y); // Use 0 as the previous price since there's no previous point
+    point.marker = { enabled: false }; // Hide the marker (point)
+    point.color = "transparent"; // Make the point invisible
+    point.enableMouseTracking = false; // Disable interaction for the point
+    series.addPoint(point, redraw, animateOnUpdate, {
+      visible: false, // Set the point as invisible
+    });
+    return; // Exit early since we're done with the single point
+  }
+
   // console.log(chart);
   seriesData.slice(1).forEach((data, index) => {
     const previousPrice = seriesData[index].price; // Get the previous price
@@ -1245,7 +1272,7 @@ function addPointToChart(
     const point = processDataPoint(data, previousPrice);
 
     // Add the volume data to the volume series with color based on the price comparison
-    if (data.size) {
+    if (data.size && Number(data.size) > 0) {
       const volumePoint = {
         x: new Date(data.date).getTime(),
         y: Number(data.size),
@@ -1254,7 +1281,8 @@ function addPointToChart(
             ? "yellow"
             : currentPrice > previousPrice
             ? "green"
-            : "red", // Set color conditionally
+            : "red", // Set color conditionally,
+        marker: { enabled: data.price == 0 ? false : true },
       };
       volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
     }
@@ -1796,3 +1824,25 @@ async function setButtonActive(e) {
     e.element.classList.add("active");
   }
 }
+
+// Function to fetch new data (this is just a placeholder)
+function fetchData() {
+  let charts = Highcharts.charts.filter((hc) => hc);
+
+  for (let chart of charts) {
+    if (chart && chart.series[0]?.name) {
+      symbol = chart.series[0].name;
+      var extremes = chart.xAxis[0].getExtremes();
+      setRangeByDate(
+        symbol,
+        extremes.min,
+        extremes.max,
+        chart.xAxis[0].dataMin,
+        chart.xAxis[0].dataMax
+      );
+    }
+  }
+}
+
+// Call fetchData every 8 seconds
+setInterval(fetchData, 60000);
