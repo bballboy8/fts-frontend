@@ -1105,8 +1105,9 @@ function processDataPoint(data, previousPrice) {
   return {
     primaryKey: data.id,
     x: timeStamp, // Use the computed timestamp
-    y: data.price,
-    color: color, // Use the computed color
+    y: data.price == 0 ? null : data.price,
+    color: color, // Use the computed color,
+    marker: { enabled: data.price == 0 ? false : true },
   };
 }
 
@@ -1167,6 +1168,40 @@ function addPointToChart(
   let lastPoint = null;
   let series = chart.series[0];
   let volumeSeries = chart.series[1];
+
+  // Case for handling a single point with price 0
+  if (seriesData.length === 1 && seriesData[0].price === 0) {
+    const data = seriesData[0]; // Get the single data point
+    const lastPoint = series.data[series.data.length - 1]; // Get the last point in the series
+
+    // Check if the last point has a price of 0 and size of 0
+    if (lastPoint && lastPoint.y === null) {
+      // Update the x value with the new datetime
+      lastPoint.update(new Date(data.date).getTime(), redraw, animateOnUpdate);
+      volumeSeries.data[series.data.length - 1].update(
+        new Date(data.date).getTime(),
+        redraw,
+        animateOnUpdate
+      );
+    } else {
+      // Process the point with price 0 and add it if last point is different
+      const point = processDataPoint(data, 0); // Use 0 as the previous price since there's no previous point
+
+      // Add the volume data to the volume series
+      if (data.size) {
+        const volumePoint = {
+          x: new Date(data.date).getTime(),
+          y: null,
+          color: "red", // Set color conditionally; could use any color for 0 price
+          marker: { enabled: false }, // Disable marker since price is 0
+        };
+        volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
+      }
+      series.addPoint(point, redraw, animateOnUpdate);
+    }
+    return; // Exit early since we're done with the single point
+  }
+
   // console.log(chart);
   seriesData.slice(1).forEach((data, index) => {
     const previousPrice = seriesData[index].price; // Get the previous price
@@ -1185,7 +1220,8 @@ function addPointToChart(
             ? "yellow"
             : currentPrice > previousPrice
             ? "green"
-            : "red", // Set color conditionally
+            : "red", // Set color conditionally,
+        marker: { enabled: data.price == 0 ? false : true },
       };
       volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
     }
@@ -1595,111 +1631,106 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     chartBoxClass = "chart-box-" + chartIndx;
   var chartBox = $(
     `<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
-    );
-
-
+  );
 
   $(element).append(chartBox);
 
+  var chart = addChart(1, chartContainerId, [], symbol, false, dotNetObject);
 
+  var endDate = new Date(); // Current date and time
 
-    var chart = addChart(1, chartContainerId, [], symbol, false, dotNetObject);
+  // Calculate the start date as 3 days before the current date
+  var startDate = new Date();
+  startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
 
-    var endDate = new Date(); // Current date and time
+  for (
+    var date = new Date(startDate);
+    date <= endDate;
+    date.setDate(date.getDate() + 1)
+  ) {
+    var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-    // Calculate the start date as 3 days before the current date
-    var startDate = new Date();
-    startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
+    if (dayOfWeek === 5) {
+      plotLines.push({
+        color: "white",
+        width: 2,
+        value: new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          20,
+          0
+        ), // 8 PM
+        zIndex: 5,
+      });
 
-    for (
-        var date = new Date(startDate);
-        date <= endDate;
-        date.setDate(date.getDate() + 1)
-    ) {
-        var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      var todate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        4,
+        0
+      );
+      todate.setDate(todate.getDate() + 3);
+      plotbreaks.push({
+        from: Math.floor(
+          new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            20,
+            0
+          ).getTime()
+        ), // 20170131
+        to: Math.floor(todate.getTime()), // 20180101
+        breakSize: 0,
+      });
+      //console.log("pb:" + plotbreaks[0]);
+    } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
+      // 8 PM EST/EDT on the current day
+      plotLines.push({
+        color: "white",
+        width: 2,
+        value: new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          20,
+          0
+        ), // 8 PM
+        zIndex: 5,
+      });
+      var todate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        4,
+        0
+      );
+      todate.setDate(todate.getDate() + 1);
 
-        if (dayOfWeek === 5) {
-            plotLines.push({
-                color: "white",
-                width: 2,
-                value: new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    20,
-                    0
-                ), // 8 PM
-                zIndex: 5,
-            });
-
-            var todate = new Date(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                4,
-                0
-            );
-            todate.setDate(todate.getDate() + 3);
-            plotbreaks.push({
-                from: Math.floor(
-                    new Date(
-                        date.getFullYear(),
-                        date.getMonth(),
-                        date.getDate(),
-                        20,
-                        0
-                    ).getTime()
-                ), // 20170131
-                to: Math.floor(todate.getTime()), // 20180101
-                breakSize: 0,
-            });
-            //console.log("pb:" + plotbreaks[0]);
-        } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
-            // 8 PM EST/EDT on the current day
-            plotLines.push({
-                color: "white",
-                width: 2,
-                value: new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    20,
-                    0
-                ), // 8 PM
-                zIndex: 5,
-            });
-            var todate = new Date(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                4,
-                0
-            );
-            todate.setDate(todate.getDate() + 1);
-
-            plotbreaks.push({
-                from: Math.floor(
-                    new Date(
-                        date.getFullYear(),
-                        date.getMonth(),
-                        date.getDate(),
-                        20,
-                        0
-                    ).getTime()
-                ), // 20170131
-                to: Math.floor(todate.getTime()), // 20180101
-                breakSize: 0,
-            });
-        }
+      plotbreaks.push({
+        from: Math.floor(
+          new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            20,
+            0
+          ).getTime()
+        ), // 20170131
+        to: Math.floor(todate.getTime()), // 20180101
+        breakSize: 0,
+      });
     }
+  }
 
-
-    // Add plotLines and plotBands to the chart
-    chart.xAxis[0].update({
-        plotLines: plotLines,
-        plotBands: plotBands,
-        breaks: plotbreaks,
-    });
+  // Add plotLines and plotBands to the chart
+  chart.xAxis[0].update({
+    plotLines: plotLines,
+    plotBands: plotBands,
+    breaks: plotbreaks,
+  });
 
   removeWindowControlButtonsFromChart();
 }
