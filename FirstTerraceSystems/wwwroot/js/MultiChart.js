@@ -88,6 +88,10 @@ function addChart(
       borderColor: "#5B6970",
 
       events: {
+        selection: function (event) {
+          // Prevent default zoom behavior (box selection)
+          return false;
+        },
         load: function () {
           var chart = this;
           // console.log("chart: ", chart);
@@ -677,6 +681,7 @@ function addChart(
         lineWidth: 0,
         opposite: false,
         tickPixelInterval: 160,
+        minRange: 60 * 1000,
       },
     ],
     yAxis: [
@@ -974,6 +979,9 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
     if (dotNetObject) {
       dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
     }
+
+    // chart.xAxis.min = chart.xAxis[0].dataMin;
+    // chart.xAxis.max = chart.xAxis[0].dataMax;
   } else {
     console.warn("Invalid zoom range. No zoom action performed.");
   }
@@ -1129,16 +1137,18 @@ function setDataToChart(
 
   seriesData.forEach((data, index) => {
     dataPoints.push(processDataPoint(data, previousPrice));
-    volumePoints.push({
-      x: new Date(data.date).getTime(),
-      y: Number(data.size),
-      color:
-        data.msgtype === "H"
-          ? "yellow"
-          : data.price > previousPrice
-          ? "green"
-          : "red",
-    });
+    if (data.size && Number(data.size) > 0) {
+      volumePoints.push({
+        x: new Date(data.date).getTime(),
+        y: Number(data.size),
+        color:
+          data.msgtype === "H"
+            ? "yellow"
+            : data.price > previousPrice
+            ? "green"
+            : "red",
+      });
+    }
     previousPrice = data.price;
   });
 
@@ -1176,7 +1186,7 @@ function addPointToChart(
     const point = processDataPoint(data, previousPrice);
 
     // Add the volume data to the volume series with color based on the price comparison
-    if (data.size) {
+    if (data.size && Number(data.size) > 0) {
       const volumePoint = {
         x: new Date(data.date).getTime(),
         y: Number(data.size),
@@ -1595,111 +1605,106 @@ function popoutChartWindow(dotNetObject, element, chartIndx, symbol) {
     chartBoxClass = "chart-box-" + chartIndx;
   var chartBox = $(
     `<div class="chart-box ${chartBoxClass} vh-100"><div class="chart-container" id="${chartContainerId}" data-chart-id="${chartIndx}" ></div></div>`
-    );
-
-
+  );
 
   $(element).append(chartBox);
 
+  var chart = addChart(1, chartContainerId, [], symbol, false, dotNetObject);
 
+  var endDate = new Date(); // Current date and time
 
-    var chart = addChart(1, chartContainerId, [], symbol, false, dotNetObject);
+  // Calculate the start date as 3 days before the current date
+  var startDate = new Date();
+  startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
 
-    var endDate = new Date(); // Current date and time
+  for (
+    var date = new Date(startDate);
+    date <= endDate;
+    date.setDate(date.getDate() + 1)
+  ) {
+    var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-    // Calculate the start date as 3 days before the current date
-    var startDate = new Date();
-    startDate.setDate(endDate.getDate() - 3); // Subtract 3 days
+    if (dayOfWeek === 5) {
+      plotLines.push({
+        color: "white",
+        width: 2,
+        value: new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          20,
+          0
+        ), // 8 PM
+        zIndex: 5,
+      });
 
-    for (
-        var date = new Date(startDate);
-        date <= endDate;
-        date.setDate(date.getDate() + 1)
-    ) {
-        var dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      var todate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        4,
+        0
+      );
+      todate.setDate(todate.getDate() + 3);
+      plotbreaks.push({
+        from: Math.floor(
+          new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            20,
+            0
+          ).getTime()
+        ), // 20170131
+        to: Math.floor(todate.getTime()), // 20180101
+        breakSize: 0,
+      });
+      //console.log("pb:" + plotbreaks[0]);
+    } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
+      // 8 PM EST/EDT on the current day
+      plotLines.push({
+        color: "white",
+        width: 2,
+        value: new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          20,
+          0
+        ), // 8 PM
+        zIndex: 5,
+      });
+      var todate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        4,
+        0
+      );
+      todate.setDate(todate.getDate() + 1);
 
-        if (dayOfWeek === 5) {
-            plotLines.push({
-                color: "white",
-                width: 2,
-                value: new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    20,
-                    0
-                ), // 8 PM
-                zIndex: 5,
-            });
-
-            var todate = new Date(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                4,
-                0
-            );
-            todate.setDate(todate.getDate() + 3);
-            plotbreaks.push({
-                from: Math.floor(
-                    new Date(
-                        date.getFullYear(),
-                        date.getMonth(),
-                        date.getDate(),
-                        20,
-                        0
-                    ).getTime()
-                ), // 20170131
-                to: Math.floor(todate.getTime()), // 20180101
-                breakSize: 0,
-            });
-            //console.log("pb:" + plotbreaks[0]);
-        } else if (dayOfWeek !== 6 && dayOfWeek !== 0) {
-            // 8 PM EST/EDT on the current day
-            plotLines.push({
-                color: "white",
-                width: 2,
-                value: new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate(),
-                    20,
-                    0
-                ), // 8 PM
-                zIndex: 5,
-            });
-            var todate = new Date(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                4,
-                0
-            );
-            todate.setDate(todate.getDate() + 1);
-
-            plotbreaks.push({
-                from: Math.floor(
-                    new Date(
-                        date.getFullYear(),
-                        date.getMonth(),
-                        date.getDate(),
-                        20,
-                        0
-                    ).getTime()
-                ), // 20170131
-                to: Math.floor(todate.getTime()), // 20180101
-                breakSize: 0,
-            });
-        }
+      plotbreaks.push({
+        from: Math.floor(
+          new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            20,
+            0
+          ).getTime()
+        ), // 20170131
+        to: Math.floor(todate.getTime()), // 20180101
+        breakSize: 0,
+      });
     }
+  }
 
-
-    // Add plotLines and plotBands to the chart
-    chart.xAxis[0].update({
-        plotLines: plotLines,
-        plotBands: plotBands,
-        breaks: plotbreaks,
-    });
+  // Add plotLines and plotBands to the chart
+  chart.xAxis[0].update({
+    plotLines: plotLines,
+    plotBands: plotBands,
+    breaks: plotbreaks,
+  });
 
   removeWindowControlButtonsFromChart();
 }
@@ -1868,3 +1873,25 @@ async function setButtonActive(e) {
     e.element.classList.add("active");
   }
 }
+
+// Function to fetch new data (this is just a placeholder)
+function fetchData() {
+  let charts = Highcharts.charts.filter((hc) => hc);
+
+  for (let chart of charts) {
+    if (chart && chart.series[0]?.name) {
+      symbol = chart.series[0].name;
+      var extremes = chart.xAxis[0].getExtremes();
+      setRangeByDate(
+        symbol,
+        extremes.min,
+        extremes.max,
+        chart.xAxis[0].dataMin,
+        chart.xAxis[0].dataMax
+      );
+    }
+  }
+}
+
+// Call fetchData every 8 seconds
+setInterval(fetchData, 60000);
