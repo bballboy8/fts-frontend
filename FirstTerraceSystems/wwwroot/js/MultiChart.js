@@ -1755,12 +1755,10 @@ async function refreshAllChartsIfOffline(startdate) {
         console.error("Error fetching filtered data: ", error);
       }
       setDataToChart(chart, filtereddata);
-      chart.redraw();
+     // chart.redraw();
       if (filtereddata.length > 0) {
         SetChartZoomActivate(chart, false);
       }
-
-      chart.redraw();
       chart.hideLoading();
     }
   }

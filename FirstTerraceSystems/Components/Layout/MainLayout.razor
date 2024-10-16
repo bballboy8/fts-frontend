@@ -1,6 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Authorization
 @inherits LayoutComponentBase
-
 @inject NavigationManager NavigationManager
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthStateProvider
@@ -22,11 +21,11 @@
            
 
             <div id="headbar" class="top-row px-4">
-                <div class="market-time" style="border: 2px solid; padding-bottom: 20px !important; margin-bottom:20px !important; display: inline-block;">
+               @*  <div class="market-time" style="border: 2px solid; padding-bottom: 20px !important; margin-bottom:20px !important; display: inline-block;">
                     <button @onclick="RefreshContent" style="border: 2px solid; padding: 6px 8px; cursor: pointer; border-radius: 4px;">
                         Refresh
                     </button>
-                </div>
+                </div> *@
                 @* Display options code here *@
                 <div @ref="Er_DisplayOptions" class="dropdown" id="dropdownDisplayOptions">
                     <button class="btn btn-secondary dropdown-toggle layout-btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -81,11 +80,12 @@
 </div>
 
 @code {
-
+    public static DateTime startDateDeactivated { get; private set; } =
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
     private bool IsDarkMode = true;
     private ElementReference Er_DisplayOptions { get; set; }
     private string? currentTime;
-    private string MarketStatus = "Closed";
+    public static string MarketStatus = "Closed";
     private void ToggleDarkMode(bool value)
     {
         IsDarkMode = value;
@@ -166,8 +166,30 @@
                 // NavigationManager.NavigateTo("/stockchart");
             }
         }
-
+        var current = Connectivity.Current;
+        current.ConnectivityChanged += Connectivity_ConnectivityChanged;
         await JSRuntime.InvokeVoidAsync("LoadKeyBordEventToDisplayOptions", Er_DisplayOptions, ChartService.InitialChartSymbols);
+    }
+
+    private async void Connectivity_ConnectivityChanged(object sender, ConnectivityChangedEventArgs e)
+    {
+        var access = e.NetworkAccess;
+
+        if (access == Microsoft.Maui.Networking.NetworkAccess.None || access == Microsoft.Maui.Networking.NetworkAccess.Unknown)
+        {
+            startDateDeactivated = TimeZoneInfo
+                .ConvertTimeFromUtc(
+                    DateTime.UtcNow,
+                    TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+            Console.WriteLine("Deactivated");
+            Console.WriteLine("No internet connection.");
+        }
+        else if (access == Microsoft.Maui.Networking.NetworkAccess.Internet)
+        {
+
+            RefreshContent();
+            Console.WriteLine("Internet connection available.");
+        }
     }
 
     private async Task Logout()
@@ -204,10 +226,11 @@
         WindowsSerivce.CloseAllOpenedWindows();
         await JSRuntime.InvokeVoidAsync("updateAllSymbols", ChartService.InitialChartSymbols.Where(x => x.IsVisible));
     }
-
-    private async Task RefreshContent()
+    
+    public void RefreshContent()
     {
-        await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", App.startDateDeactivated);
+        Console.WriteLine("Hii");
+        JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", startDateDeactivated);
     }
 
     public void Dispose()

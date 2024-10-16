@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using BlazorBootstrap;
+using FirstTerraceSystems.Components.Layout;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
@@ -494,21 +495,17 @@ namespace FirstTerraceSystems.Components.Pages
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> RefreshDataBasedOnStartDate(string symbol, DateTime startDate, int xAxisPixels, int yAxisPixels)
         {
+            // Convert current UTC time to EST
+            var currentDateTimeEST = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
-            // Check if datasets[symbol] contains data
-            //if (datasets.ContainsKey(symbol) && datasets[symbol].Any())
-            //{
-            //    // Get the minimum date present in the dataset
-            //    var minDateInDataset = datasets[symbol].Min(x => x.Date);
+           
+            // Set startDate to 4 AM on the desired date in EST
+            DateTime startDateAtFourAM = new DateTime(startDate.Year, startDate.Month, startDate.Day, 4, 0, 0);
 
-            //    // Ensure startDateRange is not less than the minimum date in the dataset
-            //    if (startDate < minDateInDataset)
-            //    {
-            //        startDate = minDateInDataset;
-            //    }
-            //}
+            // Ensure startDate is not less than the current EST time and set it to 4 AM if it's not
+            startDate = MainLayout.MarketStatus == "Closed" ? startDateAtFourAM.AddDays(-1) : startDate; //startDate < currentDateTimeEST ? startDateAtFourAM : startDate;
 
-            // Fetch and filter data in the old range but exclude data within the new range
+            // Fetch and filter old data before startDate, ensuring no negative prices
             var filteredOldData = datasets[symbol]
                 .Where(x => x.Date < startDate && x.Price >= 0)
                 .OrderBy(x => x.Date);
@@ -516,17 +513,23 @@ namespace FirstTerraceSystems.Components.Pages
             // Calculate the number of data points to display using FilterData function
             var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
 
-            // Set startDate to 4 AM on the desired date in EST
-            DateTime startDateAtFourAM = new DateTime(startDate.Year, startDate.Month, startDate.Day, 4, 0, 0);
+            // Fetch and sort additional data from 4 AM onwards (in the extended range)
+            await LoadThreeDayData(symbol, startDate);
 
-            // Fetch and sort additional data in the extended range (startDateRange to endDateRange)
-            var newData = await NasdaqService.NasdaqGetDataAsync(startDateAtFourAM, symbol);
+            var filteredNewData = datasets[symbol]
+                .Where(x => x.Date >= startDate && x.Price >= 0)
+                .OrderBy(x => x.Date);
 
-            // Filter and combine both datasets (old and new data) ensuring there is no duplication
-            var combinedFiltered = oldFiltered.Union(newData.Where(x => x.Date >= startDate));
+            // Combine old and new datasets, avoiding duplicates
+            var combinedFiltered = oldFiltered.Union(filteredNewData.Where(x => x.Date >= startDate));
+
+            // Filter the combined dataset to match the desired EST time range and sort by date
             var finalFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date);
 
+            datasets[symbol] = finalFiltered.ToList();
+
             return finalFiltered;
+
         }
 
 
@@ -739,5 +742,6 @@ namespace FirstTerraceSystems.Components.Pages
             return null;
         }
 
+       
     }
 }
