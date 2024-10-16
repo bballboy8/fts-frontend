@@ -1105,7 +1105,7 @@ function processDataPoint(data, previousPrice) {
   return {
     primaryKey: data.id,
     x: timeStamp, // Use the computed timestamp
-    y: data.price == 0 ? null : data.price,
+    y: data.price == 0 ? previousPrice : data.price,
     color: color, // Use the computed color,
     marker: { enabled: data.price == 0 ? false : true },
   };
@@ -1175,28 +1175,17 @@ function addPointToChart(
     const lastPoint = series.data[series.data.length - 1]; // Get the last point in the series
 
     // Check if the last point has a price of 0 and size of 0
-    if (lastPoint && lastPoint.y === null) {
+    if (false && lastPoint && !lastPoint.marker.enabled) {
       // Update the x value with the new datetime
-      lastPoint.update(new Date(data.date).getTime(), redraw, animateOnUpdate);
-      volumeSeries.data[series.data.length - 1].update(
-        new Date(data.date).getTime(),
+      lastPoint.update(
+        [new Date(data.date).getTime(), lastPoint.y],
         redraw,
         animateOnUpdate
       );
+      lastPoint.marker.enabled = false;
     } else {
       // Process the point with price 0 and add it if last point is different
-      const point = processDataPoint(data, 0); // Use 0 as the previous price since there's no previous point
-
-      // Add the volume data to the volume series
-      if (data.size) {
-        const volumePoint = {
-          x: new Date(data.date).getTime(),
-          y: null,
-          color: "red", // Set color conditionally; could use any color for 0 price
-          marker: { enabled: false }, // Disable marker since price is 0
-        };
-        volumeSeries.addPoint(volumePoint, redraw, animateOnUpdate);
-      }
+      const point = processDataPoint(data, lastPoint.y); // Use 0 as the previous price since there's no previous point
       series.addPoint(point, redraw, animateOnUpdate);
     }
     return; // Exit early since we're done with the single point
@@ -1573,7 +1562,7 @@ function loadDashboard(totalCharts, initialChartSymbols) {
         date.getFullYear(),
         date.getMonth(),
         date.getDate(),
-        4,
+        2,
         0
       );
       todate.setDate(todate.getDate() + 1);
