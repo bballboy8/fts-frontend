@@ -1574,7 +1574,7 @@ function generatePlotLinesAndBreaks(startDate, endDate) {
           date.getDate(),
           20, // 8 PM
           0 // 0 minutes
-        ),
+        ).getTime(),
         zIndex: 5, // z-index for stacking order
       });
 
