@@ -1535,7 +1535,8 @@ function generatePlotLinesAndBreaks(startDate, endDate) {
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
       plotLines.push({
         color: "white", // Color of the line
-        width: 2, // Width of the line
+          width: 2, // Width of the line
+          dashStyle: 'Dot', 
         value: new Date( // Value where to draw the line
           date.getFullYear(),
           date.getMonth(),
