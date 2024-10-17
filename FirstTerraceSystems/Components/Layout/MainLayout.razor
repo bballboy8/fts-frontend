@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Authorization
+@using System.Timers
 @inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 @inject IAuthenticationService AuthenticationService
@@ -80,8 +81,10 @@
 </div>
 
 @code {
-    public static DateTime startDateDeactivated { get; private set; } =
-            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+    private DateTime _lastCallTime; // Track the last time the jQuery function was called
+    private const double CheckInterval = 20000; // 20 seconds in milliseconds
+    private Timer _connectivityTimer;
+    private bool IsConnected = true;
     private bool IsDarkMode = true;
     private ElementReference Er_DisplayOptions { get; set; }
     private string? currentTime;
@@ -114,32 +117,35 @@
 
     private async void UpdateTime()
     {
-        List<HolidayList> holidayList = await NasdaqService.GetHolidays();
-        var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-        var coreMarketStartTime = new TimeSpan(9, 30, 0); // 9:30 AM
-        var coreMarketEndTime = new TimeSpan(16, 0, 0);   // 4:00 PM
-        var timeOfDay = estTime.TimeOfDay;
-        var dayOfWeek = estTime.DayOfWeek;
-
-        if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+        if (IsConnected)
         {
-            MarketStatus = "Closed"; // Market is closed on weekends
-        }
-        else if (timeOfDay >= coreMarketStartTime && timeOfDay <= coreMarketEndTime)
-        {
-            MarketStatus = "Open"; // Market is open during core hours on weekdays
-        }
-        else
-        {
-            MarketStatus = "Closed"; // Market is closed outside of core hours
-        }
+            List<HolidayList> holidayList = await NasdaqService.GetHolidays();
+            var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+            var coreMarketStartTime = new TimeSpan(9, 30, 0); // 9:30 AM
+            var coreMarketEndTime = new TimeSpan(16, 0, 0);   // 4:00 PM
+            var timeOfDay = estTime.TimeOfDay;
+            var dayOfWeek = estTime.DayOfWeek;
 
-        // if (holidayList.Where(x => DateTime.Parse(x.date_time).Date == estTime.Date).Any())
-        // {
-        //     MarketStatus = "Closed";
-        // }
+            if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+            {
+                MarketStatus = "Closed"; // Market is closed on weekends
+            }
+            else if (timeOfDay >= coreMarketStartTime && timeOfDay <= coreMarketEndTime)
+            {
+                MarketStatus = "Open"; // Market is open during core hours on weekdays
+            }
+            else
+            {
+                MarketStatus = "Closed"; // Market is closed outside of core hours
+            }
 
-        currentTime = estTime.ToString("h:mm tt EST");
+            // if (holidayList.Where(x => DateTime.Parse(x.date_time).Date == estTime.Date).Any())
+            // {
+            //     MarketStatus = "Closed";
+            // }
+
+            currentTime = estTime.ToString("h:mm tt EST");
+        }
         InvokeAsync(StateHasChanged);
     }
 
@@ -167,30 +173,103 @@
             }
         }
         var current = Connectivity.Current;
-        current.ConnectivityChanged += Connectivity_ConnectivityChanged;
+        InitializeConnectivityCheck();
+
         await JSRuntime.InvokeVoidAsync("LoadKeyBordEventToDisplayOptions", Er_DisplayOptions, ChartService.InitialChartSymbols);
     }
 
-    private async void Connectivity_ConnectivityChanged(object sender, ConnectivityChangedEventArgs e)
+    private void InitializeConnectivityCheck()
     {
-        var access = e.NetworkAccess;
+        // Initialize last call time to the current time
+        _lastCallTime = DateTime.Now;
 
-        if (access == Microsoft.Maui.Networking.NetworkAccess.None || access == Microsoft.Maui.Networking.NetworkAccess.Unknown)
-        {
-            startDateDeactivated = TimeZoneInfo
-                .ConvertTimeFromUtc(
-                    DateTime.UtcNow,
-                    TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-            Console.WriteLine("Deactivated");
-            Console.WriteLine("No internet connection.");
-        }
-        else if (access == Microsoft.Maui.Networking.NetworkAccess.Internet)
-        {
-
-            RefreshContent();
-            Console.WriteLine("Internet connection available.");
-        }
+        // Set up the timer to check every 5 seconds
+        _connectivityTimer = new Timer(7000);
+        _connectivityTimer.Elapsed += CheckConnectivity;
+        _connectivityTimer.AutoReset = true; // Ensure the timer repeats
+        _connectivityTimer.Start();
     }
+
+    private async void CheckConnectivity(object sender, ElapsedEventArgs e)
+    {
+        // var current = Connectivity.Current;
+        // var isConnected = current.NetworkAccess == NetworkAccess.Internet;
+
+        // // Calculate the elapsed time as a TimeSpan
+        // TimeSpan elapsed = DateTime.Now - _lastCallTime;
+
+        // // Convert TotalMilliseconds to long for comparison
+        // long totalMilliseconds = Convert.ToInt64(elapsed.TotalMilliseconds);
+
+        // // Check if the elapsed time in milliseconds is greater than CheckInterval
+        // if (totalMilliseconds > CheckInterval)
+        // {
+        //     // Update the last call time
+        //     _lastCallTime = DateTime.Now;
+
+        //     // Call the jQuery function if connected
+        //     if (isConnected)
+        //     {
+        //         await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", _lastCallTime);
+        //     }
+        // }
+
+        var current = Connectivity.Current;
+        var isConnected = current.NetworkAccess == NetworkAccess.Internet;
+
+        // Calculate the elapsed time since the last call
+        TimeSpan elapsed = DateTime.Now - _lastCallTime;
+
+        // Get the total milliseconds as a double
+        double totalMilliseconds = elapsed.TotalMilliseconds;
+
+        // Debug: Log the current time and last call time for verification
+        Console.WriteLine($"Current Time: {DateTime.Now}, Last Call Time: {_lastCallTime}, Elapsed Milliseconds: {totalMilliseconds}");
+
+        // Check if the elapsed time in milliseconds is greater than CheckInterval
+        if (isConnected && MarketStatus == "Open")
+        {
+            if (totalMilliseconds > CheckInterval)
+            {
+                // Update the last call time
+                _lastCallTime = DateTime.Now;
+                // Debug: Log the updated last call time
+                Console.WriteLine($"Updating Last Call Time: {_lastCallTime}");
+
+                // Call the jQuery function if connected
+                await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", _lastCallTime);
+            }
+            IsConnected = true;
+            // Update the last call time
+            _lastCallTime = DateTime.Now;
+        }
+        else
+        {
+            IsConnected = false;
+        }
+
+    }
+
+    // private async void Connectivity_ConnectivityChanged(object sender, ConnectivityChangedEventArgs e)
+    // {
+    //     var access = e.NetworkAccess;
+
+    //     if (access == Microsoft.Maui.Networking.NetworkAccess.None || access == Microsoft.Maui.Networking.NetworkAccess.Unknown)
+    //     {
+    //         startDateDeactivated = TimeZoneInfo
+    //             .ConvertTimeFromUtc(
+    //                 DateTime.UtcNow,
+    //                 TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+    //         Console.WriteLine("Deactivated");
+    //         Console.WriteLine("No internet connection.");
+    //     }
+    //     else if (access == Microsoft.Maui.Networking.NetworkAccess.Internet)
+    //     {
+
+    //         RefreshContent();
+    //         Console.WriteLine("Internet connection available.");
+    //     }
+    // }
 
     private async Task Logout()
     {
@@ -227,11 +306,11 @@
         await JSRuntime.InvokeVoidAsync("updateAllSymbols", ChartService.InitialChartSymbols.Where(x => x.IsVisible));
     }
     
-    public void RefreshContent()
-    {
-        Console.WriteLine("Hii");
-        JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", startDateDeactivated);
-    }
+    // public void RefreshContent()
+    // {
+    //     Console.WriteLine("Hii");
+    //     JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", startDateDeactivated);
+    // }
 
     public void Dispose()
     {

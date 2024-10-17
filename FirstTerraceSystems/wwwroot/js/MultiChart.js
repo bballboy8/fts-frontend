@@ -1744,22 +1744,23 @@ async function refreshAllChartsIfOffline(startdate) {
     if (chart) {
       chart.showLoading();
       try {
-        filtereddata = await ChatAppInterop.dotnetReference.invokeMethodAsync(
+          let filtereddata = await ChatAppInterop.dotnetReference.invokeMethodAsync(
           "RefreshDataBasedOnStartDate",
           chart.series[0].name,
           startdate,
           chart.xAxis[0].width,
           chart.yAxis[0].height
-        );
+          );
+          setDataToChart(chart, filtereddata);
+          chart.redraw();
+          if (filtereddata.length > 0) {
+              SetChartZoomActivate(chart, false);
+          }
+          chart.hideLoading();
       } catch (error) {
         console.error("Error fetching filtered data: ", error);
       }
-      setDataToChart(chart, filtereddata);
-     // chart.redraw();
-      if (filtereddata.length > 0) {
-        SetChartZoomActivate(chart, false);
-      }
-      chart.hideLoading();
+     
     }
   }
 }
