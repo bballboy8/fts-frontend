@@ -1801,29 +1801,28 @@ async function updateBySymbolName(symbol) {
 }
 
 async function refreshAllChartsIfOffline(startdate) {
-    let charts = Highcharts.charts.filter((hc) => hc);
-    debugger;
+  let charts = Highcharts.charts.filter((hc) => hc);
+  debugger;
   for (let chart of charts) {
     if (chart) {
-      chart.showLoading();
+      showCustomLoading(chart);
       try {
-          let filtereddata = await ChatAppInterop.dotnetReference.invokeMethodAsync(
-          "RefreshDataBasedOnStartDate",
-          chart.series[0].name,
-          startdate,
-          chart.xAxis[0].width,
-          chart.yAxis[0].height
+        let filtereddata =
+          await ChatAppInterop.dotnetReference.invokeMethodAsync(
+            "RefreshDataBasedOnStartDate",
+            chart.series[0].name,
+            startdate,
+            chart.xAxis[0].width,
+            chart.yAxis[0].height
           );
-          setDataToChart(chart, filtereddata);
-          chart.redraw();
-          if (filtereddata.length > 0) {
-              SetChartZoomActivate(chart, false);
-          }
-          chart.hideLoading();
+        setDataToChart(chart, filtereddata);
+        if (filtereddata.length > 0) {
+          SetChartZoomActivate(chart, false);
+        }
+        hideCustomLoading(chart);
       } catch (error) {
         console.error("Error fetching filtered data: ", error);
       }
-     
     }
   }
 }
