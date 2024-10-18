@@ -37,7 +37,6 @@ namespace FirstTerraceSystems.Repositories
                 return null;
             }
         }
-
         public MarketFeed? GetExistsSymbol(string? symbol)
         {
             if (string.IsNullOrEmpty(symbol)) return null;

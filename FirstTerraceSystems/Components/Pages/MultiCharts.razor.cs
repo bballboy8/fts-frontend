@@ -269,6 +269,8 @@ namespace FirstTerraceSystems.Components.Pages
 
         private async Task UpdateUI()
         {
+            var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
             while (true)
             {
                 await Task.Delay(1000);
@@ -279,21 +281,55 @@ namespace FirstTerraceSystems.Components.Pages
                                     .Select(x => x.Symbol)
                                     .ToHashSet();
 
+                DateTime currentEasternTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, easternTimeZone);
+
+                // Check if the current time is between 4 AM and 8 PM
+                bool isWorkingHours = currentEasternTime.Hour >= 4 && currentEasternTime.Hour < 20;
+
+                // Check if the current date is a working day (Monday to Friday)
+                bool isWorkingDay = currentEasternTime.DayOfWeek != DayOfWeek.Saturday && currentEasternTime.DayOfWeek != DayOfWeek.Sunday;
+
                 lock (_lock)
                 {
-                    foreach (var data in collection)
+                    foreach (var symbol in visibleSymbols)
                     {
-                        if (data.Value.Count != 0 && visibleSymbols.Contains(data.Key))
+                        List<MarketFeed> chartData;
+
+                        if (collection.ContainsKey(symbol) && collection[symbol].Count != 0)
                         {
-                            JSRuntime.InvokeVoidAsync("refreshCharts", data.Key, data.Value.ToList());
-                            collection[data.Key].Clear();
+                            // Use the actual data from collection
+                            chartData = collection[symbol].ToList();
+                            collection[symbol].Clear();
                         }
+                        else if (isWorkingHours && isWorkingDay)
+                        {
+                            // Create temporary placeholder data
+                            chartData = new List<MarketFeed>
+                                {
+                                    new MarketFeed
+                                    {
+                                        Symbol = symbol,
+                                        Price = 0,  // Set the price to zero as a placeholder
+                                        Date = currentEasternTime,  // Use the current date and time
+                                        Size = "0"  // Include volume or other necessary data
+                                    }
+                                };
+                        }
+                        else
+                        {
+                            // If not working hours or not a working day, skip sending data
+                            continue;
+                        }
+
+                        // Send the chart data (either actual or placeholder)
+                        JSRuntime.InvokeVoidAsync("refreshCharts", symbol, chartData);
                     }
                 }
 
                 OnWait = false;
             }
         }
+
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetChartDataBySymbol(string symbol, DataPoint? lastPoint)
