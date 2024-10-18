@@ -546,30 +546,31 @@ namespace FirstTerraceSystems.Components.Pages
                 // startDate = MainLayout.MarketStatus == "Closed" ? startDateAtFourAM.AddDays(-1) : startDate; //startDate < currentDateTimeEST ? startDateAtFourAM : startDate;
 
                 // Fetch and filter old data before startDate, ensuring no negative prices
-                var filteredOldData = datasets[symbol]
+                var oldData = datasets[symbol]
                     .Where(x => x.Date < startDate && x.Price >= 0)
                     .OrderBy(x => x.Date);
 
                 // Calculate the number of data points to display using FilterData function
-                var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
+                var oldFiltered = FilterData(oldData, xAxisPixels, yAxisPixels);
                 // Fetch and sort additional data from 4 AM onwards (in the extended range)
                 await LoadThreeDayData(symbol, startDate);
 
-                var filteredNewData = datasets[symbol]
+                var newData = datasets[symbol]
                 .Where(x => x.Date >= startDate && x.Price >= 0)
                 .OrderBy(x => x.Date);
 
+                var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
+
                 // Combine old and new datasets, avoiding duplicates
-                var combinedFiltered = oldFiltered.Union(filteredNewData.Where(x => x.Date >= startDate));
+                var combinedFiltered = oldFiltered.Union(newFiltered.Where(x => x.Date >= startDate));
 
                 // Filter the combined dataset to match the desired EST time range and sort by date
-                oldFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
-                var finalData = filteredOldData.Union(filteredNewData.Where(x => x.Date >= startDate));
-                datasets[symbol] = finalData.ToList();
+                var finalData = oldData.Union(newData.Where(x => x.Date >= startDate));
+                datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
 
-                return oldFiltered;
+
+                return FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
             }
-
             return FilterData(datasets[symbol], xAxisPixels, yAxisPixels).ToList();
 
         }
