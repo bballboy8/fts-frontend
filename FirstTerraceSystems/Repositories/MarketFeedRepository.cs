@@ -168,7 +168,6 @@ namespace FirstTerraceSystems.Repositories
                 CreateTableAndIndexes(groupedMarketFeeds.Key!);
                 foreach (var batch in groupedMarketFeeds.Chunk(InsertBatchSize))
                 {
-
                     await InsertRecordsBatchAsync(groupedMarketFeeds.Key!, batch).ConfigureAwait(false);
                 }
 

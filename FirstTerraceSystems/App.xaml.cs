@@ -1,5 +1,7 @@
 ﻿using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using System.Net.WebSockets;
 
 namespace FirstTerraceSystems
@@ -15,6 +17,7 @@ namespace FirstTerraceSystems
 
         protected override void OnResume()
         {
+
             base.OnResume();
         }
 
@@ -49,6 +52,7 @@ namespace FirstTerraceSystems
 
             window.Deactivated += (s, e) =>
             {
+               
                 Console.WriteLine("Deactivated");
             };
 

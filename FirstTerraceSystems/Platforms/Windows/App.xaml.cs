@@ -1,14 +1,12 @@
 ﻿using Microsoft.UI.Windowing;
-using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.Maui.Handlers;
 using FirstTerraceSystems.Services;
-using System.Runtime.InteropServices;
-using WinRT.Interop;
-using Window = Microsoft.UI.Xaml.Window;
-using Windows.UI.Core;
-using Microsoft.UI.Xaml.Input;
 using FirstTerraceSystems.Platforms.Windows.Extensions;
+using Microsoft.UI;
+using Microsoft.JSInterop;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.AspNetCore.Components;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -34,7 +32,6 @@ namespace FirstTerraceSystems.WinUI
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             base.OnLaunched(args);
-
             Microsoft.Maui.Handlers.WindowHandler.Mapper.AppendToMapping(nameof(IWindow), WindowHandler);
         }
 
@@ -52,6 +49,7 @@ namespace FirstTerraceSystems.WinUI
 
             appWindow.TitleBar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
             appWindow.Hide();
+
             if (appWindow.Presenter is OverlappedPresenter presenter)
             {
                 if (StateContainerService.IsMainPage)
@@ -68,7 +66,6 @@ namespace FirstTerraceSystems.WinUI
                 }
                 else
                 {
-                    //presenter.Minimize();
                     nativeWindow.DispatcherQueue.TryEnqueue(() =>
                     {
                         nativeWindow.MinimizeWindow();

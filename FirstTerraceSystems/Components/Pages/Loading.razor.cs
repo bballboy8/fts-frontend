@@ -51,24 +51,11 @@ namespace FirstTerraceSystems.Components.Pages
                 tasks.Remove(completedTask);
             }
             await UpdateProgress(totalTasks, totalTasks);
+
             _ = Task.Run(async () =>
             {
-                await Task.Delay(60000);
-                foreach (ChartModal chart in recordsToFetchInBackGround)
-                {
-                    Task chartTask = ChartTask(chart, defaultStartDate);
-                    nonAwaitableTasks.Add(chartTask);
-                    _symbolSet.Add(chart.Symbol);
-                }
-                defaultStartDate = currentDate;
-                currentDate = DateTime.Now;
-
-                while (nonAwaitableTasks.Any())
-                {
-                    Task completedTask = await Task.WhenAny(nonAwaitableTasks);
-                    intCompletedTasks++;
-                    nonAwaitableTasks.Remove(completedTask);
-                }
+                await Task.Delay(5000);
+                await ProcessInBatches(recordsToFetchInBackGround, defaultStartDate, 10);  // Process in batches of 10
             });
 
             WindowsSerivce.UnlockWindowResize();
@@ -132,6 +119,27 @@ namespace FirstTerraceSystems.Components.Pages
             catch (Exception ex)
             {
                 Logger.LogError(ex, $"For : {chart.Symbol}");
+            }
+        }
+
+        // Helper method to process records in batches of a specified size
+        private async Task ProcessInBatches(IEnumerable<ChartModal> records, DateTime defaultStartDate, int batchSize)
+        {
+            var recordsBatch = records.ToList();
+            int totalRecords = recordsBatch.Count;
+            for (int i = 0; i < totalRecords; i += batchSize)
+            {
+                var batch = recordsBatch.Skip(i).Take(batchSize);
+                List<Task> batchTasks = new List<Task>();
+
+                foreach (ChartModal chart in batch)
+                {
+                    Task chartTask = ChartTask(chart, defaultStartDate);
+                    batchTasks.Add(chartTask);
+                    _symbolSet.Add(chart.Symbol);
+                }
+
+                await Task.WhenAll(batchTasks);  // Run the batch of tasks in parallel
             }
         }
 

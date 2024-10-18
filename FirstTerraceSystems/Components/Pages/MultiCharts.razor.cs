@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using BlazorBootstrap;
+using FirstTerraceSystems.Components.Layout;
 using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
@@ -531,6 +532,51 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
         [JSInvokable]
+        public async Task<IEnumerable<MarketFeed>?> RefreshDataBasedOnStartDate(string symbol, DateTime startDate, int xAxisPixels, int yAxisPixels)
+        {
+            if (MainLayout.MarketStatus == "Open")
+            {
+                // Convert current UTC time to EST
+                var currentDateTimeEST = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+
+                // Set startDate to 4 AM on the desired date in EST
+                DateTime startDateAtFourAM = new DateTime(startDate.Year, startDate.Month, startDate.Day, 4, 0, 0);
+
+                // Ensure startDate is not less than the current EST time and set it to 4 AM if it's not
+                // startDate = MainLayout.MarketStatus == "Closed" ? startDateAtFourAM.AddDays(-1) : startDate; //startDate < currentDateTimeEST ? startDateAtFourAM : startDate;
+
+                // Fetch and filter old data before startDate, ensuring no negative prices
+                var oldData = datasets[symbol]
+                    .Where(x => x.Date < startDate && x.Price >= 0)
+                    .OrderBy(x => x.Date);
+
+                // Calculate the number of data points to display using FilterData function
+                var oldFiltered = FilterData(oldData, xAxisPixels, yAxisPixels);
+                // Fetch and sort additional data from 4 AM onwards (in the extended range)
+                await LoadThreeDayData(symbol, startDate);
+
+                var newData = datasets[symbol]
+                .Where(x => x.Date >= startDate && x.Price >= 0)
+                .OrderBy(x => x.Date);
+
+                var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
+
+                // Combine old and new datasets, avoiding duplicates
+                var combinedFiltered = oldFiltered.Union(newFiltered.Where(x => x.Date >= startDate));
+
+                // Filter the combined dataset to match the desired EST time range and sort by date
+                var finalData = oldData.Union(newData.Where(x => x.Date >= startDate));
+                datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
+
+
+                return FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
+            }
+            return FilterData(datasets[symbol], xAxisPixels, yAxisPixels).ToList();
+
+        }
+
+
+        [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, double oldStartDate, double oldEndDate, int xAxisPixels, int yAxisPixels)
 
         {
@@ -738,6 +784,7 @@ namespace FirstTerraceSystems.Components.Pages
 
             return null;
         }
+
 
     }
 }
