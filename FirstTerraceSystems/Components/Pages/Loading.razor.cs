@@ -1,5 +1,4 @@
-﻿using System.Xml.Serialization;
-using FirstTerraceSystems.Entities;
+﻿using FirstTerraceSystems.Entities;
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using Microsoft.Extensions.Logging;
@@ -20,8 +19,8 @@ namespace FirstTerraceSystems.Components.Pages
             totalTasks += 1;
             List<Task> nonAwaitableTasks = new List<Task> { };
             DateTime currentDate = DateTime.Now;
-            DateTime defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
-            DateTime defaultStartDateForBackground = DateTime.Now.GetPastBusinessDay(3);
+            DateTime defaultStartDate = currentDate.GetPastBusinessDay(3);
+            DateTime defaultStartDateForBackground = defaultStartDate;
             await ChartService.ChartModals();
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
             IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(500);
@@ -130,8 +129,12 @@ namespace FirstTerraceSystems.Components.Pages
         // UpdateProgress now uses IncrementProgressTo to increment the progress smoothly
         private async Task UpdateProgress(int completedTasks, int totalTasks)
         {
-            int targetProgress = (completedTasks * 100) / totalTasks;
+            int targetProgress = completedTasks * 100 / totalTasks;
             await IncrementProgressTo(targetProgress);  // Smoothly increment to the new target progress
+            if (completedTasks < totalTasks)
+            {
+                await Task.Delay(250); // Reduces frequent UI updates
+            }
         }
     }
 }
