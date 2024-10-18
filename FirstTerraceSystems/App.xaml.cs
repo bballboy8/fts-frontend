@@ -8,8 +8,6 @@ namespace FirstTerraceSystems
 {
     public partial class App : Application
     {
-        public static DateTime startDateDeactivated { get; private set; } = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-        [Inject] private IJSRuntime JSRuntime { get; set; }
         public App()
         {
             InitializeComponent();
@@ -56,22 +54,6 @@ namespace FirstTerraceSystems
             {
                
                 Console.WriteLine("Deactivated");
-            };
-
-            window.Resumed += (s, e) =>
-            {
-                //JSRuntime?.InvokeVoidAsync("refreshAllChartsIfOffline", startDateDeactivated);
-                Console.WriteLine("Resumed");
-            };
-
-            window.Stopped += (s, e) =>
-            {
-                var UTCDate = DateTime.UtcNow;
-                startDateDeactivated = TimeZoneInfo
-                    .ConvertTimeFromUtc(
-                        UTCDate,
-                        TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-                Console.WriteLine("Stopped");
             };
 
             return window;

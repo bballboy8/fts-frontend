@@ -22,12 +22,9 @@ namespace FirstTerraceSystems.WinUI
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
-        public static DateTime startDateDeactivated { get; private set; } = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-        [Inject] private IJSRuntime JSRuntime { get; set; }
         public App()
         {
             this.InitializeComponent();
-            Microsoft.Maui.Networking.Connectivity.Current.ConnectivityChanged += Connectivity_ConnectivityChanged;
         }
 
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
@@ -74,26 +71,6 @@ namespace FirstTerraceSystems.WinUI
                         nativeWindow.MinimizeWindow();
                     });
                 }
-            }
-        }
-
-        private void Connectivity_ConnectivityChanged(object sender, Microsoft.Maui.Networking.ConnectivityChangedEventArgs e)
-        {
-            var access = e.NetworkAccess;
-
-            if (access == Microsoft.Maui.Networking.NetworkAccess.None || access == Microsoft.Maui.Networking.NetworkAccess.Unknown)
-            {
-                startDateDeactivated = TimeZoneInfo
-                    .ConvertTimeFromUtc(
-                        DateTime.UtcNow,
-                        TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-                Console.WriteLine("Deactivated");
-                Console.WriteLine("No internet connection.");
-            }
-            else if (access == Microsoft.Maui.Networking.NetworkAccess.Internet)
-            {
-                //JSRuntime?.InvokeVoidAsync("refreshAllChartsIfOffline", startDateDeactivated);
-                Console.WriteLine("Internet connection available.");
             }
         }
     }
