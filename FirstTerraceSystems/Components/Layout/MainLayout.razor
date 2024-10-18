@@ -227,7 +227,7 @@
         Console.WriteLine($"Current Time: {DateTime.Now}, Last Call Time: {_lastCallTime}, Elapsed Milliseconds: {totalMilliseconds}");
 
         // Check if the elapsed time in milliseconds is greater than CheckInterval
-        if (isConnected && MarketStatus == "Open")
+        if (isConnected/*  && MarketStatus == "Open" */)
         {
             if (totalMilliseconds > CheckInterval)
             {

@@ -513,22 +513,25 @@ namespace FirstTerraceSystems.Components.Pages
             // Calculate the number of data points to display using FilterData function
             var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
 
-            // Fetch and sort additional data from 4 AM onwards (in the extended range)
-            await LoadThreeDayData(symbol, startDate);
+            if (MainLayout.MarketStatus == "Open")
+            {
+                // Fetch and sort additional data from 4 AM onwards (in the extended range)
+                await LoadThreeDayData(symbol, startDate);
 
-            var filteredNewData = datasets[symbol]
+                var filteredNewData = datasets[symbol]
                 .Where(x => x.Date >= startDate && x.Price >= 0)
                 .OrderBy(x => x.Date);
 
-            // Combine old and new datasets, avoiding duplicates
-            var combinedFiltered = oldFiltered.Union(filteredNewData.Where(x => x.Date >= startDate));
+                // Combine old and new datasets, avoiding duplicates
+                var combinedFiltered = oldFiltered.Union(filteredNewData.Where(x => x.Date >= startDate));
 
-            // Filter the combined dataset to match the desired EST time range and sort by date
-            var finalFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date);
+                // Filter the combined dataset to match the desired EST time range and sort by date
+                oldFiltered = FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
+            }
 
-            datasets[symbol] = finalFiltered.ToList();
+            datasets[symbol] = oldFiltered.ToList();
 
-            return finalFiltered;
+            return oldFiltered;
 
         }
 
