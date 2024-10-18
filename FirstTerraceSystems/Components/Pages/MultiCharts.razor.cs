@@ -534,18 +534,16 @@ namespace FirstTerraceSystems.Components.Pages
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> RefreshDataBasedOnStartDate(string symbol, DateTime startDate, int xAxisPixels, int yAxisPixels)
         {
-
             if (MainLayout.MarketStatus == "Open")
             {
                 // Convert current UTC time to EST
                 var currentDateTimeEST = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
-
                 // Set startDate to 4 AM on the desired date in EST
                 DateTime startDateAtFourAM = new DateTime(startDate.Year, startDate.Month, startDate.Day, 4, 0, 0);
 
                 // Ensure startDate is not less than the current EST time and set it to 4 AM if it's not
-                startDate = MainLayout.MarketStatus == "Closed" ? startDateAtFourAM.AddDays(-1) : startDate; //startDate < currentDateTimeEST ? startDateAtFourAM : startDate;
+                // startDate = MainLayout.MarketStatus == "Closed" ? startDateAtFourAM.AddDays(-1) : startDate; //startDate < currentDateTimeEST ? startDateAtFourAM : startDate;
 
                 // Fetch and filter old data before startDate, ensuring no negative prices
                 var filteredOldData = datasets[symbol]
