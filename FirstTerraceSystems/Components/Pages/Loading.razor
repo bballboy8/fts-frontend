@@ -1,7 +1,5 @@
 ﻿@page "/loading"
 
-
-
 @inject NasdaqService NasdaqService
 @inject Repositories.TickerRepository TickerRepository
 @inject Repositories.MarketFeedRepository MarketFeedRepository
@@ -14,7 +12,10 @@
     <div class="position-absolute top-50 start-50 translate-middle">
         <Card Class="text-light" Style="--bs-card-bg:#1B2934;width:18rem;">
             <CardBody>
-                <CardTitle Class="text-center py-3">Loading Platform ...</CardTitle>
+                <CardTitle Class="text-center py-3 d-flex justify-content-center align-items-center">
+                    <span>Loading Platform</span>
+                    <span class="ellipsis">@ellipsis</span>
+                </CardTitle>
                 <Progress Class="my-3 rounded-2 position-relative bg-dark" Height="30">
                     <ProgressBar Class="rounded-2" Style="background-color:#FB5B31 !important" Width="@progress" />
                     <small class="justify-content-center align-self-center text-white d-flex position-absolute w-100">@progress%</small>

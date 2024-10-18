@@ -76,6 +76,33 @@ onmouseleave = function () {
   canZoomOnHandleExtreme = false;
 };
 
+// Function to show loading with a spinner
+// Function to show loading with a spinner, for a specific chart instance
+function showCustomLoading(chart) {
+  if (chart) {
+    chart.showLoading();
+
+    // Check if spinner already exists to avoid duplicates
+    const loadingDiv = chart.container.querySelector(".highcharts-loading");
+    if (loadingDiv && !loadingDiv.querySelector(".spinner")) {
+      const spinner = document.createElement("div");
+      spinner.className = "spinner";
+      loadingDiv.appendChild(spinner);
+    }
+  }
+}
+
+// Function to hide loading and remove spinner, for a specific chart instance
+function hideCustomLoading(chart) {
+  if (chart) {
+    chart.hideLoading();
+    // Remove the spinner when loading is hidden
+    const spinner = chart.container.querySelector(".spinner");
+    if (spinner) {
+      spinner.remove();
+    }
+  }
+}
 var symbolData = {};
 function filterData(data, numPoints, startDate, endDate) {
   let filteredData = data;
@@ -152,7 +179,7 @@ function addChart(
           });
 
           let chartWidth = chart.chartWidth;
-          chart.showLoading();
+          showCustomLoading(chart);
 
           chart.ButtonNamespace = {};
           chart.ButtonNamespace.symbolButton = addButtonToChart(chart, {
@@ -208,7 +235,7 @@ function addChart(
                 let existingChart = getChartInstanceBySeriesName(symbol);
 
                 if (existingChart) {
-                  chart.showLoading();
+                  showCustomLoading(chart);
                   symbol = existingChart.series[0].name;
                   chart.series[0].setData(existingChart.series[0].options.data);
                   // console.log("existing");
@@ -230,9 +257,9 @@ function addChart(
                       symbol
                     );
                   }
-                  chart.hideLoading();
+                  hideCustomLoading(chart);
                 } else {
-                  chart.showLoading();
+                  showCustomLoading(chart);
 
                   // console.log("place" + chart.series[0].name);
                   updateChartSymbol(chart.renderTo.id, symbol).then(
@@ -254,12 +281,12 @@ function addChart(
                             title: `XNYS: ${symbol}`,
                           });
                         }
-                        chart.hideLoading();
+                        hideCustomLoading(chart);
                       } else {
                         symbol = chart.series[0].name;
                       }
 
-                      chart.hideLoading();
+                      hideCustomLoading(chart);
                     }
                   );
                 }
@@ -587,7 +614,11 @@ function addChart(
         type: "xy",
       },
     },
-
+    loading: {
+      labelStyle: {
+        display: "none", // Hide default "Loading..." text
+      },
+    },
     rangeSelector: {
       enabled: false,
       buttons: [
@@ -1535,15 +1566,15 @@ function generatePlotLinesAndBreaks(startDate, endDate) {
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
       plotLines.push({
         color: "white", // Color of the line
-          width: 2, // Width of the line
-          dashStyle: 'Dot', 
+        width: 2, // Width of the line
+        dashStyle: "Dot",
         value: new Date( // Value where to draw the line
           date.getFullYear(),
           date.getMonth(),
           date.getDate(),
           20, // 8 PM
           0 // 0 minutes
-        ),
+        ).getTime(),
         zIndex: 5, // z-index for stacking order
       });
 
@@ -1713,7 +1744,7 @@ async function popinChartWindow(chartIndx, minPoint, maxPoint, symbol) {
   addWindowControlButtonsToChart();
   // var data = await getChartDataBySymbol(symbol, null);
   // setDataToChart(chart, data);
-  chart.hideLoading();
+  hideCustomLoading(chart);
 }
 
 function getChartInstance(chartId) {
@@ -1741,7 +1772,7 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
     if (!seriesData) {
       // Handle case where no series data is provided (indicating all data loaded)
       chart.redraw();
-      chart.hideLoading();
+      hideCustomLoading(chart);
       return;
     }
 
@@ -1749,20 +1780,23 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
 
     if (isAllLoaded) {
       chart.redraw();
-      chart.hideLoading();
+      hideCustomLoading(chart);
     }
   }
 }
 
 async function updateAllSymbols(symbols) {
   for (let data of symbols) {
-    let chart = getChartInstanceBySeriesName(data.symbol);
-    if (chart) {
-      await setRange(data.symbol, 3 * 24 * 60 * 60 * 1000);
+    await updateBySymbolName(data.symbol);
+  }
+}
 
-      chart.redraw();
-      chart.hideLoading();
-    }
+async function updateBySymbolName(symbol) {
+  let chart = getChartInstanceBySeriesName(symbol);
+  if (chart) {
+    await setRange(symbol, 3 * 24 * 60 * 60 * 1000);
+    chart.redraw();
+    hideCustomLoading(chart);
   }
 }
 
@@ -1806,7 +1840,6 @@ async function setRange(symbol, range) {
 
     // console.log("points filtered " + filtereddata.length);
     setDataToChart(chart, filtereddata);
-    chart.redraw();
     if (filtereddata.length > 0) {
       SetChartZoomActivate(chart, false);
     }

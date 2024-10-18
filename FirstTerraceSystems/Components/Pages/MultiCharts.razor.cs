@@ -51,10 +51,10 @@ namespace FirstTerraceSystems.Components.Pages
                     });
 
                     await UpdateAndRenderChartsAsync();
-                    await MainThread.InvokeOnMainThreadAsync(async () =>
-                    {
-                        await JSRuntime.InvokeVoidAsync("updateAllSymbols", ChartService.InitialChartSymbols.Where(x => x.IsVisible));
-                    });
+                    // await MainThread.InvokeOnMainThreadAsync(async () =>
+                    // {
+                    //     await JSRuntime.InvokeVoidAsync("updateAllSymbols", ChartService.InitialChartSymbols.Where(x => x.IsVisible));
+                    // });
                     await MainThread.InvokeOnMainThreadAsync(() => preloadService.Hide());
                     IsLoading = false;
                     Logger.LogInformation($"Connecting WebSocketClient");
@@ -112,7 +112,10 @@ namespace FirstTerraceSystems.Components.Pages
                 try
                 {
                     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
-                    await SendChartDataInChunks(chart.Symbol, marketFeeds, false);
+                    datasets[chart.Symbol] = marketFeeds.ToList();
+                    // await SendChartDataInChunks(chart.Symbol, marketFeeds, false);
+                    await JSRuntime.InvokeVoidAsync("updateBySymbolName", chart.Symbol);
+
                     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
                 }
                 catch (Exception ex)
