@@ -706,3 +706,10 @@ h1:focus {
     transform: rotate(360deg);
   }
 }
+
+.ellipsis {
+  display: inline-block;
+  min-width: 1.5em; /* Minimum width to prevent layout shifting */
+  text-align: left;
+  margin-left: 0.25em; /* Add some space between the text and ellipsis */
+}

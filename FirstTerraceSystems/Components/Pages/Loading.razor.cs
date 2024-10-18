@@ -2,17 +2,27 @@
 using FirstTerraceSystems.Features;
 using FirstTerraceSystems.Models;
 using Microsoft.Extensions.Logging;
+using System.Timers; // Ensure this is used for System.Timers.Timer
 
 namespace FirstTerraceSystems.Components.Pages
 {
-    public partial class Loading
+    public partial class Loading : IDisposable
     {
         private int progress = 0;
         public static HashSet<string> _symbolSet = new HashSet<string>();
 
         int intCompletedTasks = 0, totalTasks = 0;
+        private string ellipsis = "";
+        private System.Timers.Timer ellipsisTimer;  // Fully qualify the Timer with System.Timers.Timer
+
         protected override async Task OnInitializedAsync()
         {
+            // Set up the ellipsis animation timer
+            ellipsisTimer = new System.Timers.Timer(500); // Fully qualify here as well
+            ellipsisTimer.Elapsed += OnEllipsisTimerElapsed;
+            ellipsisTimer.AutoReset = true;
+            ellipsisTimer.Start();
+
             Task tickerTask = TickerTask();
 
             List<Task> tasks = new List<Task> { tickerTask };
@@ -41,8 +51,6 @@ namespace FirstTerraceSystems.Components.Pages
                 tasks.Remove(completedTask);
             }
             await UpdateProgress(totalTasks, totalTasks);
-            await Task.Delay(1000);
-
             _ = Task.Run(async () =>
             {
                 await Task.Delay(60000);
@@ -66,6 +74,18 @@ namespace FirstTerraceSystems.Components.Pages
             WindowsSerivce.UnlockWindowResize();
 
             NavigationManager.NavigateTo("/multi-charts");
+        }
+
+        private void OnEllipsisTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            ellipsis = ellipsis switch
+            {
+                "" => ".",
+                "." => "..",
+                ".." => "...",
+                _ => ""
+            };
+            InvokeAsync(StateHasChanged);  // Trigger UI update
         }
 
         private async Task TickerTask()
@@ -135,6 +155,11 @@ namespace FirstTerraceSystems.Components.Pages
             {
                 await Task.Delay(250); // Reduces frequent UI updates
             }
+        }
+
+        public void Dispose()
+        {
+            ellipsisTimer?.Dispose();  // Clean up the timer
         }
     }
 }
