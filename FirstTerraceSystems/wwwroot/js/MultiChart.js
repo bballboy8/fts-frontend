@@ -1574,7 +1574,7 @@ function generatePlotLinesAndBreaks(startDate, endDate) {
           date.getDate(),
           20, // 8 PM
           0 // 0 minutes
-        ),
+        ).getTime(),
         zIndex: 5, // z-index for stacking order
       });
 
@@ -1787,13 +1787,16 @@ function setDataToChartBySymbol(symbol, seriesData, isAllLoaded) {
 
 async function updateAllSymbols(symbols) {
   for (let data of symbols) {
-    let chart = getChartInstanceBySeriesName(data.symbol);
-    if (chart) {
-      await setRange(data.symbol, 3 * 24 * 60 * 60 * 1000);
+    await updateBySymbolName(data.symbol);
+  }
+}
 
-      chart.redraw();
-      hideCustomLoading(chart);
-    }
+async function updateBySymbolName(symbol) {
+  let chart = getChartInstanceBySeriesName(symbol);
+  if (chart) {
+    await setRange(symbol, 3 * 24 * 60 * 60 * 1000);
+    chart.redraw();
+    hideCustomLoading(chart);
   }
 }
 
@@ -1809,7 +1812,6 @@ async function setRange(symbol, range) {
 
     // console.log("points filtered " + filtereddata.length);
     setDataToChart(chart, filtereddata);
-    chart.redraw();
     if (filtereddata.length > 0) {
       SetChartZoomActivate(chart, false);
     }
