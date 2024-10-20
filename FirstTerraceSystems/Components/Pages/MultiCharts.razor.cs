@@ -554,7 +554,7 @@ namespace FirstTerraceSystems.Components.Pages
                 var oldFiltered = FilterData(oldData, xAxisPixels, yAxisPixels);
 
                 // Fetch and sort additional data from 4 AM onwards (in the extended range)
-               var newData =  await LoadDataByStartDayAndSymbol(symbol, startDate.AddDays(-1));
+               var newData =  await LoadDataByStartDayAndSymbol(symbol, startDate);
 
                 //var newData = datasets[symbol]
                 //.Where(x => x.Date >= currentDateTimeEST && x.Price >= 0)
