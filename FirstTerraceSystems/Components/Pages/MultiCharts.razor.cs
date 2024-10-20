@@ -537,7 +537,7 @@ namespace FirstTerraceSystems.Components.Pages
             if (MainLayout.MarketStatus == "Open")
             {
                 // Convert current UTC time to EST
-                var currentDateTimeEST = TimeZoneInfo.ConvertTimeFromUtc(startDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+                //var currentDateTimeEST = TimeZoneInfo.ConvertTimeFromUtc(startDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
                 // Set startDate to 4 AM on the desired date in EST
                 //DateTime startDateAtFourAM = new DateTime(startDate.Year, startDate.Month, startDate.Day, 4, 0, 0);
@@ -547,25 +547,27 @@ namespace FirstTerraceSystems.Components.Pages
 
                 // Fetch and filter old data before startDate, ensuring no negative prices
                 var oldData = datasets[symbol]
-                    .Where(x => x.Date < currentDateTimeEST && x.Price >= 0)
+                    .Where(x => x.Date < startDate && x.Price >= 0)
                     .OrderBy(x => x.Date);
 
                 // Calculate the number of data points to display using FilterData function
                 var oldFiltered = FilterData(oldData, xAxisPixels, yAxisPixels);
-                // Fetch and sort additional data from 4 AM onwards (in the extended range)
-                await LoadThreeDayData(symbol, currentDateTimeEST);
 
-                var newData = datasets[symbol]
-                .Where(x => x.Date >= currentDateTimeEST && x.Price >= 0)
-                .OrderBy(x => x.Date);
+                // Fetch and sort additional data from 4 AM onwards (in the extended range)
+               var newData =  await LoadDataByStartDayAndSymbol(symbol, startDate.AddDays(-1));
+
+                //var newData = datasets[symbol]
+                //.Where(x => x.Date >= currentDateTimeEST && x.Price >= 0)
+                //.OrderBy(x => x.Date);
 
                 var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
 
                 // Combine old and new datasets, avoiding duplicates
-                var combinedFiltered = oldFiltered.Union(newFiltered.Where(x => x.Date >= currentDateTimeEST));
+                var combinedFiltered = oldFiltered.Union(newFiltered.Where(x => x.Date >= startDate));
 
                 // Filter the combined dataset to match the desired EST time range and sort by date
-                var finalData = oldData.Union(newData.Where(x => x.Date >= currentDateTimeEST));
+                var finalData = datasets[symbol].Union(newData.Where(x => x.Date >= startDate));
+
                 datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
 
                 return FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
@@ -782,6 +784,44 @@ namespace FirstTerraceSystems.Components.Pages
             }, token);
 
             return null;
+        }
+        private async Task<IEnumerable<MarketFeed>?> LoadDataByStartDayAndSymbol(string symbol, DateTime defaultStartDate)
+        {
+            var token = _cancellationTokenSource.Token;
+
+            // Variable to hold the result
+            IEnumerable<MarketFeed>? result = null;
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    Logger.LogInformation($"Starting background task to load data for symbol based on start date: {symbol}");
+                    var threeDayMarketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, symbol).ConfigureAwait(false);
+
+                    if (token.IsCancellationRequested)
+                    {
+                        Logger.LogInformation($"Background task canceled for symbol: {symbol}");
+                        return;
+                    }
+
+                    if (threeDayMarketFeeds != null && threeDayMarketFeeds.Any())
+                    {
+                        Loading._symbolSet.Add(symbol);
+                        Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {symbol}, total: {threeDayMarketFeeds.Count()}");
+                        MarketFeedRepository.InsertMarketFeedDataFromApi(symbol, threeDayMarketFeeds);
+
+                        // Set result if data is available
+                        result = threeDayMarketFeeds;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    Logger.LogInformation($"Background task was canceled for symbol: {symbol}");
+                }
+            }, token);
+
+            // Return the result after the task completes
+            return result;
         }
 
 

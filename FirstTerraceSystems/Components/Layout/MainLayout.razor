@@ -239,7 +239,7 @@
                 Console.WriteLine($"Updating Last Call Time: {_lastCallTime}");
 
                 // Call the jQuery function if connected
-                await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", DateTime.Parse(previousValue.ToString()).ToUniversalTime());
+                await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(previousValue.ToString()).ToUniversalTime(), TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")));
 
 
             }

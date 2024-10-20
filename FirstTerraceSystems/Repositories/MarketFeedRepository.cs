@@ -143,18 +143,21 @@ namespace FirstTerraceSystems.Repositories
 
         public void InsertMarketFeedDataFromApi(string symbol, IEnumerable<MarketFeed>? marketFeeds)
         {
-
             if (marketFeeds == null) return;
 
             CreateTableAndIndexes(symbol);
 
-            var feedsList = marketFeeds.ToList(); // Materialize enumerable to list
+             var feedsList = marketFeeds.ToList(); // Materialize enumerable to list
+            //var feedsList = marketFeeds
+            //.GroupBy(feed => feed.Date)             // Group by unique identifier
+            //.Select(group => group.First())         // Take the first entry in each group (remove duplicates)
+            //.ToList();                              // Materialize enumerable to list
+
             for (int i = 0; i < feedsList.Count; i += InsertBatchSize)
             {
                 var batch = feedsList.Skip(i).Take(InsertBatchSize).ToList();
                 InsertRecordsBatch(symbol, batch);
             }
-
         }
 
         public async Task InsertLiveMarketFeedDataFromSocket(NasdaqResponse? response)
