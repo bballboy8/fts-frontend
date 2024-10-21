@@ -1418,6 +1418,57 @@ function addChartBoxToChartList(totalCharts, chartBox) {
   }
 }
 
+function addNewChartWindowPopUp(symbol) {
+  var chartContainerId = "chart-" + Highcharts.charts.length + 1;
+  var chart = addChart(
+    Highcharts.charts.length + 1,
+    chartContainerId,
+    [],
+    symbol
+  );
+  showCustomLoading(chart);
+  removeUnusedElement();
+  var jsObjectReference = DotNet.createJSObjectReference(window);
+  var extremes = chart.xAxis[0].getExtremes();
+  //var data = chart.options.series[0].data;
+  removeChart(chart);
+  DotNet.invokeMethodAsync(
+    "FirstTerraceSystems",
+    "DragedChartWindow",
+    jsObjectReference,
+    true,
+    chartContainerId,
+    extremes.min,
+    extremes.max,
+    symbol
+  );
+
+  updateChartSymbol(chartContainerId, symbol).then((seriesData) => {
+    // console.log("place1");
+    if (seriesData) {
+      // console.log("place3");
+      if (seriesData.length > 0) {
+        // console.log("dont change data");
+        setDataToChart(chart, seriesData);
+
+        chart.series[0].update({
+          name: symbol,
+        });
+        chart.ButtonNamespace.symbolButton.attr({
+          text: truncateText(`XNYS: ${symbol}`, 11, ""),
+        });
+        chart.ButtonNamespace.symbolButton.attr({
+          title: `XNYS: ${symbol}`,
+        });
+      }
+    } else {
+      symbol = chart.series[0].name;
+    }
+
+    hideCustomLoading(chart);
+  });
+}
+
 function addChartBox(totalCharts, chartIndx, symbol) {
   var cssClass = "col-12";
 

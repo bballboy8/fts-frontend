@@ -22,6 +22,12 @@
 
                 @* Display options code here *@
                 <div @ref="Er_DisplayOptions" class="dropdown" id="dropdownDisplayOptions">
+                    <!-- Plus Icon -->
+                    <button style="background: none; border: none; padding: 0; cursor: pointer;" @onclick="OpenPopup">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 16 16">
+                            <path d="M8 1a.5.5 0 0 1 .5.5v6h6a.5.5 0 0 1 0 1h-6v6a.5.5 0 0 1-1 0v-6h-6a.5.5 0 0 1 0-1h6v-6A.5.5 0 0 1 8 1z"/>
+                        </svg>
+                    </button>
                     <button class="btn btn-secondary dropdown-toggle layout-btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         DISPLAY OPTIONS
                     </button>
@@ -32,10 +38,10 @@
                         <div class="dropdown dropend">
                             <a id="loadLayoutButton" class="dropdown-item sub-menu" onclick="loadTemplates(event);" href="javascript:void(0)">Load Layout</a>
                             <div class="dropdown-menu" id="load-template-dropdown">
-                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="5" tabindex="2" @onclick="() => LoadTemplate(5)">
+                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="5" tabindex="2" @onclick="() => LoadTemplate    (1)">
                                     <span style="margin-top: -7px;"><span class="default-chart-2-grid"> <span class="default-chart-2"></span> <span class="default-chart-2"></span></span> <span class="default-chart-3-grid"><span class="default-chart-3"></span> <span class="default-chart-3"></span> <span class="default-chart-3"></span> </span></span> Default Layout
                                 </a>
-                                <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="1" tabindex="3" @onclick="() => LoadTemplate(1)">
+                                @* <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="1" tabindex="3" @onclick="() => LoadTemplate(1)">
                                     <span class="chart-1"></span> 1 chart
                                 </a>
                                 <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="2" tabindex="4" @onclick="() => LoadTemplate(2)">
@@ -49,7 +55,7 @@
                                 </a>
                                 <a role="button" class="dropdown-item load-template" data-item-type="template" data-load-template="8" tabindex="7" @onclick="() => LoadTemplate(8)">
                                     <span style="margin-top: -7px;"><span class="chart-8-grid"> <span class="chart-8"></span> <span class="chart-8"></span></span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> <span class="chart-8-grid"><span class="chart-8"></span> <span class="chart-8"></span> </span> </span>8 charts
-                                </a>
+                                </a> *@
                             </div>
                         </div>
                     </div>
@@ -65,6 +71,29 @@
                 <Button ElementId="btn-logout" Class="me-2" Style="background-color:#FB5B31 !important" Outline="true" @onclick="Logout">Logout </Button>
                 <Switch Class="w-auto" Value="IsDarkMode" ValueExpression="() => IsDarkMode" ValueChanged="ToggleDarkMode" />
             </div>
+                    <!-- Modal Popup for Symbol Input -->
+            <div class="modal fade" id="symbolModal" tabindex="-1" role="dialog" aria-labelledby="symbolModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="symbolModalLabel">Add New Chart</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="form-control mt-2" placeholder="Enter symbol" @bind="SymbolName" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="AddChart">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
         }
 
         <article class="content px-4" style="background: radial-gradient(circle at 50% 8.19%, #1B2934 0%, #000000 100%);">
@@ -75,9 +104,13 @@
 
 @code {
 
+    private string SymbolName { get; set; } = string.Empty;
+     // Define the Symbol class
+
     private bool IsDarkMode = true;
     private ElementReference Er_DisplayOptions { get; set; }
     private string? currentTime;
+
     private string MarketStatus = "Closed";
     private void ToggleDarkMode(bool value)
     {
@@ -92,7 +125,25 @@
         StateContainerService.IsDarkMode = IsDarkMode;
     }
 
+    // Method to show the modal popup
+    private void OpenPopup()
+    {
+        // Call the JavaScript to show the modal
+        JSRuntime.InvokeVoidAsync("bootstrapModal.show");
+    }
 
+    // Method to add a new chart
+    private async Task AddChart()
+    {
+        // Logic to add a chart based on the symbol name
+        if (!string.IsNullOrWhiteSpace(SymbolName))
+        {
+            await JSRuntime.InvokeVoidAsync("addNewChartWindowPopUp", SymbolName);
+            Toast.ShowSuccessMessage($"Chart for {SymbolName} opened!");
+        }
+        // Close the modal after adding the chart
+        JSRuntime.InvokeVoidAsync("bootstrapModal.hide");
+    }
     private DotNetObjectReference<MainLayout>? _dotNetMainLayoutRef;
 
     protected override void OnInitialized()
@@ -103,11 +154,12 @@
         var timer = new System.Timers.Timer(60000);
         timer.Elapsed += (sender, e) => UpdateTime();
         timer.Start();
+
     }
 
     private async void UpdateTime()
     {
-        List<HolidayList> holidayList = await NasdaqService.GetHolidays();
+        // List<HolidayList> holidayList = await NasdaqService.GetHolidays();
         var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
         var coreMarketStartTime = new TimeSpan(9, 30, 0); // 9:30 AM
         var coreMarketEndTime = new TimeSpan(16, 0, 0);   // 4:00 PM
