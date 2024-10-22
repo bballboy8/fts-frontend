@@ -33,7 +33,7 @@ namespace FirstTerraceSystems.Components.Pages
             DateTime defaultStartDateForBackground = defaultStartDate;
             await ChartService.ChartModals();
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
-            IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(500);
+            IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(1);
 
             foreach (ChartModal chart in recordsToFetch)
             {

@@ -1471,6 +1471,7 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
+  totalCharts = 1;
   localStorage.setItem("chartCount", totalCharts);
   removeUnusedElement();
 
@@ -1819,10 +1820,10 @@ async function refreshAllChartsIfOffline(startdate) {
         if (filtereddata.length > 0) {
           SetChartZoomActivate(chart, false);
         }
-        hideCustomLoading(chart);
       } catch (error) {
         console.error("Error fetching filtered data: ", error);
       }
+      hideCustomLoading(chart);
     }
   }
 }

@@ -110,7 +110,7 @@
         _dotNetMainLayoutRef = DotNetObjectReference.Create(this);
         UpdateTime();
         // Update the time every minute
-        var timer = new System.Timers.Timer(60000);
+        var timer = new System.Timers.Timer(5000);
         timer.Elapsed += (sender, e) => UpdateTime();
         timer.Start();
     }
@@ -119,7 +119,7 @@
     {
         if (IsConnected)
         {
-            List<HolidayList> holidayList = await NasdaqService.GetHolidays();
+            // List<HolidayList> holidayList = await NasdaqService.GetHolidays();
             var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
             var coreMarketStartTime = new TimeSpan(9, 30, 0); // 9:30 AM
             var coreMarketEndTime = new TimeSpan(16, 0, 0);   // 4:00 PM
@@ -234,7 +234,7 @@
                 // Update the last call time
                 DateTime previousValue = _lastCallTime;
                 _lastCallTime = DateTime.Now;
-
+                
                 // Debug: Log the updated last call time
                 Console.WriteLine($"Updating Last Call Time: {_lastCallTime}");
 
