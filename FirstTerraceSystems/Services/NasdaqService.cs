@@ -93,7 +93,7 @@ namespace FirstTerraceSystems.Services
 
                     // Read the response content
                     string responseData = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseData);
+                    //Console.WriteLine(responseData);
                     return await DeserializeStreamAsync(await response.Content.ReadAsStreamAsync());
                 }
 
