@@ -38,7 +38,7 @@ const singleChartkeyboardNavigationOrder = [
 ];
 
 var ChatAppInterop = window.ChatAppInterop || {};
-
+let processingCharts = [];
 ChatAppInterop.dotnetReference = null;
 
 ChatAppInterop.setDotNetReference = function (dotnetReference) {
@@ -1356,7 +1356,13 @@ async function refreshCharts(symbol, seriesData) {
       //   chart.redraw();
       // }
 
-      chart.redraw();
+      // Check if the chart is in the processingCharts array
+      if (!processingCharts.includes(chart)) {
+        // If the chart is not being processed, redraw it
+        chart.redraw();
+      } else {
+        console.log("Chart is being processed, skipping redraw.");
+      }
 
       // // Fetch the min and max x values from the updated series data
       // const series = chart.series[0];
@@ -1803,7 +1809,7 @@ async function updateBySymbolName(symbol) {
 
 async function refreshAllChartsIfOffline(startdate) {
   let charts = Highcharts.charts.filter((hc) => hc);
-  debugger;
+  processingCharts = [...charts];
   for (let chart of charts) {
     if (chart) {
       showCustomLoading(chart);
@@ -1824,6 +1830,9 @@ async function refreshAllChartsIfOffline(startdate) {
         console.error("Error fetching filtered data: ", error);
       }
       hideCustomLoading(chart);
+       // Remove the chart from the processing array once done
+       processingCharts = processingCharts.filter((c) => c !== chart);
+       console.log("Remaining charts to process: ", processingCharts.length);
     }
   }
 }

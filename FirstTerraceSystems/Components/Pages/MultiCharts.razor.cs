@@ -24,6 +24,7 @@ namespace FirstTerraceSystems.Components.Pages
         public static ConcurrentDictionary<string, double> Ranges = new();
         private CancellationTokenSource _cancellationTokenSource = new();
         private readonly object _lock = new object();
+        private static readonly object _datasetLock = new object();
 
         protected override void OnInitialized()
         {
@@ -569,9 +570,13 @@ namespace FirstTerraceSystems.Components.Pages
                 var combinedFiltered = oldFiltered.Union(newFiltered.Where(x => x.Date >= startDate));
 
                 // Filter the combined dataset to match the desired EST time range and sort by date
-                var finalData = datasets[symbol].Union(newData.Where(x => x.Date >= startDate));
+                lock (_datasetLock)
+                {
+                    var finalData = datasets[symbol].Union(newData.Where(x => x.Date >= startDate));
+                    datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
+                }
 
-                datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
+                //datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
 
                 return FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
             }
