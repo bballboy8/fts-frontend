@@ -12,10 +12,35 @@
 @* @attribute [Authorize] *@
 @implements IDisposable
 
+
+@inject PreloadService preloadService
+
+
+<style>
+    #popup {
+        display: none;
+        position: absolute;
+        border: 1px solid #000;
+        background-color: #fff;
+        padding: 10px;
+        z-index: 10000;
+    }
+
+    .spinner-border {
+        padding: 33px;
+    }
+</style>
+
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
 <Preload />
 <div class="page" style="background: radial-gradient(circle at 50% 8.19%, #1B2934 0%, #000000 100%);">
     <main>
+        @if (IsLoading)
+{
+    <div class="d-flex justify-content-center">
+        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.ExtraLarge" />
+    </div>
+}
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register") && !NavigationManager.Uri.Contains("loading"))
         {
 
@@ -83,6 +108,10 @@
 @code {
     private DateTime _lastCallTime; // Track the last time the jQuery function was called
     private const double CheckInterval = 20000; // 20 seconds in milliseconds
+
+    private bool IsLoading { get; set; } = false;
+
+
     private Timer _connectivityTimer;
     private bool IsConnected = true;
     private bool IsDarkMode = true;
@@ -113,6 +142,7 @@
         var timer = new System.Timers.Timer(60000);
         timer.Elapsed += (sender, e) => UpdateTime();
         timer.Start();
+        IsLoading=false;
     }
 
     private async void UpdateTime()
@@ -237,11 +267,14 @@
 
                 // Debug: Log the updated last call time
                 Console.WriteLine($"Updating Last Call Time: {_lastCallTime}");
+                IsLoading = true;
+                preloadService.Show(SpinnerColor.Light, "Loading data...");
 
                 // Call the jQuery function if connected
                 await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(previousValue.ToString()).ToUniversalTime(), TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")));
 
-
+                await MainThread.InvokeOnMainThreadAsync(() => preloadService.Hide());
+                IsLoading = false;
             }
             IsConnected = true;
             // Update the last call time
