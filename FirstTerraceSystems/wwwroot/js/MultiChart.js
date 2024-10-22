@@ -1347,8 +1347,10 @@ const debouncedSetRangeByDate = debounce(setRangeByDate, 1000);
 var counter2 = 0;
 async function refreshCharts(symbol, seriesData) {
   setTimeout(async function () {
-    let chart = getChartInstanceBySeriesName(symbol);
-    if (chart) {
+     let chart = getChartInstanceBySeriesName(symbol);
+     if (!processingCharts.includes(chart)) {
+      debugger;
+      if (chart) {
       //    console.log("refresh" + JSON.stringify(seriesData) + "ley "+symbol);
       addPointToChart(chart, seriesData, false, false, true);
       // if (!FindChartZoomActivate(chart)) {
@@ -1357,12 +1359,10 @@ async function refreshCharts(symbol, seriesData) {
       // }
 
       // Check if the chart is in the processingCharts array
-      if (!processingCharts.includes(chart)) {
+      
         // If the chart is not being processed, redraw it
         chart.redraw();
-      } else {
-        console.log("Chart is being processed, skipping redraw.");
-      }
+     
 
       // // Fetch the min and max x values from the updated series data
       // const series = chart.series[0];
@@ -1376,6 +1376,9 @@ async function refreshCharts(symbol, seriesData) {
       //   // // Redraw again after setting the new extremes
       //   // chart.redraw();
       // }
+        } 
+    } else {
+      console.log("Chart is being processed, skipping redraw.");
     }
   }, 50);
   //removeOldPoints(chart, 3);
