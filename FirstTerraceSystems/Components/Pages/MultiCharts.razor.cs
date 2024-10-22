@@ -560,6 +560,9 @@ namespace FirstTerraceSystems.Components.Pages
                 //.Where(x => x.Date >= currentDateTimeEST && x.Price >= 0)
                 //.OrderBy(x => x.Date);
 
+                if(newData == null)
+                     return FilterData(datasets[symbol], xAxisPixels, yAxisPixels).ToList();
+
                 var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
 
                 // Combine old and new datasets, avoiding duplicates
