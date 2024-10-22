@@ -22,21 +22,80 @@ namespace FirstTerraceSystems.Services
         }
 
         //NasdaqMarketFeed
+        //public async Task<IEnumerable<MarketFeed>?> NasdaqGetDataAsync(DateTime startDatetime, string symbol)
+        //{
+        //    string jsonData = System.Text.Json.JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString(AppSettings.DFormat_NasdaqGetData), symbol = symbol });
+        //    HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
+        //    {
+        //        Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+        //    };
+        //    try
+        //    {
+
+        //        HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+        //        response.EnsureSuccessStatusCode();
+
+        //        return await DeserializeStreamAsync(await response.Content.ReadAsStreamAsync());
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log.Logger.Error(ex, "NasdaqGetDataAsync");
+        //        Console.WriteLine(ex.Message);
+        //        return null;
+        //    }
+        //}
+
+
         public async Task<IEnumerable<MarketFeed>?> NasdaqGetDataAsync(DateTime startDatetime, string symbol)
         {
-            string jsonData = System.Text.Json.JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString(AppSettings.DFormat_NasdaqGetData), symbol = symbol });
-            HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
-            {
-                Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
-            };
+            //string jsonData = System.Text.Json.JsonSerializer.Serialize(new { start_datetime = startDatetime.ToString(AppSettings.DFormat_NasdaqGetData), symbol = symbol });
+            //HttpRequestMessage request = new(HttpMethod.Post, "/nasdaq/get_data")
+            //{
+            //    Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+            //};
             try
             {
 
-                HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                //HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
-                response.EnsureSuccessStatusCode();
+                //response.EnsureSuccessStatusCode();
 
-                return await DeserializeStreamAsync(await response.Content.ReadAsStreamAsync());
+                //return await DeserializeStreamAsync(await response.Content.ReadAsStreamAsync());
+
+                using (HttpClient client = new HttpClient())
+                {
+                    // Set the base address (optional)
+                    client.BaseAddress = new Uri("http://52.72.116.51:8000/");
+
+                    // Set request headers
+                    client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+                    client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                    // Create the JSON payload
+                    var jsonPayload = new
+                    {
+                        start_datetime = startDatetime.ToString(AppSettings.DFormat_NasdaqGetData),
+                        symbol = symbol
+                    };
+
+                    // Convert the payload to JSON string
+                    var jsonString = System.Text.Json.JsonSerializer.Serialize(jsonPayload);
+                    var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                    // Send the POST request
+                    HttpResponseMessage response = await client.PostAsync("nasdaq/get_data", content);
+
+                    // Ensure the request was successful
+                    response.EnsureSuccessStatusCode();
+
+                    // Read the response content
+                    string responseData = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(responseData);
+                    return await DeserializeStreamAsync(await response.Content.ReadAsStreamAsync());
+                }
 
             }
             catch (Exception ex)
