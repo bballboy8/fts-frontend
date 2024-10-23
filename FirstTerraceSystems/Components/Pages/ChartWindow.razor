@@ -14,7 +14,7 @@
 <div @ref="ER_ChartWindow"></div>
 
 @code {
-    private const int MarketFeedChunkSize = 100000;
+    private const int MarketFeedChunkSize = 5000;
 
     [Parameter]
     public object? ChartIndx { get; set; }
@@ -62,7 +62,10 @@
             await JSRuntime.InvokeVoidAsync("changeBackgroundColor", StateContainerService.IsDarkMode);
             await JSRuntime.InvokeVoidAsync("popoutChartWindow", _dotChartWindowRef, ER_ChartWindow, ChartIndx, Symbol);
 
-            IEnumerable<MarketFeed>? marketFeeds = MultiCharts.datasets[Symbol];
+            // Create an instance of MultiCharts to call GetChartData
+            var multiChartsInstance = new MultiCharts();
+            IEnumerable<MarketFeed>? marketFeeds= await UpdateChartSymbol(ChartIndx?.ToString(), Symbol);
+
             await SendChartDataInChunks(Symbol, marketFeeds);
 
             await JSRuntime.InvokeVoidAsync("setMinMaxPointToPopoutChart", MinPoint, MaxPoint);

@@ -1418,55 +1418,106 @@ function addChartBoxToChartList(totalCharts, chartBox) {
   }
 }
 
-function addNewChartWindowPopUp(symbol) {
-  var chartContainerId = "chart-" + Highcharts.charts.length + 1;
-  var chart = addChart(
-    Highcharts.charts.length + 1,
-    chartContainerId,
-    [],
+const uid = function () {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+function getEstAndThirdLastBusinessDay() {
+  // Get current UTC date and time
+  const now = new Date();
+
+  // Convert current time to EST (Eastern Standard Time)
+  const utcOffset = now.getTimezoneOffset(); // Get offset in minutes
+  const estOffset = 300; // EST is UTC-5, which is 300 minutes behind UTC
+  const currentEstTime = new Date(
+    now.getTime() + (utcOffset - estOffset) * 60000
+  ); // Adjust UTC to EST
+
+  // Function to check if a date is a weekend (Saturday or Sunday)
+  function isWeekend(date) {
+    const day = date.getDay();
+    return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
+  }
+
+  // Find the third last business day
+  let businessDaysFound = 0;
+  let thirdLastBusinessDay = new Date(currentEstTime); // Start with current EST date
+
+  while (businessDaysFound < 3) {
+    thirdLastBusinessDay.setDate(thirdLastBusinessDay.getDate() - 1); // Move back one day
+    if (!isWeekend(thirdLastBusinessDay)) {
+      businessDaysFound++;
+    }
+  }
+
+  // Set the time of the third last business day to 4 AM
+  thirdLastBusinessDay.setHours(4, 0, 0, 0);
+
+  return {
+    currentEstTime: currentEstTime.getTime(), // Current EST datetime
+    thirdLastBusinessDay: thirdLastBusinessDay.getTime(), // 4 AM of the third last business day
+  };
+}
+
+async function addNewChartWindowPopUp(symbol) {
+  var symbolExists = await ChatAppInterop.dotnetReference.invokeMethodAsync(
+    "CheckIfSymbolExists",
     symbol
   );
-  showCustomLoading(chart);
+
+  if (!symbolExists) return false;
+
+  var chartContainerId = "chart-" + uid();
+  // var chart = addChart(
+  //   Highcharts.charts.length + 1,
+  //   chartContainerId,
+  //   [],
+  //   symbol
+  // );
+  // showCustomLoading(chart);
   removeUnusedElement();
   var jsObjectReference = DotNet.createJSObjectReference(window);
-  var extremes = chart.xAxis[0].getExtremes();
+  // var extremes = chart.xAxis[0].getExtremes();
   //var data = chart.options.series[0].data;
-  removeChart(chart);
+  // removeChart(chart);
+  const result = getEstAndThirdLastBusinessDay();
+
   DotNet.invokeMethodAsync(
     "FirstTerraceSystems",
     "DragedChartWindow",
     jsObjectReference,
     true,
     chartContainerId,
-    extremes.min,
-    extremes.max,
+    result.thirdLastBusinessDay,
+    result.currentEstTime,
     symbol
   );
 
-  updateChartSymbol(chartContainerId, symbol).then((seriesData) => {
-    // console.log("place1");
-    if (seriesData) {
-      // console.log("place3");
-      if (seriesData.length > 0) {
-        // console.log("dont change data");
-        setDataToChart(chart, seriesData);
+  // updateChartSymbol(chartContainerId, symbol).then((seriesData) => {
+  //   // console.log("place1");
+  //   if (seriesData) {
+  //     // console.log("place3");
+  //     if (seriesData.length > 0) {
+  //       // console.log("dont change data");
+  //       setDataToChart(chart, seriesData);
 
-        chart.series[0].update({
-          name: symbol,
-        });
-        chart.ButtonNamespace.symbolButton.attr({
-          text: truncateText(`XNYS: ${symbol}`, 11, ""),
-        });
-        chart.ButtonNamespace.symbolButton.attr({
-          title: `XNYS: ${symbol}`,
-        });
-      }
-    } else {
-      symbol = chart.series[0].name;
-    }
+  //       chart.series[0].update({
+  //         name: symbol,
+  //       });
+  //       chart.ButtonNamespace.symbolButton.attr({
+  //         text: truncateText(`XNYS: ${symbol}`, 11, ""),
+  //       });
+  //       chart.ButtonNamespace.symbolButton.attr({
+  //         title: `XNYS: ${symbol}`,
+  //       });
+  //     }
+  //   } else {
+  //     symbol = chart.series[0].name;
+  //   }
 
-    hideCustomLoading(chart);
-  });
+  //   hideCustomLoading(chart);
+  // });
+  return true;
 }
 
 function addChartBox(totalCharts, chartIndx, symbol) {

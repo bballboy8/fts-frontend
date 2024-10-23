@@ -12,7 +12,7 @@ namespace FirstTerraceSystems.Components.Pages
 {
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 100000;
+        private const int MarketFeedChunkSize = 5000;
         private const int PointSize = 1000;
         private bool IsLoading { get; set; } = false;
         private bool OnWait { get; set; } = false;
@@ -360,6 +360,17 @@ namespace FirstTerraceSystems.Components.Pages
         }
 
         [JSInvokable]
+        public async Task<bool> CheckIfSymbolExists(string symbol)
+        {
+            if (!TickerRepository.IsTickerExists(symbol))
+            {
+                Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
+                return false;
+            }
+            return true;
+        }
+
+        [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
         {
             // Cancel any ongoing background tasks
@@ -681,7 +692,7 @@ namespace FirstTerraceSystems.Components.Pages
         //    return await GetChartData(chartId, symbol);
         //}
 
-        private async Task<IEnumerable<MarketFeed>?> GetChartData(string symbol)
+        public async Task<IEnumerable<MarketFeed>?> GetChartData(string symbol)
         {
 
 

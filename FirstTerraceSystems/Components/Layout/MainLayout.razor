@@ -138,11 +138,18 @@
         // Logic to add a chart based on the symbol name
         if (!string.IsNullOrWhiteSpace(SymbolName))
         {
-            await JSRuntime.InvokeVoidAsync("addNewChartWindowPopUp", SymbolName);
+            bool success = await JSRuntime.InvokeAsync<bool>("addNewChartWindowPopUp", SymbolName);
+            if (success){
             Toast.ShowSuccessMessage($"Chart for {SymbolName} opened!");
+                // Close the modal after adding the chart
+                JSRuntime.InvokeVoidAsync("bootstrapModal.hide");
+            }
+            else{
+            Toast.ShowDangerMessage($"{SymbolName} doesn't exist!");
+
+            }
         }
-        // Close the modal after adding the chart
-        JSRuntime.InvokeVoidAsync("bootstrapModal.hide");
+
     }
     private DotNetObjectReference<MainLayout>? _dotNetMainLayoutRef;
 
