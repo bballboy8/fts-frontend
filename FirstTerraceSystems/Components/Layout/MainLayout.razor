@@ -82,7 +82,7 @@
 
 @code {
     private DateTime _lastCallTime; // Track the last time the jQuery function was called
-    private const double CheckInterval = 20000; // 20 seconds in milliseconds
+    private const double CheckInterval = 10000; // 10 seconds in milliseconds
     private Timer _connectivityTimer;
     private bool IsConnected = true;
     private bool IsDarkMode = true;
@@ -223,25 +223,21 @@
         // Get the total milliseconds as a double
         double totalMilliseconds = elapsed.TotalMilliseconds;
 
-        // Debug: Log the current time and last call time for verification
-        Console.WriteLine($"Current Time: {DateTime.Now}, Last Call Time: {_lastCallTime}, Elapsed Milliseconds: {totalMilliseconds}");
 
         // Check if the elapsed time in milliseconds is greater than CheckInterval
         if (isConnected)
         {
             if (totalMilliseconds > CheckInterval)
             {
+                // Debug: Log the current time and last call time for verification
+                Console.WriteLine($"Current Time: {DateTime.Now}, Last Call Time: {_lastCallTime}, Elapsed Milliseconds: {totalMilliseconds}");
                 // Update the last call time
                 DateTime previousValue = _lastCallTime;
                 _lastCallTime = DateTime.Now;
-                
                 // Debug: Log the updated last call time
                 Console.WriteLine($"Updating Last Call Time: {_lastCallTime}");
-
                 // Call the jQuery function if connected
                 await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(previousValue.ToString()).ToUniversalTime(), TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")));
-
-
             }
             IsConnected = true;
             // Update the last call time
