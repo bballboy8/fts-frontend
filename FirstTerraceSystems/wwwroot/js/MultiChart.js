@@ -38,7 +38,7 @@ const singleChartkeyboardNavigationOrder = [
 ];
 
 var ChatAppInterop = window.ChatAppInterop || {};
-
+let processingCharts = [];
 ChatAppInterop.dotnetReference = null;
 
 ChatAppInterop.setDotNetReference = function (dotnetReference) {
@@ -342,7 +342,7 @@ function addChart(
               text: config.text,
               callback: function () {
                 setButtonActive(this);
-                debouncedSetRange(symbol, config.duration);
+                debouncedSetRange(symbol, config.text);
               },
               x: config.x,
               y: 10,
@@ -943,8 +943,9 @@ function removeChart(chart) {
 }
 
 function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
+  showCustomLoading(chart);
   if (!chart.series[0].data || chart.series[0].data.length === 0) {
-    setRange(symbol, 3 * 24 * 60 * 60 * 1000);
+    setRange(symbol, "3D");
     console.warn(`No data available for zooming on chart: ${symbol}`);
     return; // Prevent zoom if no data is available
   }
@@ -1062,6 +1063,7 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   } else {
     console.warn("Invalid zoom range. No zoom action performed.");
   }
+  hideCustomLoading(chart);
 }
 
 // Function to get the 4 AM timestamp of the last three business days
@@ -1132,7 +1134,7 @@ async function getChartDataByLastFeedPoint(symbol, lastPoint) {
 
 async function getFilteredDataBySymbol(
   symbol,
-  range = undefined,
+  duration = undefined,
   xAxisPixels = 0,
   yAxisPixels = 0
 ) {
@@ -1140,7 +1142,7 @@ async function getFilteredDataBySymbol(
     return await ChatAppInterop.dotnetReference.invokeMethodAsync(
       "GetFilteredDataBySymbol",
       symbol,
-      range,
+      duration,
       xAxisPixels,
       yAxisPixels
     );
@@ -1181,18 +1183,18 @@ async function getChartDataBySymbol(symbol, lastPoint = undefined) {
   );
 }
 
-async function getExtremeDataBySymbol(
-  symbol,
-  min = undefined,
-  max = undefined
-) {
-  return await ChatAppInterop.dotnetReference.invokeMethodAsync(
-    "GetExtremeDataBySymbol",
-    symbol,
-    min,
-    max
-  );
-}
+// async function getExtremeDataBySymbol(
+//   symbol,
+//   min = undefined,
+//   max = undefined
+// ) {
+//   return await ChatAppInterop.dotnetReference.invokeMethodAsync(
+//     "GetExtremeDataBySymbol",
+//     symbol,
+//     min,
+//     max
+//   );
+// }
 
 async function updateChartSymbol(chartId, symbol) {
   return await ChatAppInterop.dotnetReference.invokeMethodAsync(
@@ -1264,6 +1266,8 @@ function setDataToChart(
     const maxX = newmax !== 0 ? newmax : dataPoints[dataPoints.length - 1].x;
     chart.xAxis[0].setExtremes(minX, maxX, false);
   }
+  // Redraw once after all data is set
+  chart.redraw();
 }
 
 //debugger
@@ -1321,16 +1325,16 @@ function addPointToChart(
   });
 }
 
-async function RefreshChartBySymbol() {
-  for (let chart of Highcharts.charts) {
-    if (!chart) continue;
+// async function RefreshChartBySymbol() {
+//   for (let chart of Highcharts.charts) {
+//     if (!chart) continue;
 
-    await ChatAppInterop.dotnetReference.invokeMethodAsync(
-      "RefreshChartBySymbol",
-      chart.series[0].name
-    );
-  }
-}
+//     await ChatAppInterop.dotnetReference.invokeMethodAsync(
+//       "RefreshChartBySymbol",
+//       chart.series[0].name
+//     );
+//   }
+// }
 function debounce(func, delay) {
   let debounceTimer;
   return function (...args) {
@@ -1341,35 +1345,43 @@ function debounce(func, delay) {
 const debouncedZoomChart = debounce(zoomChart, 1000);
 const debouncedZoomChart_zommOut = debounce(zoomChart, 300);
 
-const debouncedSetRange = debounce(setRange, 1000);
+const debouncedSetRange = debounce(setRange, 500);
 const debouncedSetRangeByDate = debounce(setRangeByDate, 1000);
 
 var counter2 = 0;
 async function refreshCharts(symbol, seriesData) {
   setTimeout(async function () {
     let chart = getChartInstanceBySeriesName(symbol);
-    if (chart) {
-      //    console.log("refresh" + JSON.stringify(seriesData) + "ley "+symbol);
-      addPointToChart(chart, seriesData, false, false, true);
-      // if (!FindChartZoomActivate(chart)) {
-      //   // console.log("Chart is not zommed!");
-      //   chart.redraw();
-      // }
+    if (!processingCharts.includes(symbol)) {
+      debugger;
+      if (chart) {
+        //    console.log("refresh" + JSON.stringify(seriesData) + "ley "+symbol);
+        addPointToChart(chart, seriesData, false, false, true);
+        // if (!FindChartZoomActivate(chart)) {
+        //   // console.log("Chart is not zommed!");
+        //   chart.redraw();
+        // }
 
-      chart.redraw();
+        // Check if the chart is in the processingCharts array
 
-      // // Fetch the min and max x values from the updated series data
-      // const series = chart.series[0];
-      // if (series && series.data.length > 0) {
-      //   const minX = series.data[0].x; // First data point on the x-axis
-      //   const maxX = series.data[series.data.length - 1].x; // Last data point on the x-axis
+        // If the chart is not being processed, redraw it
+        chart.redraw();
 
-      //   // Set the new extremes on the x-axis based on the updated data
-      //   chart.xAxis[0].setExtremes(minX, maxX);
+        // // Fetch the min and max x values from the updated series data
+        // const series = chart.series[0];
+        // if (series && series.data.length > 0) {
+        //   const minX = series.data[0].x; // First data point on the x-axis
+        //   const maxX = series.data[series.data.length - 1].x; // Last data point on the x-axis
 
-      //   // // Redraw again after setting the new extremes
-      //   // chart.redraw();
-      // }
+        //   // Set the new extremes on the x-axis based on the updated data
+        //   chart.xAxis[0].setExtremes(minX, maxX);
+
+        //   // // Redraw again after setting the new extremes
+        //   // chart.redraw();
+        // }
+      }
+    } else {
+      console.log("Chart is being processed, skipping redraw.");
     }
   }, 50);
   //removeOldPoints(chart, 3);
@@ -1471,6 +1483,7 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
+  totalCharts = 1;
   localStorage.setItem("chartCount", totalCharts);
   removeUnusedElement();
 
@@ -1794,18 +1807,67 @@ async function updateAllSymbols(symbols) {
 async function updateBySymbolName(symbol) {
   let chart = getChartInstanceBySeriesName(symbol);
   if (chart) {
-    await setRange(symbol, 3 * 24 * 60 * 60 * 1000);
+    await setRange(symbol, "");
     chart.redraw();
     hideCustomLoading(chart);
   }
 }
 
-async function setRange(symbol, range) {
+async function refreshAllChartsIfOffline(startdate) {
+  let charts = Highcharts.charts.filter((hc) => hc);
+
+  for (let chart of charts) {
+    if (chart) {
+      showCustomLoading(chart);
+
+      try {
+        var xAxis = chart.xAxis[0];
+        var extremes = xAxis.getExtremes();
+        var mindate = extremes.min;
+
+        // Append the chart's symbol to processingCharts before calling filtereddata
+        var chartSymbol = chart.series[0].name;
+        processingCharts.push(chartSymbol);
+
+        let filtereddata =
+          await ChatAppInterop.dotnetReference.invokeMethodAsync(
+            "RefreshDataBasedOnStartDate",
+            chartSymbol,
+            mindate,
+            startdate,
+            chart.xAxis[0].width,
+            chart.yAxis[0].height
+          );
+
+        setDataToChart(chart, filtereddata);
+
+        if (filtereddata.length > 0) {
+          SetChartZoomActivate(chart, false);
+        }
+      } catch (error) {
+        console.error("Error fetching filtered data: ", error);
+      }
+
+      hideCustomLoading(chart);
+      // Remove the chart's symbol from the processing list after setting the data
+      processingCharts = processingCharts.filter(
+        (symbol) => symbol !== chart.series[0].name
+      );
+
+      console.log("Remaining charts to process: ", processingCharts.length);
+    }
+  }
+}
+
+async function setRange(symbol, duration) {
   let chart = getChartInstanceBySeriesName(symbol);
+
   if (chart) {
+    showCustomLoading(chart);
+
     let filtereddata = await getFilteredDataBySymbol(
       symbol,
-      range,
+      duration,
       chart.xAxis[0].width,
       chart.yAxis[0].height
     );
@@ -1815,6 +1877,7 @@ async function setRange(symbol, range) {
     if (filtereddata.length > 0) {
       SetChartZoomActivate(chart, false);
     }
+    hideCustomLoading(chart);
   }
 }
 
@@ -1864,7 +1927,11 @@ function fetchData() {
   let charts = Highcharts.charts.filter((hc) => hc);
 
   for (let chart of charts) {
-    if (chart && chart.series[0]?.name) {
+    if (
+      chart &&
+      chart.series[0]?.name &&
+      !processingCharts.includes(chart.series[0]?.name)
+    ) {
       symbol = chart.series[0].name;
       var extremes = chart.xAxis[0].getExtremes();
       setRangeByDate(
