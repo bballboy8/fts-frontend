@@ -99,11 +99,81 @@ namespace FirstTerraceSystems.Repositories
             }
 
         }
+        public async Task<IEnumerable<MarketFeed>> GetPriceRangeChartData(string symbol, DateTime startDateTime, DateTime endDateTime, int xAxisPixels, int yAxisPixels, string ord = "ASC")
+        {
+            try
+            {
+                // Dynamically build the table name and index using the symbol
+                string sql = $@"
+            WITH price_range AS (
+                SELECT 
+                    MIN(price) AS min_price,
+                    MAX(price) AS max_price
+                FROM 
+                    symbol_{symbol} indexed by idx_symbol_{symbol}_date  
+                WHERE 
+                    msgtype = 'T'
+                    AND Date BETWEEN @StartDateTime AND @EndDateTime
+            ),
+            pixel_data AS (
+                SELECT
+                    -- Manually calculate x_pixel_bin based on time
+                    (strftime('%s', Date) - strftime('%s', @StartDateTime)) / 
+                    ((strftime('%s', @EndDateTime) - strftime('%s', @StartDateTime)) / @XAxisPixels) AS x_pixel_bin,
+                    
+                    -- Manually calculate y_pixel_bin based on price
+                    (price - (SELECT min_price FROM price_range)) / 
+                    ((SELECT max_price FROM price_range) - (SELECT min_price FROM price_range)) * @YAxisPixels AS y_pixel_bin,
+                    
+                    Date,      
+                    symbol,  
+                    price
+                FROM
+                    symbol_{symbol} indexed by idx_symbol_{symbol}_date  
+                WHERE
+                    msgtype = 'T' 
+                    AND Date BETWEEN @StartDateTime AND @EndDateTime
+            )
+            SELECT 
+                x_pixel_bin,
+                y_pixel_bin,
+                MIN(Date) AS Date,  -- Get a valid Date per bin
+                symbol,
+                MIN(price) AS price  -- Get a valid price per bin
+            FROM
+                pixel_data
+            GROUP BY
+                x_pixel_bin, y_pixel_bin, symbol
+            ORDER BY
+                x_pixel_bin, y_pixel_bin, Date {ord};";  // Dynamic order by Date based on `ord`
+
+                // Execute the SQL query with Dapper and pass parameters
+                var parameters = new
+                {
+                    Symbol = symbol,
+                    StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite),
+                    EndDateTime = endDateTime.ToString(AppSettings.DFormat_SQLite),
+                    XAxisPixels = xAxisPixels,
+                    YAxisPixels = yAxisPixels
+                };
+
+                return await _connection.QueryAsync<MarketFeed>(sql, parameters);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<MarketFeed>();
+            }
+        }
+
+
+
+
         public async Task<IEnumerable<MarketFeed>> GetChartDataByMinMax(string symbol, DateTime startDateTime, DateTime endDateTime)
         {
             try
             {
-                string sql = $"SELECT * FROM symbol_{symbol} WHERE Date >= @StartDateTime and Date <= @EndDateTime ORDER BY Date";
+                string sql = $"SELECT  * FROM symbol_{symbol}  indexed by idx_symbol_{symbol}_date WHERE Date >= @StartDateTime and Date <= @EndDateTime ORDER BY Date";
                 return await _connection.QueryAsync<MarketFeed>(sql, new { StartDateTime = startDateTime.ToString(AppSettings.DFormat_SQLite), EndDateTime = endDateTime.ToString(AppSettings.DFormat_SQLite) });
             }
             catch (Exception ex)
@@ -147,7 +217,7 @@ namespace FirstTerraceSystems.Repositories
 
             CreateTableAndIndexes(symbol);
 
-             var feedsList = marketFeeds.ToList(); // Materialize enumerable to list
+            var feedsList = marketFeeds.ToList(); // Materialize enumerable to list
             //var feedsList = marketFeeds
             //.GroupBy(feed => feed.Date)             // Group by unique identifier
             //.Select(group => group.First())         // Take the first entry in each group (remove duplicates)

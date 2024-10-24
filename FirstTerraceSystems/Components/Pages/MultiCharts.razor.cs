@@ -13,9 +13,12 @@ namespace FirstTerraceSystems.Components.Pages
 {
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 100000;
+        private const int MarketFeedChunkSize = 20000;
         private const int PointSize = 1000;
         private bool IsLoading { get; set; } = false;
+        private readonly HashSet<string> _processingSymbols = new HashSet<string>();
+        private readonly object _symbolLock = new object();
+
         private bool OnWait { get; set; } = false;
 
         private DotNetObjectReference<MultiCharts>? _dotNetMualtiChatsRef;
@@ -106,27 +109,29 @@ namespace FirstTerraceSystems.Components.Pages
         {
             try
             {
-                Logger.LogInformation($"Getting 3-day Historical Data from SQL Lite for symbol: {chart.Symbol}");
-                var marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
-                Logger.LogInformation($"Got 3-day Historical Data from SQL Lite for symbol: {chart.Symbol}, total: {marketFeeds.Count()}");
+                await JSRuntime.InvokeVoidAsync("updateBySymbolName", chart.Symbol);
 
-                try
-                {
-                    Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
-                    datasets[chart.Symbol] = marketFeeds.ToList();
-                    // await SendChartDataInChunks(chart.Symbol, marketFeeds, false);
-                    await JSRuntime.InvokeVoidAsync("updateBySymbolName", chart.Symbol);
+                // Logger.LogInformation($"Getting 3-day Historical Data from SQL Lite for symbol: {chart.Symbol}");
+                // var marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(chart.Symbol, defaultStartDate).ConfigureAwait(false);
+                // Logger.LogInformation($"Got 3-day Historical Data from SQL Lite for symbol: {chart.Symbol}, total: {marketFeeds.Count()}");
 
-                    Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, $"For : {chart.Symbol}");
-                }
-                finally
-                {
-                    marketFeeds = null;
-                }
+                // try
+                // {
+                //     Logger.LogInformation($"Passing Data To Chart: {chart.Symbol}");
+                //     datasets[chart.Symbol] = marketFeeds.ToList();
+                //     // await SendChartDataInChunks(chart.Symbol, marketFeeds, false);
+                //     await JSRuntime.InvokeVoidAsync("updateBySymbolName", chart.Symbol);
+
+                //     Logger.LogInformation($"Passed Data To Chart: {chart.Symbol}");
+                // }
+                // catch (Exception ex)
+                // {
+                //     Logger.LogError(ex, $"For : {chart.Symbol}");
+                // }
+                // finally
+                // {
+                //     marketFeeds = null;
+                // }
             }
             catch (Exception ex)
             {
@@ -190,34 +195,34 @@ namespace FirstTerraceSystems.Components.Pages
             return DateTimeOffset.FromUnixTimeMilliseconds(Convert.ToInt64(unixTimeStamp)).LocalDateTime;
         }
 
-        [JSInvokable]
-        public IEnumerable<MarketFeed>? GetExtremeDataBySymbol(string symbol, JsonElement? minElement, JsonElement? maxElement)
-        {
-            if (minElement == null || maxElement == null)
-                return Enumerable.Empty<MarketFeed>();
+        // [JSInvokable]
+        // public IEnumerable<MarketFeed>? GetExtremeDataBySymbol(string symbol, JsonElement? minElement, JsonElement? maxElement)
+        // {
+        //     if (minElement == null || maxElement == null)
+        //         return Enumerable.Empty<MarketFeed>();
 
-            long? min = minElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(minElement?.GetDouble()) : (long?)null;
-            long? max = maxElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(maxElement?.GetDouble()) : (long?)null;
+        //     long? min = minElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(minElement?.GetDouble()) : (long?)null;
+        //     long? max = maxElement?.ValueKind == JsonValueKind.Number ? Convert.ToInt64(maxElement?.GetDouble()) : (long?)null;
 
-            var startDate = UnixTimeStampToDateTime(min.GetValueOrDefault());
-            var endDate = UnixTimeStampToDateTime(max.GetValueOrDefault());
+        //     var startDate = UnixTimeStampToDateTime(min.GetValueOrDefault());
+        //     var endDate = UnixTimeStampToDateTime(max.GetValueOrDefault());
 
-            if (datasets.ContainsKey(symbol))
-            {
-                var extremeData = datasets[symbol].Where(x => x.Date >= startDate && x.Date <= endDate).ToList();
-                return FilterData(extremeData, 300);
-            }
+        //     if (datasets.ContainsKey(symbol))
+        //     {
+        //         var extremeData = datasets[symbol].Where(x => x.Date >= startDate && x.Date <= endDate).ToList();
+        //         return FilterData(extremeData, 300);
+        //     }
 
-            return Enumerable.Empty<MarketFeed>();
-        }
+        //     return Enumerable.Empty<MarketFeed>();
+        // }
 
-        public static List<MarketFeed> FilteredDataBySymbol(string symbol, double range)
-        {
-            var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
-            DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-            var filtered = datasets[symbol].Where(x => x.Date >= eastern).ToList();
-            return FilterData(filtered, PointSize);
-        }
+        // public static List<MarketFeed> FilteredDataBySymbol(string symbol, double range)
+        // {
+        //     var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+        //     DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+        //     var filtered = datasets[symbol].Where(x => x.Date >= eastern).ToList();
+        //     return FilterData(filtered, PointSize);
+        // }
 
         private async Task InitializedDataBaseAsync()
         {
@@ -240,26 +245,36 @@ namespace FirstTerraceSystems.Components.Pages
                 {
                     foreach (var data in datasets)
                     {
+                        var symbol = data.Key;
+                        lock (_symbolLock)
+                        {
+                            if (_processingSymbols.Contains(symbol))
+                            {
+                                // Skip this symbol as it's being processed
+                                continue;
+                            }
+                        }
+
                         var groupedData = response.Data
                             .Select(d => new MarketFeed(response.Headers, d))
                             .GroupBy(mf => mf.Symbol);
 
-                        var dataGot = groupedData.FirstOrDefault(x => x.Key == data.Key)?.ToList();
+                        var dataGot = groupedData.FirstOrDefault(x => x.Key == symbol)?.ToList();
 
                         if (dataGot != null)
                         {
                             if (OnWait)
-                                await Task.Delay(1000);
+                                await Task.Delay(500);
 
                             var filteredData = FilterByEasternTime(dataGot);
 
                             lock (_lock)
                             {
-                                datasets[data.Key] = datasets[data.Key].Concat(dataGot).ToList();
-                                if (!collection.ContainsKey(data.Key))
-                                    collection[data.Key] = filteredData.ToList();
+                                datasets[symbol] = datasets[symbol].Concat(dataGot).ToList();
+                                if (!collection.ContainsKey(symbol))
+                                    collection[symbol] = filteredData.ToList();
                                 else
-                                    collection[data.Key].AddRange(filteredData);
+                                    collection[symbol].AddRange(filteredData);
                             }
                         }
                     }
@@ -277,7 +292,7 @@ namespace FirstTerraceSystems.Components.Pages
 
             while (true)
             {
-                await Task.Delay(1000);
+                await Task.Delay(500);
                 OnWait = true;
 
                 var visibleSymbols = ChartService.InitialChartSymbols
@@ -324,12 +339,10 @@ namespace FirstTerraceSystems.Components.Pages
                             // If not working hours or not a working day, skip sending data
                             continue;
                         }
-
                         // Send the chart data (either actual or placeholder)
                         JSRuntime.InvokeVoidAsync("refreshCharts", symbol, chartData);
                     }
                 }
-
                 OnWait = false;
             }
         }
@@ -348,18 +361,18 @@ namespace FirstTerraceSystems.Components.Pages
             ChartService.UpdateSymbol(chartId, symbol);
         }
 
-        [JSInvokable]
-        public async Task RefreshChartBySymbol(string symbol)
-        {
-            IEnumerable<MarketFeed>? marketFeeds = null;
-            if (datasets.ContainsKey(symbol))
-                marketFeeds = datasets[symbol];
-            else
-                marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
-            await SendChartDataInChunks(symbol, marketFeeds).ConfigureAwait(false);
-            //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
-            marketFeeds = null;
-        }
+        // [JSInvokable]
+        // public async Task RefreshChartBySymbol(string symbol)
+        // {
+        //     IEnumerable<MarketFeed>? marketFeeds = null;
+        //     if (datasets.ContainsKey(symbol))
+        //         marketFeeds = datasets[symbol];
+        //     else
+        //         marketFeeds = await MarketFeedRepository.GetChartDataBySymbol(symbol, DateTime.Now.GetPastBusinessDay(3)).ConfigureAwait(false);
+        //     await SendChartDataInChunks(symbol, marketFeeds).ConfigureAwait(false);
+        //     //    await JSRuntime.InvokeVoidAsync("setRange", symbol, 3 * 24 * 60 * 60 * 1000);
+        //     marketFeeds = null;
+        // }
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
@@ -506,90 +519,96 @@ namespace FirstTerraceSystems.Components.Pages
             await WebSocketClient.CloseUtp();
         }
         [JSInvokable]
-        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range, int xAxisPixels, int yAxisPixels)
+        public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, string duration, int xAxisPixels, int yAxisPixels)
         {
-            var filtered = await GetChartData(symbol);
+            DateTime eastern;
+            var symbolData = await GetChartData(symbol);
+            var maxDate = symbolData.Max(x => x.Date);
 
-            // Update the range for the symbol
-            Ranges[symbol] = range;
+            // Dictionary to map durations to time adjustments
+            var durationMapping = new Dictionary<string, Func<DateTime>>()
+                                        {
+                                            { "3D", () => DateTime.Now.GetPastBusinessDay(3) },
+                                            { "1D", () => DateTime.Now.GetPastBusinessDay(1) },
+                                            { "1h", () => maxDate.AddHours(-1) },
+                                            { "30m", () => maxDate.AddMinutes(-30) },
+                                            { "3m", () => maxDate.AddMinutes(-3) },
+                                            { "1m", () => maxDate.AddMinutes(-1) }
+                                        };
 
-            var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
+            // If the duration is in the mapping, use it; otherwise, set to the earliest date
+            if (durationMapping.TryGetValue(duration, out var calculateDate))
+            {
+                eastern = calculateDate();
+            }
+            else
+            {
+                eastern = symbolData.Min(x => x.Date); // default to the earliest date if no match
+            }
 
-            // Convert UTC to Eastern Time
-            DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(RangeDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+            // Further filter based on price and date
+            var durationData = symbolData.Where(x => x.Date >= eastern && x.Price >= 0).ToList();
 
-            // Get the last data point
-            var last = filtered.LastOrDefault();
-
-            // Filter the data by time range
-            filtered = filtered.Where((x) => x.Date >= eastern && x.Price >= 0).ToList();
-
-
-
-            // Calculate the number of data points to display
-            filtered = FilterData(filtered, xAxisPixels, yAxisPixels);
-
-            return filtered;
+            return FilterData(durationData, xAxisPixels, yAxisPixels);
         }
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> RefreshDataBasedOnStartDate(string symbol, DateTime startDate, int xAxisPixels, int yAxisPixels)
         {
-            if (MainLayout.MarketStatus == "Open")
+            lock (_symbolLock)
             {
-                // Convert current UTC time to EST
-                //var currentDateTimeEST = TimeZoneInfo.ConvertTimeFromUtc(startDate, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-
-                // Set startDate to 4 AM on the desired date in EST
-                //DateTime startDateAtFourAM = new DateTime(startDate.Year, startDate.Month, startDate.Day, 4, 0, 0);
-
-                // Ensure startDate is not less than the current EST time and set it to 4 AM if it's not
-                // startDate = MainLayout.MarketStatus == "Closed" ? startDateAtFourAM.AddDays(-1) : startDate; //startDate < currentDateTimeEST ? startDateAtFourAM : startDate;
-
-                // Fetch and filter old data before startDate, ensuring no negative prices
-                var oldData = datasets[symbol]
-                    .Where(x => x.Date < startDate && x.Price >= 0)
-                    .OrderBy(x => x.Date);
-
-                // Calculate the number of data points to display using FilterData function
-                var oldFiltered = FilterData(oldData, xAxisPixels, yAxisPixels);
-
-                // Fetch and sort additional data from 4 AM onwards (in the extended range)
-               var newData =  await LoadDataByStartDayAndSymbol(symbol, startDate);
-
-                //var newData = datasets[symbol]
-                //.Where(x => x.Date >= currentDateTimeEST && x.Price >= 0)
-                //.OrderBy(x => x.Date);
-
-                if(newData == null)
-                     return FilterData(datasets[symbol], xAxisPixels, yAxisPixels).ToList();
-
-                var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
-
-                // Combine old and new datasets, avoiding duplicates
-                var combinedFiltered = oldFiltered.Union(newFiltered.Where(x => x.Date >= startDate));
-
-                // Filter the combined dataset to match the desired EST time range and sort by date
-                lock (_datasetLock)
+                if (_processingSymbols.Contains(symbol))
                 {
-                    var finalData = datasets[symbol].Union(newData.Where(x => x.Date >= startDate));
-                    datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
+                    // If the symbol is already being processed, return immediately or handle as needed
+                    return null;
+                }
+                _processingSymbols.Add(symbol);
+            }
+
+            try
+            {
+                if (MainLayout.MarketStatus == "Open")
+                {
+                    // Existing logic
+                    var oldData = datasets[symbol]
+                        .Where(x => x.Date < startDate && x.Price >= 0)
+                        .OrderBy(x => x.Date);
+
+                    var oldFiltered = FilterData(oldData, xAxisPixels, yAxisPixels);
+                    var newData = await LoadDataByStartDayAndSymbol(symbol, startDate);
+
+                    if (newData == null)
+                        return FilterData(datasets[symbol], xAxisPixels, yAxisPixels).ToList();
+
+                    var newFiltered = FilterData(newData, xAxisPixels, yAxisPixels);
+                    var combinedFiltered = oldFiltered.Union(newFiltered.Where(x => x.Date >= startDate));
+
+                    lock (_datasetLock)
+                    {
+                        var finalData = datasets[symbol].Union(newData.Where(x => x.Date >= startDate));
+                        datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
+                    }
+
+                    return FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
                 }
 
-                //datasets[symbol] = finalData.OrderBy(x => x.Date).ToList();
-
-                return FilterByEasternTime(combinedFiltered).OrderBy(x => x.Date).ToList();
+                return FilterData(datasets[symbol], xAxisPixels, yAxisPixels).ToList();
             }
-            return FilterData(datasets[symbol], xAxisPixels, yAxisPixels).ToList();
-
+            finally
+            {
+                lock (_symbolLock)
+                {
+                    _processingSymbols.Remove(symbol);
+                }
+            }
         }
+
 
 
         [JSInvokable]
         public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbolAndDateRange(string symbol, double startDate, double endDate, double oldStartDate, double oldEndDate, int xAxisPixels, int yAxisPixels)
 
         {
-
             // Convert timestamps to DateTime objects
             var startDateRange = UnixTimeStampToDateTime((long)startDate);
             var endDateRange = UnixTimeStampToDateTime((long)endDate);
@@ -610,14 +629,13 @@ namespace FirstTerraceSystems.Components.Pages
                 }
             }
 
-
-            // // // Fetch data in the old range but exclude data within the new range
+            // Fetch data in the old range but exclude data within the new range
             var filteredOldData = datasets[symbol]
                 .Where(x => x.Date >= oldStartDateRange && x.Date <= oldEndDateRange && (x.Date < startDateRange || x.Date > endDateRange) && x.Price >= 0)
                 .OrderBy(x => x.Date)
                 .ToList();
 
-            // // Calculate the number of data points to display using FilterData function
+            // Calculate the number of data points to display using FilterData function
             var oldFiltered = FilterData(filteredOldData, xAxisPixels, yAxisPixels);
 
 
@@ -642,20 +660,13 @@ namespace FirstTerraceSystems.Components.Pages
 
         {
 
-            // var currentTime = DateTime.Now.TimeOfDay;
-
-
             if (PointSize > xAxisPixels)
             {
                 xAxisPixels = PointSize;
             }
 
-
             // Total number of data points
-
             var totalPoints = data.Count();
-
-
 
             // Determine if we need to reduce the number of points based on xAxisPixels
 
@@ -666,80 +677,18 @@ namespace FirstTerraceSystems.Components.Pages
                 return data.ToList();
             }
 
-
             // Determine step size for selecting points
-
             int step = totalPoints > numPointsToShow ? (int)Math.Ceiling((double)totalPoints / numPointsToShow) : 1;
 
-
-
             // Filter data to have at least one point per x-axis pixel
-
             var filteredData = FilterByEasternTime(data).Where((_, index) => index % step == 0).ToList();
 
             return filteredData.ToList();
-            // Additional filtering to ensure at least 10 distinct y-axis points for each time pixel
-
-            // var groupedByTimePixel = filteredData
-
-            //     .GroupBy(point => point.Date.Ticks / (TimeSpan.TicksPerMillisecond * xAxisPixels))
-
-            //     .SelectMany(g =>
-
-            //     {
-
-            //         // If fewer than 10 points in this time group, show them all
-
-            //         if (g.Count() <= 10)
-
-            //             return g;
-
-
-
-            //         // Otherwise, distribute points across y-axis
-
-            //         var pointsByPriceRange = g
-
-            //             .GroupBy(point => point.Price / (yAxisPixels * 10)) // Divide prices into y-axis pixels
-
-            //             .SelectMany(pg => pg.Take(10)) // Take up to 10 per pixel group
-
-            //             .Take(yAxisPixels);
-
-
-            //         return pointsByPriceRange;
-
-            //     });
-
-
-            // return groupedByTimePixel.OrderBy(x => x.Date).ToList();
 
         }
 
-        //[JSInvokable]
-        //public async Task<IEnumerable<MarketFeed>?> UpdateChartSymbol(string chartId, string symbol)
-        //{
-        //    // Cancel any ongoing background tasks
-        //    lock (_lock)
-        //    {
-        //        _cancellationTokenSource.Cancel();
-        //        _cancellationTokenSource.Dispose();
-        //        _cancellationTokenSource = new CancellationTokenSource();
-        //    }
-
-        //    if (!TickerRepository.IsTickerExists(symbol))
-        //    {
-        //        Toast.ShowDangerMessage($"Ticker '{symbol}' does not exist.");
-        //        return null;
-        //    }
-
-        //    return await GetChartData(chartId, symbol);
-        //}
-
         private async Task<IEnumerable<MarketFeed>?> GetChartData(string symbol)
         {
-
-
             if (!datasets.ContainsKey(symbol) || !datasets[symbol].Any())
             {
                 var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
@@ -749,8 +698,6 @@ namespace FirstTerraceSystems.Components.Pages
                 if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
                 {
                     datasets[symbol] = dbmarketFeeds.ToList();
-                    var filtered = FilterData(dbmarketFeeds, PointSize);
-                    return filtered;
                 }
                 else
                 {

@@ -33,7 +33,7 @@ namespace FirstTerraceSystems.Components.Pages
             DateTime defaultStartDateForBackground = defaultStartDate;
             await ChartService.ChartModals();
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
-            IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(500);
+            IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(1);
 
             foreach (ChartModal chart in recordsToFetch)
             {
@@ -54,12 +54,24 @@ namespace FirstTerraceSystems.Components.Pages
 
             _ = Task.Run(async () =>
             {
-                await Task.Delay(5000);
+                await Task.Delay(50000);
+
+                var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+                var coreMarketStartTime = new TimeSpan(4, 00, 0); // 4:00 AM
+                var coreMarketEndTime = new TimeSpan(20, 0, 0);   // 8:00 PM
+                var timeOfDay = estTime.TimeOfDay;
+                var dayOfWeek = estTime.DayOfWeek;
+
+                if (dayOfWeek != DayOfWeek.Saturday && dayOfWeek != DayOfWeek.Sunday && timeOfDay >= coreMarketStartTime && timeOfDay <= coreMarketEndTime)
+                {
+                    var utcNow = DateTime.UtcNow;
+                    DateTime currentEasternTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+                    await ProcessInBatchesChartTaskForGap(recordsToFetch, currentEasternTime, 10);  // Process in batches of 10               
+                }
                 await ProcessInBatches(recordsToFetchInBackGround, defaultStartDate, 10);  // Process in batches of 10
             });
 
             WindowsSerivce.UnlockWindowResize();
-
             NavigationManager.NavigateTo("/multi-charts");
         }
 
@@ -121,6 +133,51 @@ namespace FirstTerraceSystems.Components.Pages
                 Logger.LogError(ex, $"For : {chart.Symbol}");
             }
         }
+
+
+        private async Task ChartTaskForGap(ChartModal chart, DateTime defaultStartDate)
+        {
+            try
+            {
+                Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
+                IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(defaultStartDate, chart.Symbol);
+
+                Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
+
+                if (marketFeeds != null && marketFeeds.Any())
+                {
+                    Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {chart.Symbol}");
+                    MarketFeedRepository.InsertMarketFeedDataFromApi(chart.Symbol, marketFeeds);
+                    Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"For : {chart.Symbol}");
+            }
+        }
+
+
+        private async Task ProcessInBatchesChartTaskForGap(IEnumerable<ChartModal> records, DateTime defaultStartDate, int batchSize)
+        {
+            var recordsBatch = records.ToList();
+            int totalRecords = recordsBatch.Count;
+            for (int i = 0; i < totalRecords; i += batchSize)
+            {
+                var batch = recordsBatch.Skip(i).Take(batchSize);
+                List<Task> batchTasks = new List<Task>();
+
+                foreach (ChartModal chart in batch)
+                {
+                    Task chartTask = ChartTaskForGap(chart, defaultStartDate);
+                    batchTasks.Add(chartTask);
+                    _symbolSet.Add(chart.Symbol);
+                }
+
+                await Task.WhenAll(batchTasks);  // Run the batch of tasks in parallel
+            }
+        }
+
 
         // Helper method to process records in batches of a specified size
         private async Task ProcessInBatches(IEnumerable<ChartModal> records, DateTime defaultStartDate, int batchSize)
