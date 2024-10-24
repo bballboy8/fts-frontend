@@ -12,10 +12,21 @@
 @* @attribute [Authorize] *@
 @implements IDisposable
 
+
+@inject PreloadService preloadService
+
+
 <Toasts class="p-3" Placement="ToastsPlacement.BottomCenter" Delay="2000" AutoHide="true" ShowCloseButton="false" StackLength="1" />
 <Preload />
 <div class="page" style="background: radial-gradient(circle at 50% 8.19%, #1B2934 0%, #000000 100%);">
     <main>
+        @* @if (IsLoading)
+{
+    <div class="loading-overlay" style="visibility: visible;">
+        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.ExtraLarge" />
+    </div>
+} *@
+
         @if (!NavigationManager.Uri.Contains("login") && !NavigationManager.Uri.Contains("register") && !NavigationManager.Uri.Contains("loading"))
         {
 
@@ -83,6 +94,8 @@
 @code {
     private DateTime _lastCallTime; // Track the last time the jQuery function was called
     private const double CheckInterval = 10000; // 10 seconds in milliseconds
+    private bool IsLoading { get; set; } = false;
+
     private Timer _connectivityTimer;
     private bool IsConnected = true;
     private bool IsDarkMode = true;
@@ -113,6 +126,7 @@
         var timer = new System.Timers.Timer(5000);
         timer.Elapsed += (sender, e) => UpdateTime();
         timer.Start();
+        IsLoading=false;
     }
 
     private async void UpdateTime()
@@ -191,64 +205,44 @@
     }
 
     private async void CheckConnectivity(object sender, ElapsedEventArgs e)
+{
+    var current = Connectivity.Current;
+    var isConnected = current.NetworkAccess == NetworkAccess.Internet;
+
+    TimeSpan elapsed = DateTime.Now - _lastCallTime;
+    double totalMilliseconds = elapsed.TotalMilliseconds;
+
+    if (isConnected)
     {
-        // var current = Connectivity.Current;
-        // var isConnected = current.NetworkAccess == NetworkAccess.Internet;
-
-        // // Calculate the elapsed time as a TimeSpan
-        // TimeSpan elapsed = DateTime.Now - _lastCallTime;
-
-        // // Convert TotalMilliseconds to long for comparison
-        // long totalMilliseconds = Convert.ToInt64(elapsed.TotalMilliseconds);
-
-        // // Check if the elapsed time in milliseconds is greater than CheckInterval
-        // if (totalMilliseconds > CheckInterval)
-        // {
-        //     // Update the last call time
-        //     _lastCallTime = DateTime.Now;
-
-        //     // Call the jQuery function if connected
-        //     if (isConnected)
-        //     {
-        //         await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", _lastCallTime);
-        //     }
-        // }
-
-        var current = Connectivity.Current;
-        var isConnected = current.NetworkAccess == NetworkAccess.Internet;
-
-        // Calculate the elapsed time since the last call
-        TimeSpan elapsed = DateTime.Now - _lastCallTime;
-
-        // Get the total milliseconds as a double
-        double totalMilliseconds = elapsed.TotalMilliseconds;
-
-
-        // Check if the elapsed time in milliseconds is greater than CheckInterval
-        if (isConnected)
+        if (totalMilliseconds > CheckInterval && !IsLoading)
         {
-            if (totalMilliseconds > CheckInterval)
-            {
-                // Debug: Log the current time and last call time for verification
-                Console.WriteLine($"Current Time: {DateTime.Now}, Last Call Time: {_lastCallTime}, Elapsed Milliseconds: {totalMilliseconds}");
-                // Update the last call time
-                DateTime previousValue = _lastCallTime;
-                _lastCallTime = DateTime.Now;
-                // Debug: Log the updated last call time
-                Console.WriteLine($"Updating Last Call Time: {_lastCallTime}");
-                // Call the jQuery function if connected
-                await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(previousValue.ToString()).ToUniversalTime(), TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")));
-            }
-            IsConnected = true;
-            // Update the last call time
+            DateTime previousValue = _lastCallTime;
             _lastCallTime = DateTime.Now;
-        }
-        else
-        {
-            IsConnected = false;
-        }
+            IsLoading = true;
 
+            // Switch to the main thread before showing the preload spinner
+            await InvokeAsync(() => preloadService.Show(SpinnerColor.Light, "Loading data..."));
+            Console.WriteLine($"Calling refreshAllChartsIfOffline: {_lastCallTime}");
+
+            await JSRuntime.InvokeVoidAsync("refreshAllChartsIfOffline", TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(previousValue.ToString()).ToUniversalTime(), TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")));
+
+            // Switch back to the main thread to hide the preload spinner and update the UI state
+            await InvokeAsync(() => 
+            {
+                preloadService.Hide();
+                IsLoading = false;
+                StateHasChanged();
+            });
+        }
+        IsConnected = true;
+        _lastCallTime = DateTime.Now;
     }
+    else
+    {
+        IsConnected = false;
+        IsLoading = false;
+    }
+}
 
     // private async void Connectivity_ConnectivityChanged(object sender, ConnectivityChangedEventArgs e)
     // {

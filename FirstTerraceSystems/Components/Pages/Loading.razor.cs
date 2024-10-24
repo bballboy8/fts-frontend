@@ -33,7 +33,7 @@ namespace FirstTerraceSystems.Components.Pages
             DateTime defaultStartDateForBackground = defaultStartDate;
             await ChartService.ChartModals();
             IEnumerable<ChartModal> recordsToFetch = ChartService.InitialChartSymbols.Where(x => x.IsVisible == true);
-            IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(1);
+            IEnumerable<ChartModal> recordsToFetchInBackGround = ChartService.InitialChartSymbols.Where(x => x.IsVisible == false).Take(10);
 
             foreach (ChartModal chart in recordsToFetch)
             {
@@ -54,21 +54,20 @@ namespace FirstTerraceSystems.Components.Pages
 
             _ = Task.Run(async () =>
             {
-                await Task.Delay(50000);
+                await Task.Delay(5000);
+                // var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+                // var coreMarketStartTime = new TimeSpan(4, 00, 0); // 4:00 AM
+                // var coreMarketEndTime = new TimeSpan(20, 0, 0);   // 8:00 PM
+                // var timeOfDay = estTime.TimeOfDay;
+                // var dayOfWeek = estTime.DayOfWeek;
 
-                var estTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-                var coreMarketStartTime = new TimeSpan(4, 00, 0); // 4:00 AM
-                var coreMarketEndTime = new TimeSpan(20, 0, 0);   // 8:00 PM
-                var timeOfDay = estTime.TimeOfDay;
-                var dayOfWeek = estTime.DayOfWeek;
-
-                if (dayOfWeek != DayOfWeek.Saturday && dayOfWeek != DayOfWeek.Sunday && timeOfDay >= coreMarketStartTime && timeOfDay <= coreMarketEndTime)
-                {
-                    var utcNow = DateTime.UtcNow;
-                    DateTime currentEasternTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-                    await ProcessInBatchesChartTaskForGap(recordsToFetch, currentEasternTime, 10);  // Process in batches of 10               
-                }
-                await ProcessInBatches(recordsToFetchInBackGround, defaultStartDate, 10);  // Process in batches of 10
+                // if (dayOfWeek != DayOfWeek.Saturday && dayOfWeek != DayOfWeek.Sunday && timeOfDay >= coreMarketStartTime && timeOfDay <= coreMarketEndTime)
+                // {
+                //     var utcNow = DateTime.UtcNow;
+                //     DateTime currentEasternTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
+                //     await ProcessInBatchesChartTaskForGap(recordsToFetch, currentEasternTime, 10);  // Process in batches of 10               
+                // }
+                await ProcessInBatches(recordsToFetchInBackGround, defaultStartDate, 100);  // Process in batches of 10
             });
 
             WindowsSerivce.UnlockWindowResize();
@@ -116,16 +115,22 @@ namespace FirstTerraceSystems.Components.Pages
                 MarketFeed? lastMarketFeed = MarketFeedRepository.GetLastRecordBySymbol(chart.Symbol);
                 DateTime startDate = lastMarketFeed?.Date ?? defaultStartDate;
 
-                Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}");
+                // Check if milliseconds are present and round to the next second if necessary
+                if (startDate.Millisecond > 0)
+                {
+                    startDate = startDate.AddSeconds(1);
+                }
+
+                Logger.LogInformation($"Starting API call for symbol: {chart.Symbol}  StartDate: {startDate}");
                 IEnumerable<MarketFeed>? marketFeeds = await NasdaqService.NasdaqGetDataAsync(startDate, chart.Symbol);
 
                 Logger.LogInformation($"Got Response from API for symbol: {chart.Symbol}");
 
                 if (marketFeeds != null && marketFeeds.Any())
                 {
-                    Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {chart.Symbol}");
+                    Logger.LogInformation($"Adding Historical Data to SQL Lite for symbol: {chart.Symbol}  StartDate: {startDate}");
                     MarketFeedRepository.InsertMarketFeedDataFromApi(chart.Symbol, marketFeeds);
-                    Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {chart.Symbol} total: {marketFeeds.Count()}");
+                    Logger.LogInformation($"Added Historical Data to SQL Lite for symbol: {chart.Symbol}  StartDate: {startDate} total: {marketFeeds.Count()}");
                 }
             }
             catch (Exception ex)

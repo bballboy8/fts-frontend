@@ -8,7 +8,7 @@
 
         //DateFormats
         public const string DFormat_SQLite = "yyyy-MM-dd HH:mm:ss";
-        public const string DFormat_NasdaqGetData = "yyyy-MM-ddTHH:ss";
+        public const string DFormat_NasdaqGetData = "yyyy-MM-ddTHH:mm:ss";
         public const string DFormat_MarketFeedForSocket = "yyyy-MM-dd HH:mm:ss.ffffff";
     }
 

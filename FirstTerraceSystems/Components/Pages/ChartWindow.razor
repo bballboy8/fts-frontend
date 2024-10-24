@@ -328,18 +328,55 @@
     }
 
     [JSInvokable]
-    public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, double range, int xAxisPixels, int yAxisPixels )
+    public async Task<IEnumerable<MarketFeed>?> GetFilteredDataBySymbol(string symbol, string duration, int xAxisPixels, int yAxisPixels )
     {
-        MultiCharts.Ranges[symbol] = range;
-        var RangeDate = DateTime.UtcNow.AddMilliseconds(-range);
-        DateTime eastern = TimeZoneInfo
-    .ConvertTimeFromUtc(
-      RangeDate,
-      TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-        @* var last = MultiCharts.datasets[symbol][MultiCharts.datasets[symbol].Count - 1]; *@
-        var filtered = MultiCharts.datasets[symbol].Where((x) => x.Date >= eastern).ToList();
-        filtered = MultiCharts.FilterData(filtered, xAxisPixels, yAxisPixels);
-        return filtered;
+
+            DateTime eastern;
+            var symbolData = await GetChartData(symbol);
+            var maxDate = symbolData.Max(x => x.Date);
+
+            // Dictionary to map durations to time adjustments
+            var durationMapping = new Dictionary<string, Func<DateTime>>()
+                                        {
+                                            { "3D", () => DateTime.Now.GetPastBusinessDay(3) },
+                                            { "1D", () => DateTime.Now.GetPastBusinessDay(1) },
+                                            { "1h", () => maxDate.AddHours(-1) },
+                                            { "30m", () => maxDate.AddMinutes(-30) },
+                                            { "3m", () => maxDate.AddMinutes(-3) },
+                                            { "1m", () => maxDate.AddMinutes(-1) }
+                                        };
+
+            // If the duration is in the mapping, use it; otherwise, set to the earliest date
+            if (durationMapping.TryGetValue(duration, out var calculateDate))
+            {
+                eastern = calculateDate();
+            }
+            else
+            {
+                eastern = symbolData.Min(x => x.Date); // default to the earliest date if no match
+            }
+
+            // Further filter based on price and date
+            var durationData = symbolData.Where(x => x.Date >= eastern && x.Price >= 0).ToList();
+
+            return MultiCharts.FilterData(durationData, xAxisPixels, yAxisPixels);
+    }
+
+
+    private async Task<IEnumerable<MarketFeed>?> GetChartData(string symbol)
+    {
+        if (!MultiCharts.datasets.ContainsKey(symbol) || !MultiCharts.datasets[symbol].Any())
+        {
+            var defaultStartDate = DateTime.Now.GetPastBusinessDay(3);
+            var dbmarketFeeds = await MarketFeedRepository.GetChartDataBySymbol1(symbol, defaultStartDate, false, false).ConfigureAwait(false);
+
+            if (dbmarketFeeds != null && dbmarketFeeds.Count() > 0)
+            {
+                MultiCharts.datasets[symbol] = dbmarketFeeds.ToList();
+            }
+        }
+        return MultiCharts.datasets[symbol];
+
     }
 
     public void Dispose()

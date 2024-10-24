@@ -943,7 +943,7 @@ function removeChart(chart) {
 }
 
 function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
-  showCustomLoading(chart);
+  // showCustomLoading(chart);
   if (!chart.series[0].data || chart.series[0].data.length === 0) {
     setRange(symbol, "3D");
     console.warn(`No data available for zooming on chart: ${symbol}`);
@@ -1063,7 +1063,7 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
   } else {
     console.warn("Invalid zoom range. No zoom action performed.");
   }
-  hideCustomLoading(chart);
+  // hideCustomLoading(chart);
 }
 
 // Function to get the 4 AM timestamp of the last three business days
@@ -1266,8 +1266,6 @@ function setDataToChart(
     const maxX = newmax !== 0 ? newmax : dataPoints[dataPoints.length - 1].x;
     chart.xAxis[0].setExtremes(minX, maxX, false);
   }
-  // Redraw once after all data is set
-  chart.redraw();
 }
 
 //debugger
@@ -1483,7 +1481,6 @@ function addChartBox(totalCharts, chartIndx, symbol) {
 }
 
 function createDashboard(totalCharts, initialChartSymbols) {
-  totalCharts = 1;
   localStorage.setItem("chartCount", totalCharts);
   removeUnusedElement();
 
@@ -1809,7 +1806,6 @@ async function updateBySymbolName(symbol) {
   if (chart) {
     await setRange(symbol, "");
     chart.redraw();
-    hideCustomLoading(chart);
   }
 }
 
@@ -1833,7 +1829,6 @@ async function refreshAllChartsIfOffline(startdate) {
           await ChatAppInterop.dotnetReference.invokeMethodAsync(
             "RefreshDataBasedOnStartDate",
             chartSymbol,
-            mindate,
             startdate,
             chart.xAxis[0].width,
             chart.yAxis[0].height
@@ -1844,16 +1839,17 @@ async function refreshAllChartsIfOffline(startdate) {
         if (filtereddata.length > 0) {
           SetChartZoomActivate(chart, false);
         }
+
+        chart.redraw();
       } catch (error) {
         console.error("Error fetching filtered data: ", error);
       }
 
-      hideCustomLoading(chart);
       // Remove the chart's symbol from the processing list after setting the data
       processingCharts = processingCharts.filter(
         (symbol) => symbol !== chart.series[0].name
       );
-
+      hideCustomLoading(chart);
       console.log("Remaining charts to process: ", processingCharts.length);
     }
   }
@@ -1877,6 +1873,7 @@ async function setRange(symbol, duration) {
     if (filtereddata.length > 0) {
       SetChartZoomActivate(chart, false);
     }
+    chart.redraw();
     hideCustomLoading(chart);
   }
 }

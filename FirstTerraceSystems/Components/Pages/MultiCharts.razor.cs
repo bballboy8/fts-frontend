@@ -567,7 +567,13 @@ namespace FirstTerraceSystems.Components.Pages
 
             try
             {
-                if (MainLayout.MarketStatus == "Open")
+                var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
+                DateTime currentEasternTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, easternTimeZone);
+
+                // Check if the current time is between 4 AM and 8 PM
+                bool isWorkingHours = currentEasternTime.Hour >= 4 && currentEasternTime.Hour < 20;
+                if (true)
                 {
                     // Existing logic
                     var oldData = datasets[symbol]
@@ -575,6 +581,7 @@ namespace FirstTerraceSystems.Components.Pages
                         .OrderBy(x => x.Date);
 
                     var oldFiltered = FilterData(oldData, xAxisPixels, yAxisPixels);
+                    Console.WriteLine("Calling api! LoadDataByStartDayAndSymbol");
                     var newData = await LoadDataByStartDayAndSymbol(symbol, startDate);
 
                     if (newData == null)

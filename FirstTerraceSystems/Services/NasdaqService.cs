@@ -81,6 +81,8 @@ namespace FirstTerraceSystems.Services
                         symbol = symbol
                     };
 
+                    Console.WriteLine("jsonPayload:" + jsonPayload);
+
                     // Convert the payload to JSON string
                     var jsonString = System.Text.Json.JsonSerializer.Serialize(jsonPayload);
                     var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
