@@ -13,7 +13,7 @@ namespace FirstTerraceSystems.Components.Pages
 {
     public partial class MultiCharts
     {
-        private const int MarketFeedChunkSize = 20000;
+        private const int MarketFeedChunkSize = 100000;
         private const int PointSize = 1000;
         private bool IsLoading { get; set; } = false;
         private readonly HashSet<string> _processingSymbols = new HashSet<string>();

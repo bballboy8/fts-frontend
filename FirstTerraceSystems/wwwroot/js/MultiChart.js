@@ -675,33 +675,31 @@ function addChart(
         events: {
           afterSetExtremes: function (e) {
             var chart = this.chart;
-            // if (e.trigger === "zoom" || e.trigger === "pan") {
-            //   SetChartZoomActivate(chart, true);
-            //   var symbol = chart.series[0].name;
+            if (e.trigger === "zoom" || e.trigger === "pan") {
+              SetChartZoomActivate(chart, true);
+              var symbol = chart.series[0].name;
 
-            //   // After zoom, ensure the points maintain their colors
-            //   var data = chart.series[0].data;
+              // After zoom, ensure the points maintain their colors
+              var data = chart.series[0].data;
 
-            //   // Initialize the previous price with the first data point's y value or a default value
-            //   var previousPrice = data.length > 0 ? data[0].y : 0;
+              // Initialize the previous price with the first data point's y value or a default value
+              var previousPrice = data.length > 0 ? data[0].y : 0;
 
-            //   data.forEach(function (point, index) {
-            //     // Compare the current point's y value with the previous one
-            //     if (index > 0 && point.y > previousPrice) {
-            //       point.update({ color: "green" });
-            //     } else {
-            //       point.update({ color: "red" });
-            //     }
+              data.forEach(function (point, index) {
+                // Compare the current point's y value with the previous one
+                if (index > 0 && point.y > previousPrice) {
+                  point.update({ color: "green" });
+                } else {
+                  point.update({ color: "red" });
+                }
 
-            //     // Update previousPrice for the next iteration
-            //     previousPrice = point.y;
-            //   });
-            // }
+                // Update previousPrice for the next iteration
+                previousPrice = point.y;
+              });
+            }
 
             // Check if the event is triggered by zoom or pan
             if (e.trigger === "zoom" || e.trigger === "pan") {
-              SetChartZoomActivate(chart, true);
-
               // Get the chart symbol (assuming it's the first series' name)
               var symbol = chart.series[0].name;
 
@@ -772,6 +770,13 @@ function addChart(
         height: "65%",
 
         resize: { enabled: true },
+        events: {
+          afterSetExtremes: function (e) {
+            const values = [];
+
+            // console.log(e.max + "ychanged");
+          },
+        },
       },
       {
         gridLineWidth: 0,
@@ -1042,13 +1047,12 @@ function zoomChart(zoomIn, chart, dotNetObject = undefined, symbol) {
       newMin = Math.max(chart.xAxis[0].dataMin, newMin);
     }
     newMax = Math.min(chart.xAxis[0].dataMax, newMax);
-    xAxis.setExtremes(newMin, newMax);
-    chart.redraw();
+    // xAxis.setExtremes(newMin, newMax);
     // Smooth animation (optional for better UX)
-    // chart.xAxis[0].update({ min: newMin, max: newMax }, true, {
-    //   duration: 300, // Animation duration in milliseconds for smooth zoom
-    //   easing: "easeOutQuad", // Use an easing function for smoother transitions
-    // });
+    chart.xAxis[0].update({ min: newMin, max: newMax }, true, {
+      duration: 300, // Animation duration in milliseconds for smooth zoom
+      easing: "easeOutQuad", // Use an easing function for smoother transitions
+    });
 
     if (dotNetObject) {
       dotNetObject.invokeMethodAsync("ZoomingChanged", newMin, newMax);
@@ -1253,6 +1257,9 @@ function setDataToChart(
 
   chart.series[0].setData(dataPoints, false); // Set data without redrawing
   chart.series[1].setData(volumePoints, false); // Set data without redrawing
+
+  // Redraw once after all data is set
+  chart.redraw();
 
   if (update_extreme && dataPoints.length > 1) {
     const minX = newmin !== 0 ? newmin : dataPoints[0].x;
